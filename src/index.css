@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+
+
+
+
+
+
+/* .breadcumb-menu li:nth-child(4) a {
+  font-size: 27px;
+  color: yellow;
+}
+
+.breadcumb-menu li:not(:last-child):after {
+  font-family: "Font Awesome 6 Free"; 
+  content: "\f054"; 
+  font-weight: 900; 
+  position: relative;
+  margin-left: 15px;
+  margin-right: 10px;
+} */
+
+
+
+/* add_action('wp_footer', function () {
+    ?>
+    <script>
+    (function () {
+      var CUSTOM_LOGIN_URL = 'https://elipsenew.elipsestudio.com/login';
+
+      function setCheckoutLoginLink() {
+        var link = document.querySelector('a.wc-block-checkout__login-prompt');
+        if (!link) return;
+
+        var finalUrl;
+        try {
+          finalUrl = new URL(CUSTOM_LOGIN_URL, window.location.origin);
+        } catch (e) {
+          finalUrl = { toString: function(){ return CUSTOM_LOGIN_URL; } };
+        }
+
+        if (finalUrl.searchParams) {
+          if (!finalUrl.searchParams.has('redirect_to')) {
+            finalUrl.searchParams.set('redirect_to', window.location.href);
+          }
+        } else {
+          var sep = CUSTOM_LOGIN_URL.indexOf('?') === -1 ? '?' : '&';
+          finalUrl = { toString: function(){ return CUSTOM_LOGIN_URL + sep + 'redirect_to=' + encodeURIComponent(window.location.href); } };
+        }
+
+        if (link.getAttribute('href') !== finalUrl.toString()) {
+          link.setAttribute('href', finalUrl.toString());
+        }
+      }
+
+      function init() {
+        setCheckoutLoginLink();
+        var mo = new MutationObserver(function (mutations) {
+          for (var i = 0; i < mutations.length; i++) {
+            if (mutations[i].addedNodes && mutations[i].addedNodes.length) {
+              setCheckoutLoginLink();
+              break;
+            }
+          }
+        });
+        mo.observe(document.body, { childList: true, subtree: true });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+    </script>
+    <?php
+}, 99); */
+
+
+@font-face {
+  font-family: "lucidaCalligraphyItalic";
+  src: url("./assets/fonts/lucidaCalligraphyItalic.ttf") format("truetype");
+}
+
+/* Premium Custom Scrollbar */
+.custom-scrollbar-premium::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar-premium::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar-premium::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.custom-scrollbar-premium::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
