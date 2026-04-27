@@ -24,10 +24,10 @@ import useSettingsStore from '../store/settingsStore';
 import { useAuth } from '../context/AuthContext';
 import { getMyOrder, getMyOrderHistory, placeOrder, unlockOrder, lockOrder, deleteHistory, getStudentProfile, updateStudentProfile, changePasswordAuth, getMyClassBackDesigns, resetOrder, createFreshOrder } from '../api/api';
 import useSocket from '../hooks/useSocket';
-
+import useBackDesignStore from '../store/backDesignStore';
 const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup /*, setShowBackTextPopup */ }) => { // COMMENTED: Back text feature disabled
     const { logout } = useAuth();
-
+    const { backDesigns } = useBackDesignStore();
     // 1. Move Constants & Logic to top
     const DEFAULT_SELECTIONS = {
         'T-SHIRT': {
@@ -995,7 +995,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             <Settings className="w-4 h-4" />
                             <span className="hidden sm:inline">Design Back</span>
                             <span className="sm:hidden text-[10px]">Back</span>
-                        </button> */}
+                        </button>
                         {/* COMMENTED: Back text feature disabled */}
                         {/* <button
                             onClick={() => setShowBackTextPopup(true)}
@@ -1075,8 +1075,8 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
 
                         {/* Payment status badge */}
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${paymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
-                                paymentStatus === 'partial' ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-slate-100 text-slate-500'
+                            paymentStatus === 'partial' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-slate-100 text-slate-500'
                             }`}>
                             {paymentStatus}
                         </span>
@@ -1207,7 +1207,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             <div className="flex-1 bg-white/50 secondDiv overflow-y-auto custom-scrollbar-premium">
                                 <div className="p-6 space-y-8">
 
-                                    {activeMenu === 'T-SHIRT' && <Tshirt key={`tshirt-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} />}
+                                    {activeMenu === 'T-SHIRT' && <Tshirt key={`tshirt-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} />}
                                     {activeMenu === "SWEATSHIRT" && <SweatShirt key={`sweatshirt-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} />}
                                     {activeMenu === "HOODIE" && <Hoodie key={`hoodie-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} />}
                                     {activeMenu === "ZIPPERHOODIE" && <ZippedHoodie key={`zipper-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['ZIPPERHOODIE']} onUpdate={(updates) => handleUpdateSelection('ZIPPERHOODIE', updates)} />}

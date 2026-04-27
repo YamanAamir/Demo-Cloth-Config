@@ -45,7 +45,7 @@ const CANVAS_HEIGHT = 400;
 //   { name: 'Design 8', url: design8 },
 // ];
 
-export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, designColor }) {
+export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, designColor, backDesigns: propBackDesigns }) {
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
   const [objects, setObjects] = useState([]);
@@ -57,7 +57,8 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
   const [initialSize, setInitialSize] = useState({ w: 0, h: 0 });
   const [initialAngleOffset, setInitialAngleOffset] = useState(0);
 
-  const { backDesigns, loading, fetchBackDesigns } = useBackDesignStore();
+  const { backDesigns: storeBackDesigns, loading, fetchBackDesigns } = useBackDesignStore();
+  const backDesigns = propBackDesigns || storeBackDesigns;
   const userStr = localStorage.getItem("user");
   const user = userStr ? JSON.parse(userStr) : null;
   const getClassId = user?.class_id;
@@ -78,6 +79,8 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
   }, [getClassId]);
 
   console.log("🎨 Current backDesigns:", backDesigns);
+  console.log("🎨 Current propBackDesigns:", propBackDesigns);
+  console.log("🎨 Current storeBackDesigns:", storeBackDesigns);
   console.log("🎨 Current pressureOptions.backDesign:", pressureOptions?.backDesign);
   console.log("🎨 Current objects.length:", objects.length);
 
@@ -110,9 +113,12 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
 
   // Load saved backDesign when pressureOptions change
   useEffect(() => {
+    console.log("🔄 pressureOptions.backDesign changed:", pressureOptions?.backDesign);
     if (pressureOptions?.backDesign) {
       const config = pressureOptions.backDesign;
+      console.log("🎯 Loading back design config:", config);
       loadImageSafe(config.src, (img) => {
+        console.log("✅ Back design image loaded successfully");
         setObjects([{
           id: 'uploadedImage',
           type: 'image',
@@ -125,6 +131,7 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
         setSelectedId('uploadedImage');
       });
     } else {
+      console.log("🚫 No back design in pressureOptions, clearing objects");
       setObjects([]);
       setSelectedId(null);
     }
@@ -174,43 +181,45 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
     
     // If backDesigns just became available and we don't have any objects yet
     if (backDesigns && objects.length === 0 && !pressureOptions?.backDesign) {
+      console.log("🚀 BackDesigns just became available, triggering auto-load");
       const design = backDesigns;
+      const img = `${BASE_URL}${design.file_path.replace(/\\/g, "/")}`;
+      console.log("🎯 Loading design from availability change:", design.name, img);
+      
+      loadImageSafe(img, async (imgObj) => {
+        console.log("✅ Image loaded from availability change");
+        const scale = Math.min(
+          (CANVAS_WIDTH * 0.75) / imgObj.width,
+          (CANVAS_HEIGHT * 0.65) / imgObj.height
+        );
+        const w = imgObj.width * scale;
+        const h = imgObj.height * scale;
 
-      if (design.file_path) {
-        const img = `${BASE_URL}${design.file_path.replace(/\\/g, "/")}`;
-        loadImageSafe(img, async (imgObj) => {
-          const scale = Math.min(
-            (CANVAS_WIDTH * 0.75) / imgObj.width,
-            (CANVAS_HEIGHT * 0.65) / imgObj.height
-          );
-          const w = imgObj.width * scale;
-          const h = imgObj.height * scale;
+        const newImageObj = {
+          id: 'uploadedImage',
+          type: 'image',
+          srcObj: imgObj,
+          pos: { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 },
+          size: { w, h },
+          angle: 0,
+          locked: false,
+        };
 
-          const newImageObj = {
-            id: 'uploadedImage',
-            type: 'image',
-            srcObj: imgObj,
-            pos: { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 },
-            size: { w, h },
-            angle: 0,
-            locked: false,
-          };
+        console.log("🎨 Setting objects from availability change:", newImageObj);
+        setObjects([newImageObj]);
+        setSelectedId('uploadedImage');
 
-          setObjects([newImageObj]);
-          setSelectedId('uploadedImage');
-
-          onUpdate({
-            backDesign: {
-              pos: newImageObj.pos,
-              size: newImageObj.size,
-              angle: newImageObj.angle,
-              locked: newImageObj.locked,
-              src: img,
-              designId: design?.id
-            }
-          });
+        onUpdate({
+          backDesign: {
+            pos: newImageObj.pos,
+            size: newImageObj.size,
+            angle: newImageObj.angle,
+            locked: newImageObj.locked,
+            src: img,
+            designId: design?.id
+          }
         });
-      }
+      });
     }
   }, [backDesigns]); // Only watch backDesigns changes
 
@@ -238,19 +247,16 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    console.log("🎨 Drawing canvas with objects:", objects.length);
+
     // Draw all objects on main canvas (for diffuse)
     objects.forEach(obj => {
+      console.log("🖼️ Drawing object:", obj.id, obj.type);
       ctx.save();
       ctx.translate(obj.pos.x, obj.pos.y);
       ctx.rotate((obj.angle * Math.PI) / 180);
       if (obj.type === 'image') {
         ctx.drawImage(obj.srcObj, -obj.size.w / 2, -obj.size.h / 2, obj.size.w, obj.size.h);
-      } else if (obj.type === 'text') {
-        ctx.font = `bold ${obj.fontSize}px ${obj.fontFamily || 'Arial'}`;
-        ctx.fillStyle = obj.color || '#111111';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(obj.text, 0, 0);
       }
       ctx.restore();
     });
@@ -267,12 +273,6 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
       octx.rotate((obj.angle * Math.PI) / 180);
       if (obj.type === 'image') {
         octx.drawImage(obj.srcObj, -obj.size.w / 2, -obj.size.h / 2, obj.size.w, obj.size.h);
-      } else if (obj.type === 'text') {
-        octx.font = `bold ${obj.fontSize}px ${obj.fontFamily || 'Arial'}`;
-        octx.fillStyle = obj.color || '#111111';
-        octx.textAlign = 'center';
-        octx.textBaseline = 'middle';
-        octx.fillText(obj.text, 0, 0);
       }
       octx.restore();
     });
@@ -300,6 +300,7 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
 
     // Send to parent / PlayCanvas
     if (onUpdate && postEx && diffuseBase64 && opacityBase64) {
+      console.log("📤 Sending canvas data to PlayCanvas:", postEx);
       onUpdate({
         canvasBase64: {
           diffuse: postEx + "back_diffuse: " + diffuseBase64,

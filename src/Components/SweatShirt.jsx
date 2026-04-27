@@ -107,34 +107,14 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos }) => {
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 40;
-      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+      const DIVIDER_W = 2;
+      const BOX_W = (CANVAS_WIDTH - DIVIDER_W) / 2;
+      const BOX_H = Math.round(FLAG_HEIGHT * 0.4);
+      const BOX_Y = TEXT_HEIGHT + (FLAG_HEIGHT - BOX_H) / 2;
 
-      const gap = 10;
-
-      const paddingX = 50;
-      const paddingTop = 20;     // 👈 ADD THIS
-      const paddingBottom = 20;  // 👈 ADD THIS
-
-      const availableHeight = CANVAS_HEIGHT - paddingTop - paddingBottom - gap;
-      const boxHeight = availableHeight / 2;
-
-      const boxWidth = CANVAS_WIDTH - paddingX * 2;
-      const x = paddingX;// 👈 adjust this (increase = more cut from sides)
-
-      // const boxWidth = CANVAS_WIDTH - paddingX * 2;
-      // const boxHeight = (CANVAS_HEIGHT - gap) / 2;
-
-      // const x = paddingX; // 👈 shift boxes from left
-
-      // TOP BOX
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(x, paddingTop, boxWidth, boxHeight);
-
-      // BOTTOM BOX
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(x, paddingTop + boxHeight + gap, boxWidth, boxHeight);
+      ctx.fillRect(0, BOX_Y, BOX_W, BOX_H);
+      ctx.fillRect(BOX_W + DIVIDER_W, BOX_Y, BOX_W, BOX_H);
     }
     return canvas.toDataURL("image/png");
   };
@@ -300,34 +280,36 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos }) => {
         img.src = src;
       });
 
-    // ---------- 2 FLAGS (FULL CANVAS FIX + NO CUTTING) ----------
+    // ---------- 2 FLAGS SIDE BY SIDE ----------
     if (hasTwoFlags) {
+      const DIVIDER_W = 2;
+      const BOX_W = (CANVAS_WIDTH - DIVIDER_W) / 2;
+      const BOX_H = Math.round(FLAG_HEIGHT * 0.4);
+      const BOX_Y = TEXT_HEIGHT + (FLAG_HEIGHT - BOX_H) / 2;
+
+      const drawFlagInBox = (img, x, y, w, h) => {
+        const scale = Math.max(w / img.width, h / img.height);
+        const dw = img.width * scale;
+        const dh = img.height * scale;
+        const dx = x + (w - dw) / 2;
+        const dy = y + (h - dh) / 2;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x, y, w, h);
+        ctx.clip();
+        ctx.drawImage(img, dx, dy, dw, dh);
+        ctx.restore();
+      };
+
       Promise.all([
         loadImage(flagImages[flag]),
         loadImage(flagImages[flag2]),
       ])
         .then(([img1, img2]) => {
-          const gap = 10;
-
-          const boxWidth = CANVAS_WIDTH * 0.9;
-          const boxHeight = (CANVAS_HEIGHT - gap) / 2;
-
-          const x = (CANVAS_WIDTH - boxWidth) / 2;
-
-          // 🔲 WHITE BOX 1 (TOP)
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(x, 0, boxWidth, boxHeight);
-
-          // 🔲 WHITE BOX 2 (BOTTOM)
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(x, boxHeight + gap, boxWidth, boxHeight);
-
-          // 🖼 FLAG 1
-          ctx.drawImage(img1, x, 0, boxWidth, boxHeight);
-
-          // 🖼 FLAG 2
-          ctx.drawImage(img2, x, boxHeight + gap, boxWidth, boxHeight);
-
+          drawFlagInBox(img1, 0, BOX_Y, BOX_W, BOX_H);
+          drawFlagInBox(img2, BOX_W + DIVIDER_W, BOX_Y, BOX_W, BOX_H);
+          ctx.fillStyle = "#000";
+          ctx.fillRect(BOX_W, BOX_Y, DIVIDER_W, BOX_H);
           finalize();
         })
         .catch(finalize);

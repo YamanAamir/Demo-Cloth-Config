@@ -735,7 +735,7 @@ const QuoteModal = ({
       });
 
       if (stripeResponse.data?.success && stripeResponse.data?.url) {
-        // window.location.href = stripeResponse.data.url;
+        window.location.href = stripeResponse.data.url;
         return;
       } else {
         if (stripeResponse.data?.message) {
