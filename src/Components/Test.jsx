@@ -174,45 +174,43 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
     
     // If backDesigns just became available and we don't have any objects yet
     if (backDesigns && objects.length === 0 && !pressureOptions?.backDesign) {
-      console.log("🚀 BackDesigns just became available, triggering auto-load");
       const design = backDesigns;
-      const img = `${BASE_URL}${design.file_path.replace(/\\/g, "/")}`;
-      console.log("🎯 Loading design from availability change:", design.name, img);
-      
-      loadImageSafe(img, async (imgObj) => {
-        console.log("✅ Image loaded from availability change");
-        const scale = Math.min(
-          (CANVAS_WIDTH * 0.75) / imgObj.width,
-          (CANVAS_HEIGHT * 0.65) / imgObj.height
-        );
-        const w = imgObj.width * scale;
-        const h = imgObj.height * scale;
 
-        const newImageObj = {
-          id: 'uploadedImage',
-          type: 'image',
-          srcObj: imgObj,
-          pos: { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 },
-          size: { w, h },
-          angle: 0,
-          locked: false,
-        };
+      if (design.file_path) {
+        const img = `${BASE_URL}${design.file_path.replace(/\\/g, "/")}`;
+        loadImageSafe(img, async (imgObj) => {
+          const scale = Math.min(
+            (CANVAS_WIDTH * 0.75) / imgObj.width,
+            (CANVAS_HEIGHT * 0.65) / imgObj.height
+          );
+          const w = imgObj.width * scale;
+          const h = imgObj.height * scale;
 
-        console.log("🎨 Setting objects from availability change:", newImageObj);
-        setObjects([newImageObj]);
-        setSelectedId('uploadedImage');
+          const newImageObj = {
+            id: 'uploadedImage',
+            type: 'image',
+            srcObj: imgObj,
+            pos: { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 },
+            size: { w, h },
+            angle: 0,
+            locked: false,
+          };
 
-        onUpdate({
-          backDesign: {
-            pos: newImageObj.pos,
-            size: newImageObj.size,
-            angle: newImageObj.angle,
-            locked: newImageObj.locked,
-            src: img,
-            designId: design?.id
-          }
+          setObjects([newImageObj]);
+          setSelectedId('uploadedImage');
+
+          onUpdate({
+            backDesign: {
+              pos: newImageObj.pos,
+              size: newImageObj.size,
+              angle: newImageObj.angle,
+              locked: newImageObj.locked,
+              src: img,
+              designId: design?.id
+            }
+          });
         });
-      });
+      }
     }
   }, [backDesigns]); // Only watch backDesigns changes
 
@@ -247,6 +245,12 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
       ctx.rotate((obj.angle * Math.PI) / 180);
       if (obj.type === 'image') {
         ctx.drawImage(obj.srcObj, -obj.size.w / 2, -obj.size.h / 2, obj.size.w, obj.size.h);
+      } else if (obj.type === 'text') {
+        ctx.font = `bold ${obj.fontSize}px ${obj.fontFamily || 'Arial'}`;
+        ctx.fillStyle = obj.color || '#111111';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(obj.text, 0, 0);
       }
       ctx.restore();
     });
@@ -263,6 +267,12 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
       octx.rotate((obj.angle * Math.PI) / 180);
       if (obj.type === 'image') {
         octx.drawImage(obj.srcObj, -obj.size.w / 2, -obj.size.h / 2, obj.size.w, obj.size.h);
+      } else if (obj.type === 'text') {
+        octx.font = `bold ${obj.fontSize}px ${obj.fontFamily || 'Arial'}`;
+        octx.fillStyle = obj.color || '#111111';
+        octx.textAlign = 'center';
+        octx.textBaseline = 'middle';
+        octx.fillText(obj.text, 0, 0);
       }
       octx.restore();
     });

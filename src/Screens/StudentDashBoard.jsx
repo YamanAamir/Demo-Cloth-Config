@@ -99,12 +99,12 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     useEffect(() => { fetchSettings(); }, []);
 
     const GARMENT_PRICES = {
-        'T-SHIRT':      getGarmentPrice('T-SHIRT')      || 1200,
-        'SWEATSHIRT':   getGarmentPrice('SWEATSHIRT')   || 1500,
-        'HOODIE':       getGarmentPrice('HOODIE')        || 2000,
+        'T-SHIRT': getGarmentPrice('T-SHIRT') || 1200,
+        'SWEATSHIRT': getGarmentPrice('SWEATSHIRT') || 1500,
+        'HOODIE': getGarmentPrice('HOODIE') || 2000,
         'ZIPPERHOODIE': getGarmentPrice('ZIPPERHOODIE') || 2200,
-        'SWEATPANTS':   getGarmentPrice('SWEATPANTS')   || 2000,
-        'SHORTS':       getGarmentPrice('SHORTS')        || 1500,
+        'SWEATPANTS': getGarmentPrice('SWEATPANTS') || 2000,
+        'SHORTS': getGarmentPrice('SHORTS') || 1500,
     };
 
     const isGarmentConfigured = (garmentType, garmentData) => {
@@ -255,9 +255,11 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         try {
             const resBackDesigns = await getMyClassBackDesigns();
             if (resBackDesigns.data?.success && resBackDesigns.data.data) {
-                const backDesigns = resBackDesigns.data.data;
-                // Find the most recent back design or the one that matches current class
-                const latestDesign = backDesigns.find(design => design.class_id === user?.class_id) || backDesigns[0];
+                const backDesignsData = resBackDesigns.data.data;
+                // API returns a single object or an array
+                const latestDesign = Array.isArray(backDesignsData)
+                    ? (backDesignsData.find(d => d.class_id === user?.class_id) || backDesignsData[0])
+                    : backDesignsData;
                 if (latestDesign) {
                     setBackDesignStatus(latestDesign.approval_status);
                 }
@@ -286,7 +288,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
 
     const handleResetOrder = async () => {
         console.log("🔄 Reset button clicked, orderId:", orderId);
-        
+
         if (!orderId) {
             message.error("No active order found to reset.");
             return;
@@ -297,21 +299,21 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             console.log("🔄 Calling resetOrder API with orderId:", orderId);
             const response = await resetOrder(orderId);
             console.log("🔄 Reset response:", response);
-            
+
             if (response.data?.success) {
                 message.success("Order reset successfully! Starting fresh design.");
-                
+
                 // Reset local state to defaults
                 setAllSelections(DEFAULT_SELECTIONS);
                 setCustomizations(prev => ({
                     ...prev,
                     [selectedStudent]: DEFAULT_SELECTIONS
                 }));
-                
+
                 // Refresh data
                 await fetchOrderData();
                 await fetchHistoryData();
-                
+
                 setShowResetModal(false);
             }
         } catch (err) {
@@ -328,18 +330,18 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             const response = await createFreshOrder();
             if (response.data?.success) {
                 message.success("Fresh order created! Start designing from scratch.");
-                
+
                 // Reset local state to defaults
                 setAllSelections(DEFAULT_SELECTIONS);
                 setCustomizations(prev => ({
                     ...prev,
                     [selectedStudent]: DEFAULT_SELECTIONS
                 }));
-                
+
                 // Refresh data
                 await fetchOrderData();
                 await fetchHistoryData();
-                
+
                 setShowResetModal(false);
             }
         } catch (err) {
@@ -448,7 +450,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
 
     const handleUpdateSelection = (category, updates) => {
         console.log("HANDLE UPDATE:", category, updates);
-        
+
         if (isLocked && !isAdmin) {
             message.warning("Editing is locked after the deadline.");
             return;
@@ -472,7 +474,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             // Sync Pressure Options with positional mapping
             if (updates.pressureOptions) {
                 const pUpdates = updates.pressureOptions;
-                
+
                 // For SHORTS, apply updates directly without cross-category sync
                 if (category === 'SHORTS') {
                     Object.keys(pUpdates).forEach(key => {
@@ -483,42 +485,42 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                 } else {
                     // Original complex mapping logic for other categories
                     Object.keys(pUpdates).forEach(key => {
-                    if (key === 'backDesign') {
-                        const val = pUpdates[key];
-                        ['T-SHIRT', 'SWEATSHIRT', 'HOODIE', 'ZIPPERHOODIE'].forEach(cat => {
-                            if (next[cat]) next[cat].pressureOptions.backDesign = val;
-                        });
-                        return;
-                    }
-
-                    const newValue = pUpdates[key];
-                    // Regex for exact position matching to avoid chest/sleeve cross-contamination
-                    const match = key.match(/^(rightChest|leftChest|rightSleeve|leftSleeve|bottomChest|rightLeg|leftLeg)(.*)$/);
-                    if (match) {
-                        const basePos = match[1];
-                        const suffix = match[2]; // e.g., "Text", "Flag", "Type"
-
-                        // Map Chest to Leg for unified "side" selection
-                        const mapping = {
-                            'rightChest': ['rightChest', 'rightLeg'],
-                            'leftChest': ['leftChest', 'leftLeg'],
-                            'rightLeg': ['rightChest', 'rightLeg'],
-                            'leftLeg': ['leftChest', 'leftLeg'],
-                            'rightSleeve': ['rightSleeve'],
-                            'leftSleeve': ['leftSleeve'],
-                            'bottomChest': ['bottomChest']
-                        };
-
-                        const targets = mapping[basePos] || [basePos];
-                        Object.keys(next).forEach(cat => {
-                            targets.forEach(tPos => {
-                                const tKey = `${tPos}${suffix}`;
-                                if (next[cat].pressureOptions && next[cat].pressureOptions.hasOwnProperty(tKey)) {
-                                    next[cat].pressureOptions[tKey] = newValue;
-                                }
+                        if (key === 'backDesign') {
+                            const val = pUpdates[key];
+                            ['T-SHIRT', 'SWEATSHIRT', 'HOODIE', 'ZIPPERHOODIE'].forEach(cat => {
+                                if (next[cat]) next[cat].pressureOptions.backDesign = val;
                             });
-                        });
-                    }
+                            return;
+                        }
+
+                        const newValue = pUpdates[key];
+                        // Regex for exact position matching to avoid chest/sleeve cross-contamination
+                        const match = key.match(/^(rightChest|leftChest|rightSleeve|leftSleeve|bottomChest|rightLeg|leftLeg)(.*)$/);
+                        if (match) {
+                            const basePos = match[1];
+                            const suffix = match[2]; // e.g., "Text", "Flag", "Type"
+
+                            // Map Chest to Leg for unified "side" selection
+                            const mapping = {
+                                'rightChest': ['rightChest', 'rightLeg'],
+                                'leftChest': ['leftChest', 'leftLeg'],
+                                'rightLeg': ['rightChest', 'rightLeg'],
+                                'leftLeg': ['leftChest', 'leftLeg'],
+                                'rightSleeve': ['rightSleeve'],
+                                'leftSleeve': ['leftSleeve'],
+                                'bottomChest': ['bottomChest']
+                            };
+
+                            const targets = mapping[basePos] || [basePos];
+                            Object.keys(next).forEach(cat => {
+                                targets.forEach(tPos => {
+                                    const tKey = `${tPos}${suffix}`;
+                                    if (next[cat].pressureOptions && next[cat].pressureOptions.hasOwnProperty(tKey)) {
+                                        next[cat].pressureOptions[tKey] = newValue;
+                                    }
+                                });
+                            });
+                        }
                     });
                 }
             }
@@ -932,7 +934,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
 
                     <div className="flex items-center space-x-2 sm:space-x-4">
                         {/* Refresh Status Button */}
-                        <button
+                        {/* <button
                             onClick={handleRefreshStatus}
                             disabled={isRefreshing}
                             className="flex items-center space-x-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all font-medium text-sm border border-blue-200 disabled:opacity-50"
@@ -940,10 +942,10 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         >
                             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                             <span className="hidden sm:inline">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
-                        </button>
+                        </button> */}
 
                         {/* Reset Order Button */}
-                        {orderId && (
+                        {/* {orderId && (
                             <button
                                 onClick={() => {
                                     console.log("🔄 Reset button clicked, orderId:", orderId, "isLocked:", isLocked, "isAdmin:", isAdmin);
@@ -956,9 +958,9 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                 <RotateCcw className={`w-4 h-4 ${isResetting ? 'animate-spin' : ''}`} />
                                 <span className="hidden sm:inline">Reset</span>
                             </button>
-                        )}
-                        
-                        {undoAvailable && (
+                        )} */}
+
+                        {/* {undoAvailable && (
                             <button
                                 onClick={handleUndo}
                                 className="flex items-center space-x-2 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all font-medium text-sm border border-slate-200"
@@ -967,16 +969,16 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                 <span className="rotate-180">↺</span>
                                 <span className="hidden sm:inline">Undo</span>
                             </button>
-                        )}
-                        <button
+                        )} */}
+                        {/* <button
                             onClick={handleSaveClick}
                             disabled={isSaving || (isLocked && !isAdmin)}
                             className={`flex items-center space-x-2 px-3 py-2 ${isSaving ? 'bg-slate-100' : 'bg-green-600 hover:bg-green-700'} text-white rounded-xl transition-all font-medium text-sm shadow-sm disabled:opacity-50`}
                         >
                             <Settings className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
                             <span className="hidden sm:inline">{isSaving ? 'Saving...' : 'Save Design'}</span>
-                        </button>
-                        {dbHistory.length > 0 && (
+                        </button> */}
+                        {/* {dbHistory.length > 0 && (
                             <button
                                 onClick={() => setIsHistoryModalOpen(true)}
                                 className="flex items-center space-x-2 px-3 py-2 bg-white text-slate-600 rounded-xl hover:bg-slate-50 transition-all font-medium text-sm border border-slate-200"
@@ -985,7 +987,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                 <History className="w-4 h-4 text-green-600" />
                                 <span className="hidden sm:inline">History</span>
                             </button>
-                        )}
+                        )} */}
                         {/* <button
                             onClick={() => setShowBackPopup(true)}
                             className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-slate-800 text-white rounded-xl hover:bg-slate-900 transition-all font-medium text-sm shadow-md"
@@ -1004,7 +1006,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             <span className="sm:hidden text-[10px]">Text</span>
                         </button> */}
 
-                        <Dropdown
+                        {/* <Dropdown
                             menu={{
                                 items: [
                                     {
@@ -1025,19 +1027,19 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             }}
                             trigger={['click']}
                             placement="bottomRight"
-                        >
-                            <button className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-slate-100 transition-all">
-                                <Avatar
-                                    size={34}
-                                    style={{ backgroundColor: '#16a34a', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
-                                >
-                                    {user?.name?.charAt(0)?.toUpperCase() || 'S'}
-                                </Avatar>
-                                <span className="hidden sm:inline text-sm font-semibold text-slate-700 max-w-[100px] truncate">
-                                    {user?.name || 'Student'}
-                                </span>
-                            </button>
-                        </Dropdown>
+                        > */}
+                        <button className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-slate-100 transition-all">
+                            <Avatar
+                                size={34}
+                                style={{ backgroundColor: '#16a34a', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
+                            >
+                                {user?.name?.charAt(0)?.toUpperCase() || 'S'}
+                            </Avatar>
+                            <span className="hidden sm:inline text-sm font-semibold text-slate-700 max-w-[100px] truncate">
+                                {user?.name || 'Student'}
+                            </span>
+                        </button>
+                        {/* </Dropdown> */}
                     </div>
                 </header>
 
@@ -1072,22 +1074,21 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         )}
 
                         {/* Payment status badge */}
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                            paymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
-                            paymentStatus === 'partial' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-slate-100 text-slate-500'
-                        }`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${paymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
+                                paymentStatus === 'partial' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-slate-100 text-slate-500'
+                            }`}>
                             {paymentStatus}
                         </span>
 
                         {/* Class tracking status */}
                         {classStatus && (() => {
                             const statusMap = {
-                                active:           { label: 'Order in progress',              color: 'bg-blue-100 text-blue-700' },
-                                orders_locked:    { label: 'Order locked – going to production', color: 'bg-orange-100 text-orange-700' },
-                                production_ready: { label: 'Being produced',                 color: 'bg-purple-100 text-purple-700' },
-                                shipped:          { label: 'Shipped – check email for tracking', color: 'bg-indigo-100 text-indigo-700' },
-                                completed:        { label: 'Delivered',                      color: 'bg-green-100 text-green-700' },
+                                active: { label: 'Order in progress', color: 'bg-blue-100 text-blue-700' },
+                                orders_locked: { label: 'Order locked – going to production', color: 'bg-orange-100 text-orange-700' },
+                                production_ready: { label: 'Being produced', color: 'bg-purple-100 text-purple-700' },
+                                shipped: { label: 'Shipped – check email for tracking', color: 'bg-indigo-100 text-indigo-700' },
+                                completed: { label: 'Delivered', color: 'bg-green-100 text-green-700' },
                             };
                             const s = statusMap[classStatus];
                             if (!s) return null;
@@ -1104,9 +1105,9 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         {/* Back Design Approval Status */}
                         {backDesignStatus && (() => {
                             const statusMap = {
-                                pending:  { label: 'Back Design: Pending Review', color: 'bg-yellow-100 text-yellow-700' },
-                                approved: { label: 'Back Design: Approved ✓',     color: 'bg-green-100 text-green-700' },
-                                rejected: { label: 'Back Design: Rejected',      color: 'bg-red-100 text-red-700' },
+                                pending: { label: 'Back Design: Pending Review', color: 'bg-yellow-100 text-yellow-700' },
+                                approved: { label: 'Back Design: Approved ✓', color: 'bg-green-100 text-green-700' },
+                                rejected: { label: 'Back Design: Rejected', color: 'bg-red-100 text-red-700' },
                             };
                             const s = statusMap[backDesignStatus];
                             if (!s) return null;
@@ -1510,7 +1511,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                         consent_marketing: d.consent_marketing,
                                     });
                                 }
-                            }).catch(() => {});
+                            }).catch(() => { });
                         }
                     }}
                 >

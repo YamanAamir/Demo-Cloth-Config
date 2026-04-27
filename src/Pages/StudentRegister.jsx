@@ -72,7 +72,7 @@ const StudentRegister = () => {
         try {
             await registerUser(payload);
             message.success('Registration successful! You can now log in.');
-            navigate('/login');
+            navigate('/');
         } catch (error) {
             message.error(error.response?.data?.message || 'Registration failed');
             submittingRef.current = false; // allow retry on error
@@ -118,7 +118,7 @@ const StudentRegister = () => {
                         <Button type="primary" block onClick={() => setUseManualCode(true)}>
                             Enter Class Code Manually
                         </Button>
-                        <Button type="link" block onClick={() => navigate('/login')} style={{ marginTop: 8 }}>
+                        <Button type="link" block onClick={() => navigate('/')} style={{ marginTop: 8 }}>
                             Go to Login
                         </Button>
                     </Card>
@@ -208,7 +208,7 @@ const StudentRegister = () => {
                     </Form>
 
                     <Text type="secondary" style={{ fontSize: 12 }}>
-                        Already have an account? <a href="/login">Log in</a>
+                        Already have an account? <a href="/">Log in</a>
                     </Text>
                     <div style={{ marginTop: 12 }}>
                         <Text type="secondary" style={{ fontSize: 12 }}>

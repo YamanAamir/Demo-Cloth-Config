@@ -99,11 +99,11 @@ function App() {
               />
             </>
           ) : (
-            <Navigate to="/login" replace />
+            <Navigate to="/" replace />
           )
         } />
-        <Route path="/login" element={!user ? <StudentLogin /> : <Navigate to="/" replace />} />
-        <Route path="/register" element={!user ? <StudentRegister /> : <Navigate to="/" replace />} />
+        {/* <Route path="/login" element={!user ? <StudentLogin /> : <Navigate to="/" replace />} /> */}
+        {/* <Route path="/register" element={!user ? <StudentRegister /> : <Navigate to="/" replace />} /> */}
         <Route path="/payment-success" element={<SuccessScreen />} />
         <Route path="/payment-cancelled" element={<CancelScreen />} />
       </Routes>

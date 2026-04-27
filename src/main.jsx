@@ -9,7 +9,7 @@ import { AuthProvider } from "./context/AuthContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <AuthProvider>
-    <BrowserRouter basename="/Clothing-Configurator">
+    <BrowserRouter basename="/Demo-Clothing-Configurator">
       <App />
     </BrowserRouter>
   </AuthProvider>
