@@ -81,6 +81,15 @@ export const lockOrder = (orderId) => api.put(`/admin/orders/${orderId}/lock`);
 // Stripe Payment
 export const createCheckoutSession = (data) => api.post('/payment/create-checkout-session', data);
 
+// Inquiry Email (no auth required)
+export const sendInquiry = (data) => api.post('/contact/inquiry', data);
+
+// Public school list (no auth required) — full list for dropdown
+export const getPublicSchools = () => api.post('/student/schools', { page: 1, limit: 1000, search: '' });
+
+// Public classes by school — for inquiry form dropdown
+export const getClassesBySchool = (schoolId) => api.post(`/student/schools/${schoolId}/classes`);
+
 // Settings (public)
 export const getPublicSettings = () => api.get('/student/settings');
 

@@ -485,7 +485,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos }) => {
             <div className="grid grid-cols-3 gap-3 mb-4">
               {sizes.map(s => <button key={s} onClick={() => onUpdate({ selectedSize: s })} className={`py-3 px-4 rounded-lg border-2 transition-all font-medium ${selectedSize === s ? "border-gray-900 bg-white text-gray-900" : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"}`}>{s}</button>)}
             </div>
-            <a href="#" className="text-sm text-green-600 hover:underline">Size guide</a>
+            {/* <a href="#" className="text-sm text-green-600 hover:underline">Size guide</a> */}
           </div>
         </>
       ) : (

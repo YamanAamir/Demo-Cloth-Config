@@ -687,9 +687,9 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos }) => {
                 </button>
               ))}
             </div>
-            <a href="#" className="text-sm text-green-600 hover:underline">
+            {/* <a href="#" className="text-sm text-green-600 hover:underline">
               Size guide
-            </a>
+            </a> */}
           </div>
         </>
       ) : (

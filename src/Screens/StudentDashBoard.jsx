@@ -16,6 +16,7 @@ import SweatPants from '../Components/SweatPants';
 import SweatShirt from '../Components/SweatShirt';
 import QuoteModal from '../Components/Modal';
 import HistoryModal from '../Components/HistoryModal';
+import InquiryModal from '../Components/InquiryModal';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { GraduationCap, ChevronUp, ChevronDown, LogOut, Settings, LayoutGrid, Lock, History, Package, User, RefreshCw, RotateCcw } from 'lucide-react';
 import StudentPopup from '../Components/Popup';
@@ -146,6 +147,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     const [profileSaving, setProfileSaving] = useState(false);
     const [profileEditForm] = Form.useForm();
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+    const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
     const [undoAvailable, setUndoAvailable] = useState(false);
     const [searchParams] = useSearchParams();
     const packageName = searchParams.get("package");
@@ -1006,16 +1008,16 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             <span className="sm:hidden text-[10px]">Text</span>
                         </button> */}
 
-                        {/* <Dropdown
+                        <Dropdown
                             menu={{
                                 items: [
-                                    {
-                                        key: 'profile',
-                                        label: 'Profile',
-                                        icon: <User />,
-                                        onClick: () => setProfileDrawerOpen(true),
-                                    },
-                                    { type: 'divider' },
+                                    // {
+                                    //     key: 'profile',
+                                    //     label: 'Profile',
+                                    //     icon: <User />,
+                                    //     onClick: () => setProfileDrawerOpen(true),
+                                    // },
+                                    // { type: 'divider' },
                                     {
                                         key: 'logout',
                                         label: 'Log out',
@@ -1027,7 +1029,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             }}
                             trigger={['click']}
                             placement="bottomRight"
-                        > */}
+                        >
                         <button className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-slate-100 transition-all">
                             <Avatar
                                 size={34}
@@ -1039,7 +1041,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                 {user?.name || 'Student'}
                             </span>
                         </button>
-                        {/* </Dropdown> */}
+                        </Dropdown>
                     </div>
                 </header>
 
@@ -1234,7 +1236,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                 </div>
                             </div>
                             <button
-                                onClick={() => setIsQuoteModalOpen(true)}
+                                onClick={() => setIsInquiryModalOpen(true)}
                                 disabled={!sizeFlag}
                                 className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 shadow-md
            
@@ -1242,7 +1244,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                         ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 hover:shadow-lg"
                                         : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
                             >
-                                {balanceDue <= 0 && paymentStatus === 'paid' ? 'Save Changes' : (balanceDue > 0 && amountPaid > 0 ? `Pay Balance (${balanceDue} DKK)` : 'Approve and Pay')}
+                                {balanceDue <= 0 && paymentStatus === 'paid' ? 'Save Changes' : (balanceDue > 0 && amountPaid > 0 ? `Pay Balance (${balanceDue} DKK)` : 'Send Inquiry')}
                             </button>
                         </div>
                     </div>
@@ -1453,7 +1455,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                 )}
                             </div>
                             <button
-                                onClick={() => setIsQuoteModalOpen(true)}
+                                onClick={() => setIsInquiryModalOpen(true)}
                                 // disabled={!sizeFlag}
                                 // disabled={!sizeFlag}
                                 className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 shadow-md
@@ -1461,7 +1463,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                         ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 hover:shadow-lg"
                                         : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
                             >
-                                Approve and Pay
+                                Send Inquiry
                             </button>
                         </div>
                     </div>
@@ -1480,6 +1482,10 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                     packageName={packageName}
                     program={program}
                     initialDeliveryDetails={existingDeliveryDetails}
+                />
+                <InquiryModal
+                    isOpen={isInquiryModalOpen}
+                    onClose={() => setIsInquiryModalOpen(false)}
                 />
                 <HistoryModal
                     isOpen={isHistoryModalOpen}

@@ -504,9 +504,9 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns }) => {
                 </button>
               ))}
             </div>
-            <a href="#" className="text-sm text-green-600 hover:underline">
+            {/* <a href="#" className="text-sm text-green-600 hover:underline">
               Size guide
-            </a>
+            </a> */}
           </div>
         </>
       ) : (

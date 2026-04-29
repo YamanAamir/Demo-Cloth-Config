@@ -268,7 +268,7 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos }) => {
                 >{size}</button>
               ))}
             </div>
-            <a href="#" className="text-sm text-green-600 hover:underline">Size guide</a>
+            {/* <a href="#" className="text-sm text-green-600 hover:underline">Size guide</a> */}
           </div>
         </>
       ) : (
