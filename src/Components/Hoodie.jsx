@@ -4,12 +4,48 @@ import plus from "../assets/menuimages/shirt-plus.png";
 import Test from "./Test";
 import { BASE_URL } from "../utils/const";
 import { ALL_FLAGS } from "../utils/flags";
-import { X, Image as ImageIcon, Flag, Trash2 } from "lucide-react";
+import { X, Image as ImageIcon, Trash2, Globe, Loader2, CheckCircle, Flag } from "lucide-react";
+import { getCountries, getLibraryDesigns } from "../api/api";
+import UploadRequestModal from "./UploadRequestModal";
 
-const Hoodie = ({ data, onUpdate, isAppReady, logos }) => {
+const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
   const [activeTab, setActiveTab] = useState("size");
   const [showFlagModal, setShowFlagModal] = useState(false);
   const [currentField, setCurrentField] = useState("");
+
+  // Library state
+  const [libCountries, setLibCountries] = useState([]);
+  const [libSelectedCountry, setLibSelectedCountry] = useState(null);
+  const [libDesigns, setLibDesigns] = useState([]);
+  const [libCountriesLoading, setLibCountriesLoading] = useState(false);
+  const [libDesignsLoading, setLibDesignsLoading] = useState(false);
+  const [libSelectedDesign, setLibSelectedDesign] = useState(null);
+
+  // Upload own design state
+  const [showUploadModal, setShowUploadModal] = useState(false);
+
+  useEffect(() => {
+    const fetchLibCountries = async () => {
+      setLibCountriesLoading(true);
+      try {
+        const res = await getCountries();
+        if (res.data?.success) { const list = res.data.data || []; setLibCountries(list); if (list.length > 0) setLibSelectedCountry(list[0]); }
+      } catch (e) { console.error(e); } finally { setLibCountriesLoading(false); }
+    };
+    fetchLibCountries();
+  }, []);
+
+  useEffect(() => {
+    if (!libSelectedCountry) return;
+    const fetchDesigns = async () => {
+      setLibDesignsLoading(true); setLibDesigns([]);
+      try {
+        const res = await getLibraryDesigns(libSelectedCountry.id);
+        if (res.data?.success) setLibDesigns(res.data.data || []);
+      } catch (e) { console.error(e); } finally { setLibDesignsLoading(false); }
+    };
+    fetchDesigns();
+  }, [libSelectedCountry]);
   const selectedColor = data?.selectedColor || "Red";
   const selectedSize = data?.selectedSize || "";
   const pressureOptions = data?.pressureOptions || {
@@ -455,45 +491,118 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos }) => {
   ) : null;
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-gray-50">
-      <div className="flex gap-4 mb-8">
-        <button onClick={() => setActiveTab("size")} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${activeTab === "size" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
-          <span className="font-medium text-gray-900">Size and color</span><img className="w-10" src={cog} alt="settings" />
+    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 180px)' }}>
+      {/* <div className="flex gap-2 p-4 pb-2">
+        <button onClick={() => setActiveTab("size")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${activeTab === "size" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
+          <span className="font-medium text-gray-900">Color & Size</span><img className="w-6" src={cog} alt="settings" />
         </button>
-        <button onClick={() => setActiveTab("pressure")} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${activeTab === "pressure" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
-          <span className="font-medium text-gray-900">Pressure</span><img className="w-10" src={plus} alt="add" />
+        <button onClick={() => setActiveTab("pressure")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${activeTab === "pressure" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
+          <span className="font-medium text-gray-900">Design</span><img className="w-6" src={plus} alt="add" />
         </button>
-      </div>
+      </div> */}
       {activeTab === "size" ? (
-        <>
-          <h1 className="text-3xl font-bold mb-8 text-gray-900">Hoodie</h1>
-          <div className="mb-8">
-            <h2 className="text-sm font-semibold mb-4 text-gray-700">Color</h2>
-            <div className="grid grid-cols-4 gap-4">
+        <div className="flex flex-col flex-1 relative px-4 pb-20">
+          <h1 className="text-lg font-bold mb-3 text-gray-900">Hoodie</h1>
+          {/* ── Back Design Library ── */}
+          <div className="mb-4">
+            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5" /> Back Design Library
+            </h2>
+            {/* Country dropdown */}
+            {libCountriesLoading ? (
+              <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading countries...
+              </div>
+            ) : (
+              <div className="mb-3">
+                <select
+                  value={libSelectedCountry?.id || ''}
+                  onChange={e => {
+                    const found = libCountries.find(c => String(c.id) === e.target.value);
+                    if (found) setLibSelectedCountry(found);
+                  }}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-700 font-medium focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+                >
+                  {libCountries.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {libDesignsLoading ? (
+              <div className="flex items-center justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
+            ) : libDesigns.length === 0 ? (
+              <p className="text-xs text-gray-400 py-3 text-center">No designs for this country</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {libDesigns.map(design => {
+                  const src = `${BASE_URL}${design.file_path?.replace(/\\/g, "/")}`;
+                  const isSelected = libSelectedDesign?.id === design.id;
+                  return (
+                    <button key={design.id} onClick={() => { setLibSelectedDesign(design); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: false } } }); }}
+                      className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all bg-white ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}>
+                      <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
+                      {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><CheckCircle className="w-3.5 h-3.5 text-white" /></div>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          {/* Color — 2-row grid */}
+          <div className="mb-4">
+            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
+            <div className="grid grid-flow-col grid-rows-1 gap-2 w-fit">
               {colors.map(c => (
-                <div key={c.name} className="flex flex-col items-center">
-                  <button onClick={() => onUpdate({ selectedColor: c.name })} className="relative w-12 h-12 rounded-lg transition-all focus:outline-none" style={{ backgroundColor: c.value, border: selectedColor === c.name ? `3px solid ${c.border}` : `1px solid ${c.border}`, boxShadow: selectedColor === c.name ? `0 0 0 2px white, 0 0 0 4px ${c.border}` : "none" }}>
-                    {selectedColor === c.name && <div className="absolute inset-0 rounded-lg border-2 border-white pointer-events-none" />}
-                  </button>
-                  <span className="text-xs mt-2 text-center text-gray-700">{c.name}</span>
-                </div>
+                <button key={c.name} title={c.name} onClick={() => onUpdate({ selectedColor: c.name })}
+                  className="relative w-8 h-8 rounded-md transition-all focus:outline-none"
+                  style={{ backgroundColor: c.value, border: selectedColor === c.name ? `2px solid ${c.border}` : `1px solid ${c.border}`, boxShadow: selectedColor === c.name ? `0 0 0 2px white, 0 0 0 3px ${c.border}` : "none" }}>
+                  {selectedColor === c.name && <div className="absolute inset-0 rounded-md border border-white pointer-events-none" />}
+                </button>
               ))}
             </div>
+            {selectedColor && <p className="text-xs text-gray-500 mt-1.5">{selectedColor}</p>}
           </div>
-          <div>
-            <h2 className="text-sm font-semibold mb-4 text-gray-700">Size</h2>
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              {sizes.map(s => <button key={s} onClick={() => onUpdate({ selectedSize: s })} className={`py-3 px-4 rounded-lg border-2 transition-all font-medium ${selectedSize === s ? "border-gray-900 bg-white text-gray-900" : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"}`}>{s}</button>)}
+          {/* Size */}
+          <div className="mb-5">
+            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Size</h2>
+            <div className="flex flex-wrap gap-2">
+              {sizes.map(s => <button key={s} onClick={() => onUpdate({ selectedSize: s })} className={`py-1.5 px-3 rounded-lg border-2 transition-all font-medium text-sm ${selectedSize === s ? "border-gray-900 bg-white text-gray-900" : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"}`}>{s}</button>)}
             </div>
-            {/* <a href="#" className="text-sm text-green-600 hover:underline">Size guide</a> */}
           </div>
-        </>
+          {/* Upload own design */}
+          <div className="mb-4">
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="w-full py-2 px-4 rounded-xl border-2 border-dashed border-gray-300 text-gray-600 text-sm font-semibold hover:border-green-500 hover:text-green-700 transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Upload own design
+            </button>
+          </div>
+          {/* Next */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
+            <button onClick={() => setActiveTab("pressure")} className="w-full py-2.5 bg-gray-500 text-white font-semibold rounded-xl hover:bg-gray-600 transition text-sm flex items-center justify-center gap-2">
+              Next — Design
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        </div>
       ) : (
-        <>
-          <h1 className="text-3xl font-bold mb-8 text-gray-900">Pressure Options</h1>
+        <div className="flex flex-col flex-1 relative px-4 pb-20">
+          <h1 className="text-lg font-bold mb-4 text-gray-900">Design Options</h1>
           <div className="mb-6"><h2 className="text-xl font-semibold text-gray-900 mb-4">Chest Area</h2>{["rightChest", "leftChest", "bottomChest"].map(renderChestArea)}</div>
           <div className="mb-6"><h2 className="text-xl font-semibold text-gray-900 mb-4">Sleeves</h2>{["rightSleeve", "leftSleeve"].map(renderSleeveArea)}</div>
-        </>
+          {/* Back */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
+            <button onClick={() => setActiveTab("size")} className="w-full py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition text-sm flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              Back
+            </button>
+          </div>
+        </div>
       )}
       <div className={activeTab === "pressure" ? "mt-10" : ""} style={activeTab !== "pressure" ? { visibility: "hidden", position: "absolute", pointerEvents: "none", height: 0, overflow: "hidden" } : {}}>
         <Test postEx="Hoodie:" pressureOptions={pressureOptions} isAppReady={isAppReady} onUpdate={u => {
@@ -502,6 +611,11 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos }) => {
         }} />
       </div>
       <Modal />
+      <UploadRequestModal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onSendRequest={() => onOpenInquiry?.()}
+      />
     </div>
   );
 };

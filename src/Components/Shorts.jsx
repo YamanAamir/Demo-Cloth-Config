@@ -1,15 +1,51 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 import Test1 from "./Test1";
 import { BASE_URL } from "../utils/const";
 import { ALL_FLAGS } from "../utils/flags";
-import { X, Image as ImageIcon, Flag, Trash2 } from "lucide-react";
+import { X, Image as ImageIcon, Trash2, Globe, Loader2, CheckCircle, Flag } from "lucide-react";
+import { getCountries, getLibraryDesigns } from "../api/api";
+import UploadRequestModal from "./UploadRequestModal";
 
-const Shorts = ({ data, onUpdate, isAppReady, logos }) => {
+const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
   const [activeTab, setActiveTab] = useState("size");
   const [showFlagModal, setShowFlagModal] = useState(false);
   const [currentField, setCurrentField] = useState("");
+
+  // Library state
+  const [libCountries, setLibCountries] = useState([]);
+  const [libSelectedCountry, setLibSelectedCountry] = useState(null);
+  const [libDesigns, setLibDesigns] = useState([]);
+  const [libCountriesLoading, setLibCountriesLoading] = useState(false);
+  const [libDesignsLoading, setLibDesignsLoading] = useState(false);
+  const [libSelectedDesign, setLibSelectedDesign] = useState(null);
+
+  // Upload own design state
+  const [showUploadModal, setShowUploadModal] = useState(false);
+
+  useEffect(() => {
+    const fetchLibCountries = async () => {
+      setLibCountriesLoading(true);
+      try {
+        const res = await getCountries();
+        if (res.data?.success) { const list = res.data.data || []; setLibCountries(list); if (list.length > 0) setLibSelectedCountry(list[0]); }
+      } catch (e) { console.error(e); } finally { setLibCountriesLoading(false); }
+    };
+    fetchLibCountries();
+  }, []);
+
+  useEffect(() => {
+    if (!libSelectedCountry) return;
+    const fetchDesigns = async () => {
+      setLibDesignsLoading(true); setLibDesigns([]);
+      try {
+        const res = await getLibraryDesigns(libSelectedCountry.id);
+        if (res.data?.success) setLibDesigns(res.data.data || []);
+      } catch (e) { console.error(e); } finally { setLibDesignsLoading(false); }
+    };
+    fetchDesigns();
+  }, [libSelectedCountry]);
 
   const selectedColor = data?.selectedColor || "Heather Grey";
   const selectedSize = data?.selectedSize || "";
@@ -26,32 +62,32 @@ const Shorts = ({ data, onUpdate, isAppReady, logos }) => {
   const BASE_CANVAS_WIDTH = 320;
   const TEXT_HEIGHT = 120;
   const FLAG_HEIGHT = 240;
-  
+
   // 🔥 Dynamic dimensions based on flag count for optimal UI
   const getEffectiveDimensions = (flagCount) => {
     const DIMENSION_MAP = {
-      1: { 
+      1: {
         width: BASE_CANVAS_WIDTH,           // Full width for single flag
         flagHeight: FLAG_HEIGHT             // Full height for single flag
       },
-      2: { 
+      2: {
         width: BASE_CANVAS_WIDTH * 0.75,    // 75% width for dual flags (240px)
         flagHeight: FLAG_HEIGHT * 0.6       // 60% height for dual flags (144px)
       }
     };
     return DIMENSION_MAP[flagCount] || DIMENSION_MAP[1];
   };
-  
+
   const CANVAS_HEIGHT = TEXT_HEIGHT + FLAG_HEIGHT;
 
   const getEmissiveBase64 = (text, hasFlag = false, hasLogo = false, flagCount = 1) => {
     const canvas = document.createElement("canvas");
-    
+
     // 🔥 Dynamic canvas dimensions based on flag count
     const dimensions = getEffectiveDimensions(flagCount);
     canvas.width = dimensions.width;
     canvas.height = TEXT_HEIGHT + dimensions.flagHeight;
-    
+
     const ctx = canvas.getContext("2d");
     if (text?.trim()) {
       let fontSize = 48;
@@ -62,7 +98,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos }) => {
     }
     if (hasFlag || hasLogo) { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, TEXT_HEIGHT, dimensions.width, dimensions.flagHeight); }
     if (hasFlag || hasLogo) { ctx.strokeStyle = "#000000"; ctx.lineWidth = 40; ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10); }
-    
+
     try {
       return canvas.toDataURL("image/png");
     } catch (error) {
@@ -77,12 +113,12 @@ const Shorts = ({ data, onUpdate, isAppReady, logos }) => {
 
   const getDiffuseBase64 = (flag, logoPre, logoCustom, text, callback, flag2 = "", flagCount = 1) => {
     const canvas = document.createElement("canvas");
-    
+
     // 🔥 Dynamic canvas dimensions based on flag count
     const dimensions = getEffectiveDimensions(flagCount);
     canvas.width = dimensions.width;
     canvas.height = TEXT_HEIGHT + dimensions.flagHeight;
-    
+
     const ctx = canvas.getContext("2d");
     if (text?.trim()) {
       let fontSize = 48;
@@ -108,16 +144,16 @@ const Shorts = ({ data, onUpdate, isAppReady, logos }) => {
       }
     };
     const loadImage = (src) => new Promise((resolve, reject) => {
-      const img = new Image(); 
-      
+      const img = new Image();
+
       // 🔥 CRITICAL: Set crossOrigin BEFORE src to prevent canvas taint
       img.crossOrigin = "anonymous";
-      
+
       img.onload = () => {
         console.log("✅ Shorts image loaded:", src);
         resolve(img);
       };
-      
+
       img.onerror = (e) => {
         console.error("❌ Shorts image failed:", src, e);
         // Create fallback
@@ -131,7 +167,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos }) => {
         fallbackImg.onload = () => resolve(fallbackImg);
         fallbackImg.src = fallbackCanvas.toDataURL();
       };
-      
+
       img.src = src;
     });
     if (flag && flagImages[flag]) {
@@ -152,9 +188,9 @@ const Shorts = ({ data, onUpdate, isAppReady, logos }) => {
           });
       } else {
         console.log("🔍 Loading single flag:", flagImages[flag]);
-        loadImage(flagImages[flag]).then(img => { 
-          ctx.drawImage(img, 0, TEXT_HEIGHT, dimensions.width, dimensions.flagHeight); 
-          finalize(); 
+        loadImage(flagImages[flag]).then(img => {
+          ctx.drawImage(img, 0, TEXT_HEIGHT, dimensions.width, dimensions.flagHeight);
+          finalize();
         }).catch((error) => {
           console.error("❌ Single flag failed:", flagImages[flag], error);
           finalize();
@@ -197,7 +233,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos }) => {
         [`${area}Type`]: type, [`${area}Text`]: "",
         ...(type === "flag" ? { [`${area}LogoPredefined`]: "", [`${area}LogoCustom`]: "" }
           : type === "logo" ? { [`${area}Flag`]: "" }
-          : { [`${area}Flag`]: "", [`${area}LogoPredefined`]: "", [`${area}LogoCustom`]: "" }),
+            : { [`${area}Flag`]: "", [`${area}LogoPredefined`]: "", [`${area}LogoCustom`]: "" }),
       },
     });
   };
@@ -243,10 +279,10 @@ const Shorts = ({ data, onUpdate, isAppReady, logos }) => {
       const logoPre = pressureOptions[`${area}LogoPredefined`] || "";
       const logoCustom = pressureOptions[`${area}LogoCustom`] || "";
       const type = pressureOptions[`${area}Type`] || "";
-      
+
       // Debug logging
       console.log("EFFECT:", area, "TEXT:", text, "TYPE:", type, "FLAG:", flag);
-      
+
       const prev = prevRef.current[area] || {};
       if (prev.text === text && prev.flag === flag && prev.flag2 === flag2 && prev.flagCount === flagCount && prev.logoPre === logoPre && prev.logoCustom === logoCustom && prev.type === type) return;
       prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type };
@@ -270,124 +306,145 @@ const Shorts = ({ data, onUpdate, isAppReady, logos }) => {
 
   const renderArea = (area) => {
     return (
-    <div key={area} className="bg-white rounded-lg p-4 mb-4">
-      <h3 className="font-semibold text-gray-900 mb-3">
-        {area === "rightLeg" ? "Right Leg:" : "Left Leg:"}
-      </h3>
-      <div className="space-y-3">
-        <div className="flex rounded-lg overflow-hidden border border-gray-200">
-          {["text", "flag", "logo"].map(tab => (
-            <button key={tab} type="button"
-              onClick={() => {
-                console.log("TAB CLICKED:", tab, "AREA:", area);
-                if (tab === "text") {
-                  onUpdate({ 
-                    pressureOptions: { 
-                      ...pressureOptions, 
-                      [`${area}Type`]: "", 
-                      [`${area}Flag`]: "", 
-                      [`${area}LogoPredefined`]: "", 
-                      [`${area}LogoCustom`]: "" 
-                    } 
-                  });
-                } else { 
-                  handleTypeChange(area, tab); 
-                }
-              }}
-              className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`]?.trim() === tab || (tab === "text" && (!pressureOptions[`${area}Type`] || pressureOptions[`${area}Type`]?.trim() === "")) ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
-            >
-              {tab === "text" ? "Text" : tab === "flag" ? "Flag" : "Logo"}
-              {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
-            </button>
-          ))}
+      <div key={area} className="bg-white rounded-lg p-4 mb-4">
+        <h3 className="font-semibold text-gray-900 mb-3">
+          {area === "rightLeg" ? "Right Leg:" : "Left Leg:"}
+        </h3>
+        <div className="space-y-3">
+          <div className="flex rounded-lg overflow-hidden border border-gray-200">
+            {["text", "flag", "logo"].map(tab => (
+              <button key={tab} type="button"
+                onClick={() => {
+                  console.log("TAB CLICKED:", tab, "AREA:", area);
+                  if (tab === "text") {
+                    onUpdate({
+                      pressureOptions: {
+                        ...pressureOptions,
+                        [`${area}Type`]: "",
+                        [`${area}Flag`]: "",
+                        [`${area}LogoPredefined`]: "",
+                        [`${area}LogoCustom`]: ""
+                      }
+                    });
+                  } else {
+                    handleTypeChange(area, tab);
+                  }
+                }}
+                className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`]?.trim() === tab || (tab === "text" && (!pressureOptions[`${area}Type`] || pressureOptions[`${area}Type`]?.trim() === "")) ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+              >
+                {tab === "text" ? "Text" : tab === "flag" ? "Flag" : "Logo"}
+                {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
+              </button>
+            ))}
+          </div>
+          {(!pressureOptions[`${area}Type`] || pressureOptions[`${area}Type`]?.trim() === "") && (
+            <div className="flex flex-wrap gap-2">
+              <input type="text" value={pressureOptions[`${area}Text`]}
+                onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
+                placeholder="Enter text" maxLength={25}
+                className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
+              />
+              {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
+            </div>
+          )}
+          {pressureOptions[`${area}Type`]?.trim() === "flag" && (
+            <div className="flex flex-wrap gap-2">
+              <input type="text" value={getFlagDisplay(pressureOptions[`${area}Flag`])} readOnly placeholder="Select flag"
+                className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
+                onClick={() => handleFlagSelect(`${area}Flag`)}
+              />
+              <button onClick={() => handleFlagSelect(`${area}Flag`)} className="px-4 py-2 bg-green-900 text-white rounded-lg hover:bg-green-800 text-sm font-medium">Select</button>
+              {pressureOptions[`${area}Flag`] && <button onClick={() => clearField(`${area}Flag`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
+            </div>
+          )}
+          {pressureOptions[`${area}Type`]?.trim() === "logo" && (
+            <div className="flex flex-wrap gap-2">
+              <input type="text" value={getLogoDisplay(pressureOptions[`${area}LogoPredefined`])} readOnly placeholder="Select logo"
+                className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
+                onClick={() => handleFlagSelect(`${area}LogoPredefined`)}
+              />
+              <button onClick={() => handleFlagSelect(`${area}LogoPredefined`)} className="px-4 py-2 bg-green-900 text-white rounded-lg hover:bg-green-800 text-sm font-medium">Select</button>
+              {pressureOptions[`${area}LogoPredefined`] && <button onClick={() => clearField(`${area}LogoPredefined`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
+            </div>
+          )}
         </div>
-        {(!pressureOptions[`${area}Type`] || pressureOptions[`${area}Type`]?.trim() === "") && (
-          <div className="flex flex-wrap gap-2">
-            <input type="text" value={pressureOptions[`${area}Text`]}
-              onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
-              placeholder="Enter text" maxLength={25}
-              className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
-            />
-            {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
-          </div>
-        )}
-        {pressureOptions[`${area}Type`]?.trim() === "flag" && (
-          <div className="flex flex-wrap gap-2">
-            <input type="text" value={getFlagDisplay(pressureOptions[`${area}Flag`])} readOnly placeholder="Select flag"
-              className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
-              onClick={() => handleFlagSelect(`${area}Flag`)}
-            />
-            <button onClick={() => handleFlagSelect(`${area}Flag`)} className="px-4 py-2 bg-green-900 text-white rounded-lg hover:bg-green-800 text-sm font-medium">Select</button>
-            {pressureOptions[`${area}Flag`] && <button onClick={() => clearField(`${area}Flag`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
-          </div>
-        )}
-        {pressureOptions[`${area}Type`]?.trim() === "logo" && (
-          <div className="flex flex-wrap gap-2">
-            <input type="text" value={getLogoDisplay(pressureOptions[`${area}LogoPredefined`])} readOnly placeholder="Select logo"
-              className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
-              onClick={() => handleFlagSelect(`${area}LogoPredefined`)}
-            />
-            <button onClick={() => handleFlagSelect(`${area}LogoPredefined`)} className="px-4 py-2 bg-green-900 text-white rounded-lg hover:bg-green-800 text-sm font-medium">Select</button>
-            {pressureOptions[`${area}LogoPredefined`] && <button onClick={() => clearField(`${area}LogoPredefined`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
-          </div>
-        )}
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-gray-50">
-      <div className="flex gap-4 mb-8">
-        <button onClick={() => setActiveTab("size")} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${activeTab === "size" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
-          <span className="font-medium text-gray-900">Size and color</span>
-          <img className="w-10" src={cog} alt="settings" />
+    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 180px)' }}>
+      {/* <div className="flex gap-2 p-4 pb-2">
+        <button onClick={() => setActiveTab("size")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${activeTab === "size" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
+          <span className="font-medium text-gray-900">Color & Size</span>
+          <img className="w-6" src={cog} alt="settings" />
         </button>
-        <button onClick={() => setActiveTab("pressure")} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${activeTab === "pressure" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
-          <span className="font-medium text-gray-900">Pressure</span>
-          <img className="w-10" src={plus} alt="add" />
+        <button onClick={() => setActiveTab("pressure")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${activeTab === "pressure" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
+          <span className="font-medium text-gray-900">Design</span>
+          <img className="w-6" src={plus} alt="add" />
         </button>
-      </div>
+      </div> */}
 
       {activeTab === "size" ? (
-        <>
-          <h1 className="text-3xl font-bold mb-8 text-gray-900">Shorts</h1>
-          <div className="mb-8">
-            <h2 className="text-sm font-semibold mb-4 text-gray-700">Color</h2>
-            <div className="grid grid-cols-4 gap-4">
+        <div className="flex flex-col flex-1 relative px-4 pb-20">
+          <h1 className="text-lg font-bold mb-4 text-gray-900">Shorts</h1>
+          <div className="mb-5">
+            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
+            <div className="grid grid-flow-col grid-rows-1 gap-2 w-fit">
               {colors.map(color => (
-                <div key={color.name} className="flex flex-col items-center">
-                  <button onClick={() => onUpdate({ selectedColor: color.name })}
-                    className="relative w-12 h-12 rounded-lg transition-all focus:outline-none"
-                    style={{ backgroundColor: color.value, border: selectedColor === color.name ? `3px solid ${color.border}` : `1px solid ${color.border}`, boxShadow: selectedColor === color.name ? `0 0 0 2px white, 0 0 0 4px ${color.border}` : "none" }}
-                  >
-                    {selectedColor === color.name && <div className="absolute inset-0 rounded-lg border-2 border-white pointer-events-none" />}
-                  </button>
-                  <span className="text-xs mt-2 text-center text-gray-700">{color.name}</span>
-                </div>
+                <button key={color.name} title={color.name} onClick={() => onUpdate({ selectedColor: color.name })}
+                  className="relative w-8 h-8 rounded-md transition-all focus:outline-none"
+                  style={{ backgroundColor: color.value, border: selectedColor === color.name ? `2px solid ${color.border}` : `1px solid ${color.border}`, boxShadow: selectedColor === color.name ? `0 0 0 2px white, 0 0 0 3px ${color.border}` : "none" }}
+                >
+                  {selectedColor === color.name && <div className="absolute inset-0 rounded-md border border-white pointer-events-none" />}
+                </button>
               ))}
             </div>
+            {selectedColor && <p className="text-xs text-gray-500 mt-1.5">{selectedColor}</p>}
           </div>
-          <div>
-            <h2 className="text-sm font-semibold mb-4 text-gray-700">Size</h2>
-            <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="mb-5">
+            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Size</h2>
+            <div className="flex flex-wrap gap-2">
               {sizes.map(size => (
                 <button key={size} onClick={() => onUpdate({ selectedSize: size })}
-                  className={`py-3 px-4 rounded-lg border-2 transition-all font-medium ${selectedSize === size ? "border-gray-900 bg-white text-gray-900" : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"}`}
+                  className={`py-1.5 px-3 rounded-lg border-2 transition-all font-medium text-sm ${selectedSize === size ? "border-gray-900 bg-white text-gray-900" : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"}`}
                 >{size}</button>
               ))}
             </div>
-            {/* <a href="#" className="text-sm text-green-600 hover:underline">Size guide</a> */}
           </div>
-        </>
+          {/* Upload own design */}
+          <div className="mb-4">
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="w-full py-2 px-4 rounded-xl border-2 border-dashed border-gray-300 text-gray-600 text-sm font-semibold hover:border-green-500 hover:text-green-700 transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Upload own design
+            </button>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
+            <button onClick={() => setActiveTab("pressure")} className="w-full py-2.5 bg-gray-500 text-white font-semibold rounded-xl hover:bg-gray-600 transition text-sm flex items-center justify-center gap-2">
+              Next — Design
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        </div>
       ) : (
-        <>
-          <h1 className="text-3xl font-bold mb-8 text-gray-900">Pressure Options</h1>
+        <div className="flex flex-col flex-1 relative px-4 pb-20">
+          <h1 className="text-lg font-bold mb-4 text-gray-900">Design Options</h1>
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Leg Area</h2>
             {["rightLeg", "leftLeg"].map(renderArea)}
           </div>
-        </>
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
+            <button onClick={() => setActiveTab("size")} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              Back
+            </button>
+          </div>
+        </div>
       )}
 
       <div className={activeTab === "pressure" ? "mt-10" : ""} style={activeTab !== "pressure" ? { visibility: "hidden", position: "absolute", pointerEvents: "none", height: 0, overflow: "hidden" } : {}}>
@@ -465,6 +522,11 @@ const Shorts = ({ data, onUpdate, isAppReady, logos }) => {
           </div>
         </div>
       )}
+      <UploadRequestModal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onSendRequest={() => onOpenInquiry?.()}
+      />
     </div>
   );
 };

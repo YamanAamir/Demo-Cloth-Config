@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 import Test1 from "./Test1";
 import { BASE_URL } from "../utils/const";
 import { ALL_FLAGS } from "../utils/flags";
-import { X, Image as ImageIcon, Flag, Trash2 } from "lucide-react";
+import { X, Image as ImageIcon, Trash2, Flag } from "lucide-react";
 
-const SweatPants = ({ data, onUpdate, isAppReady, logos }) => {
+const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
   const [activeTab, setActiveTab] = useState("size");
   const [showFlagModal, setShowFlagModal] = useState(false);
   const [currentField, setCurrentField] = useState("");
@@ -228,57 +228,66 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos }) => {
   );
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-gray-50">
-      <div className="flex gap-4 mb-8">
-        <button onClick={() => setActiveTab("size")} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${activeTab === "size" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
-          <span className="font-medium text-gray-900">Size and color</span>
-          <img className="w-10" src={cog} alt="settings" />
+    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 180px)' }}>
+      {/* <div className="flex gap-2 p-4 pb-2">
+        <button onClick={() => setActiveTab("size")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${activeTab === "size" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
+          <span className="font-medium text-gray-900">Color & Size</span>
+          <img className="w-6" src={cog} alt="settings" />
         </button>
-        <button onClick={() => setActiveTab("pressure")} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${activeTab === "pressure" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
-          <span className="font-medium text-gray-900">Pressure</span>
-          <img className="w-10" src={plus} alt="add" />
+        <button onClick={() => setActiveTab("pressure")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${activeTab === "pressure" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
+          <span className="font-medium text-gray-900">Design</span>
+          <img className="w-6" src={plus} alt="add" />
         </button>
-      </div>
+      </div> */}
 
       {activeTab === "size" ? (
-        <>
-          <h1 className="text-3xl font-bold mb-8 text-gray-900">SweatPants</h1>
-          <div className="mb-8">
-            <h2 className="text-sm font-semibold mb-4 text-gray-700">Color</h2>
-            <div className="grid grid-cols-4 gap-4">
+        <div className="flex flex-col flex-1 relative px-4 pb-20">
+          <h1 className="text-lg font-bold mb-4 text-gray-900">SweatPants</h1>
+          <div className="mb-5">
+            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
+            <div className="grid grid-flow-col grid-rows-1 gap-2 w-fit">
               {colors.map(color => (
-                <div key={color.name} className="flex flex-col items-center">
-                  <button onClick={() => onUpdate({ selectedColor: color.name })}
-                    className="relative w-12 h-12 rounded-lg transition-all focus:outline-none"
-                    style={{ backgroundColor: color.value, border: selectedColor === color.name ? `3px solid ${color.border}` : `1px solid ${color.border}`, boxShadow: selectedColor === color.name ? `0 0 0 2px white, 0 0 0 4px ${color.border}` : "none" }}
-                  >
-                    {selectedColor === color.name && <div className="absolute inset-0 rounded-lg border-2 border-white pointer-events-none" />}
-                  </button>
-                  <span className="text-xs mt-2 text-center text-gray-700">{color.name}</span>
-                </div>
+                <button key={color.name} title={color.name} onClick={() => onUpdate({ selectedColor: color.name })}
+                  className="relative w-8 h-8 rounded-md transition-all focus:outline-none"
+                  style={{ backgroundColor: color.value, border: selectedColor === color.name ? `2px solid ${color.border}` : `1px solid ${color.border}`, boxShadow: selectedColor === color.name ? `0 0 0 2px white, 0 0 0 3px ${color.border}` : "none" }}
+                >
+                  {selectedColor === color.name && <div className="absolute inset-0 rounded-md border border-white pointer-events-none" />}
+                </button>
               ))}
             </div>
+            {selectedColor && <p className="text-xs text-gray-500 mt-1.5">{selectedColor}</p>}
           </div>
-          <div>
-            <h2 className="text-sm font-semibold mb-4 text-gray-700">Size</h2>
-            <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="mb-5">
+            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Size</h2>
+            <div className="flex flex-wrap gap-2">
               {sizes.map(size => (
                 <button key={size} onClick={() => onUpdate({ selectedSize: size })}
-                  className={`py-3 px-4 rounded-lg border-2 transition-all font-medium ${selectedSize === size ? "border-gray-900 bg-white text-gray-900" : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"}`}
+                  className={`py-1.5 px-3 rounded-lg border-2 transition-all font-medium text-sm ${selectedSize === size ? "border-gray-900 bg-white text-gray-900" : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"}`}
                 >{size}</button>
               ))}
             </div>
-            {/* <a href="#" className="text-sm text-green-600 hover:underline">Size guide</a> */}
           </div>
-        </>
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
+            <button onClick={() => setActiveTab("pressure")} className="w-full py-2.5 bg-green-700 text-white font-semibold rounded-xl hover:bg-green-800 transition text-sm flex items-center justify-center gap-2">
+              Next — Design
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        </div>
       ) : (
-        <>
-          <h1 className="text-3xl font-bold mb-8 text-gray-900">Pressure Options</h1>
+        <div className="flex flex-col flex-1 relative px-4 pb-20">
+          <h1 className="text-lg font-bold mb-4 text-gray-900">Design Options</h1>
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Leg Area</h2>
             {["rightLeg", "leftLeg"].map(renderArea)}
           </div>
-        </>
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
+            <button onClick={() => setActiveTab("size")} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              Back
+            </button>
+          </div>
+        </div>
       )}
 
       <div className={activeTab === "pressure" ? "mt-10" : ""} style={activeTab !== "pressure" ? { visibility: "hidden", position: "absolute", pointerEvents: "none", height: 0, overflow: "hidden" } : {}}>

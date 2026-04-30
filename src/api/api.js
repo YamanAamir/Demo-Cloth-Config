@@ -101,3 +101,16 @@ export const changePasswordAuth = (data) => api.put('/auth/change-password', dat
 // Order Reset Functions
 export const resetOrder = (orderId) => api.post(`/student/reset-order/${orderId}`);
 export const createFreshOrder = () => api.post('/student/create-fresh-order');
+
+// Library designs — browse by country
+export const getCountries = () => api.get('/student/countries');
+export const getLibraryDesigns = (countryId) => api.get(`/student/library-designs?country_id=${countryId}`);
+
+// Check if student's class is signed up (for "Upload own design")
+export const checkClassSignup = () => api.get('/student/check-class-signup');
+
+// Schools — GET version (auth required, for logged-in student flows)
+export const getSchools = () => api.get('/student/schools');
+
+// Classes by school — GET version (auth required)
+export const getClassesBySchoolAuth = (schoolId) => api.get(`/student/schools/${schoolId}/classes`);
