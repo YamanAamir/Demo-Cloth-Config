@@ -643,7 +643,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
   const sizes = ["S", "M", "L", "XL", "2XL", "3XL"];
 
   return (
-    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 180px)' }}>
+    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 200px)' }}>
       {/* Tab Navigation */}
       {/* <div className="flex gap-2 p-4 pb-2">
         <button
@@ -669,55 +669,8 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
       </div> */}
 
       {activeTab === "size" ? (
-        <div className="flex flex-col flex-1 relative px-4 pb-20">
+        <div className="flex flex-col flex-1 relative px-4 pb-36">
           <h1 className="text-lg font-bold mb-4 text-gray-900">SweatShirt</h1>
-
-          {/* ── Back Design Library ── */}
-          <div className="mb-4">
-            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5" /> Back Design Library
-            </h2>
-            {/* Country dropdown */}
-            {libCountriesLoading ? (
-              <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading countries...
-              </div>
-            ) : (
-              <div className="mb-3">
-                <select
-                  value={libSelectedCountry?.id || ''}
-                  onChange={e => {
-                    const found = libCountries.find(c => String(c.id) === e.target.value);
-                    if (found) setLibSelectedCountry(found);
-                  }}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-700 font-medium focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
-                >
-                  {libCountries.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            {libDesignsLoading ? (
-              <div className="flex items-center justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
-            ) : libDesigns.length === 0 ? (
-              <p className="text-xs text-gray-400 py-3 text-center">No designs for this country</p>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {libDesigns.map(design => {
-                  const src = `${BASE_URL}${design.file_path?.replace(/\\/g, "/")}`;
-                  const isSelected = libSelectedDesign?.id === design.id;
-                  return (
-                    <button key={design.id} onClick={() => { setLibSelectedDesign(design); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: false } } }); }}
-                      className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all bg-white ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}>
-                      <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
-                      {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><CheckCircle className="w-3.5 h-3.5 text-white" /></div>}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
 
           {/* Color Section — compact */}
           <div className="mb-5">
@@ -767,6 +720,53 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
             </div>
           </div>
 
+          {/* ── Back Design Library ── */}
+          <div className="mb-4">
+            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5" /> Back Design Library
+            </h2>
+            {/* Country dropdown */}
+            {libCountriesLoading ? (
+              <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading countries...
+              </div>
+            ) : (
+              <div className="mb-3">
+                <select
+                  value={libSelectedCountry?.id || ''}
+                  onChange={e => {
+                    const found = libCountries.find(c => String(c.id) === e.target.value);
+                    if (found) setLibSelectedCountry(found);
+                  }}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-700 font-medium focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+                >
+                  {libCountries.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {libDesignsLoading ? (
+              <div className="flex items-center justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
+            ) : libDesigns.length === 0 ? (
+              <p className="text-xs text-gray-400 py-3 text-center">No designs for this country</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {libDesigns.map(design => {
+                  const src = `${BASE_URL}${design.file_path?.replace(/\\/g, "/")}`;
+                  const isSelected = libSelectedDesign?.id === design.id;
+                  return (
+                    <button key={design.id} onClick={() => { setLibSelectedDesign(design); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } }); }}
+                      className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all bg-white ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}>
+                      <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
+                      {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><CheckCircle className="w-3.5 h-3.5 text-white" /></div>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Upload own design */}
           <div className="mb-4">
             <button
@@ -784,7 +784,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
           <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
             <button
               onClick={() => setActiveTab("pressure")}
-              className="w-full py-2.5 bg-gray-500 text-white font-semibold rounded-xl hover:bg-gray-600 transition text-sm flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-slate-600 text-white font-semibold rounded-xl hover:bg-slate-700 transition text-sm flex items-center justify-center gap-2"
             >
               Next — Design
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -794,7 +794,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col flex-1 relative px-4 pb-20">
+        <div className="flex flex-col flex-1 relative px-4 pb-36">
 
           {/* Chest Area */}
           <div className="mb-6">

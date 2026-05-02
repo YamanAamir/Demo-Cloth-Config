@@ -473,7 +473,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry 
   const sizes = ["S", "M", "L", "XL", "2XL", "3XL"];
 
   return (
-    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 180px)' }}>
+    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 200px)' }}>
       {/* Tab Navigation */}
       {/* <div className="flex gap-2 p-4 pb-2">
         <button
@@ -499,8 +499,50 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry 
       </div> */}
 
       {activeTab === "size" ? (
-        <div className="flex flex-col flex-1 relative px-4 pb-20">
+        <div className="flex flex-col flex-1 relative px-4 pb-36">
           <h1 className="text-lg font-bold mb-3 text-gray-900">T-shirt</h1>
+
+          {/* Color — 2-row grid */}
+          <div className="mb-4">
+            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
+            <div className="grid grid-flow-col grid-rows-1 gap-2 w-fit">
+              {colors.map((color) => (
+                <button
+                  key={color.name}
+                  title={color.name}
+                  onClick={() => onUpdate({ selectedColor: color.name })}
+                  className="relative w-8 h-8 rounded-md cursor-pointer transition-all focus:outline-none"
+                  style={{
+                    backgroundColor: color.value,
+                    border: selectedColor === color.name ? `2px solid ${color.border}` : `1px solid ${color.border}`,
+                    boxShadow: selectedColor === color.name ? `0 0 0 2px white, 0 0 0 3px ${color.border}` : "none",
+                  }}
+                >
+                  {selectedColor === color.name && <div className="absolute inset-0 rounded-md border border-white pointer-events-none" />}
+                </button>
+              ))}
+            </div>
+            {selectedColor && <p className="text-xs text-gray-500 mt-1.5">{selectedColor}</p>}
+          </div>
+
+          {/* Size — compact */}
+          <div className="mb-5">
+            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Size</h2>
+            <div className="flex flex-wrap gap-2">
+              {sizes.map((size) => (
+                <button
+                  key={size}
+                  onClick={() => onUpdate({ selectedSize: size })}
+                  className={`py-1.5 px-3 rounded-lg border-2 transition-all font-medium text-sm ${selectedSize === size
+                    ? "border-gray-900 bg-white text-gray-900"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"
+                    }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* ── Back Design Library ── */}
           <div className="mb-4">
@@ -556,7 +598,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry 
                               pos: { x: 200, y: 200 },
                               size: { w: 300, h: 300 },
                               angle: 0,
-                              locked: false,
+                              locked: true,
                             }
                           }
                         });
@@ -578,48 +620,6 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry 
             )}
           </div>
 
-          {/* Color — 2-row grid */}
-          <div className="mb-4">
-            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
-            <div className="grid grid-flow-col grid-rows-1 gap-2 w-fit">
-              {colors.map((color) => (
-                <button
-                  key={color.name}
-                  title={color.name}
-                  onClick={() => onUpdate({ selectedColor: color.name })}
-                  className="relative w-8 h-8 rounded-md cursor-pointer transition-all focus:outline-none"
-                  style={{
-                    backgroundColor: color.value,
-                    border: selectedColor === color.name ? `2px solid ${color.border}` : `1px solid ${color.border}`,
-                    boxShadow: selectedColor === color.name ? `0 0 0 2px white, 0 0 0 3px ${color.border}` : "none",
-                  }}
-                >
-                  {selectedColor === color.name && <div className="absolute inset-0 rounded-md border border-white pointer-events-none" />}
-                </button>
-              ))}
-            </div>
-            {selectedColor && <p className="text-xs text-gray-500 mt-1.5">{selectedColor}</p>}
-          </div>
-
-          {/* Size — compact */}
-          <div className="mb-5">
-            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Size</h2>
-            <div className="flex flex-wrap gap-2">
-              {sizes.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => onUpdate({ selectedSize: size })}
-                  className={`py-1.5 px-3 rounded-lg border-2 transition-all font-medium text-sm ${selectedSize === size
-                    ? "border-gray-900 bg-white text-gray-900"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"
-                    }`}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Upload own design */}
           <div className="mb-4">
             <button
@@ -634,10 +634,10 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry 
           </div>
 
           {/* Next — absolute bottom */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gray-50 border-t border-gray-200">
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
             <button
               onClick={() => setActiveTab("pressure")}
-              className="w-full py-2.5 bg-gray-500 text-white font-semibold rounded-xl hover:bg-gray-600 transition text-sm flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-slate-600 text-white font-semibold rounded-xl hover:bg-slate-700 transition text-sm flex items-center justify-center gap-2"
             >
               Next — Design
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

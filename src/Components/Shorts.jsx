@@ -4,48 +4,12 @@ import plus from "../assets/menuimages/shirt-plus.png";
 import Test1 from "./Test1";
 import { BASE_URL } from "../utils/const";
 import { ALL_FLAGS } from "../utils/flags";
-import { X, Image as ImageIcon, Trash2, Globe, Loader2, CheckCircle, Flag } from "lucide-react";
-import { getCountries, getLibraryDesigns } from "../api/api";
-import UploadRequestModal from "./UploadRequestModal";
+import { X, Image as ImageIcon, Trash2, Flag } from "lucide-react";
 
 const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
   const [activeTab, setActiveTab] = useState("size");
   const [showFlagModal, setShowFlagModal] = useState(false);
   const [currentField, setCurrentField] = useState("");
-
-  // Library state
-  const [libCountries, setLibCountries] = useState([]);
-  const [libSelectedCountry, setLibSelectedCountry] = useState(null);
-  const [libDesigns, setLibDesigns] = useState([]);
-  const [libCountriesLoading, setLibCountriesLoading] = useState(false);
-  const [libDesignsLoading, setLibDesignsLoading] = useState(false);
-  const [libSelectedDesign, setLibSelectedDesign] = useState(null);
-
-  // Upload own design state
-  const [showUploadModal, setShowUploadModal] = useState(false);
-
-  useEffect(() => {
-    const fetchLibCountries = async () => {
-      setLibCountriesLoading(true);
-      try {
-        const res = await getCountries();
-        if (res.data?.success) { const list = res.data.data || []; setLibCountries(list); if (list.length > 0) setLibSelectedCountry(list[0]); }
-      } catch (e) { console.error(e); } finally { setLibCountriesLoading(false); }
-    };
-    fetchLibCountries();
-  }, []);
-
-  useEffect(() => {
-    if (!libSelectedCountry) return;
-    const fetchDesigns = async () => {
-      setLibDesignsLoading(true); setLibDesigns([]);
-      try {
-        const res = await getLibraryDesigns(libSelectedCountry.id);
-        if (res.data?.success) setLibDesigns(res.data.data || []);
-      } catch (e) { console.error(e); } finally { setLibDesignsLoading(false); }
-    };
-    fetchDesigns();
-  }, [libSelectedCountry]);
 
   const selectedColor = data?.selectedColor || "Heather Grey";
   const selectedSize = data?.selectedSize || "";
@@ -373,7 +337,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 180px)' }}>
+    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 200px)' }}>
       {/* <div className="flex gap-2 p-4 pb-2">
         <button onClick={() => setActiveTab("size")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${activeTab === "size" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
           <span className="font-medium text-gray-900">Color & Size</span>
@@ -386,7 +350,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
       </div> */}
 
       {activeTab === "size" ? (
-        <div className="flex flex-col flex-1 relative px-4 pb-20">
+        <div className="flex flex-col flex-1 relative px-4 pb-36">
           <h1 className="text-lg font-bold mb-4 text-gray-900">Shorts</h1>
           <div className="mb-5">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
@@ -412,27 +376,15 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
               ))}
             </div>
           </div>
-          {/* Upload own design */}
-          <div className="mb-4">
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="w-full py-2 px-4 rounded-xl border-2 border-dashed border-gray-300 text-gray-600 text-sm font-semibold hover:border-green-500 hover:text-green-700 transition-all flex items-center justify-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-              Upload own design
-            </button>
-          </div>
           <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
-            <button onClick={() => setActiveTab("pressure")} className="w-full py-2.5 bg-gray-500 text-white font-semibold rounded-xl hover:bg-gray-600 transition text-sm flex items-center justify-center gap-2">
+            <button onClick={() => setActiveTab("pressure")} className="w-full py-2.5 bg-slate-600 text-white font-semibold rounded-xl hover:bg-slate-700 transition text-sm flex items-center justify-center gap-2">
               Next — Design
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>
         </div>
       ) : (
-        <div className="flex flex-col flex-1 relative px-4 pb-20">
+        <div className="flex flex-col flex-1 relative px-4 pb-36">
           <h1 className="text-lg font-bold mb-4 text-gray-900">Design Options</h1>
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Leg Area</h2>
@@ -522,11 +474,6 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
           </div>
         </div>
       )}
-      <UploadRequestModal
-        isOpen={showUploadModal}
-        onClose={() => setShowUploadModal(false)}
-        onSendRequest={() => onOpenInquiry?.()}
-      />
     </div>
   );
 };

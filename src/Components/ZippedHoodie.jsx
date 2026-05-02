@@ -543,7 +543,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
   );
 
   return (
-    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 180px)' }}>
+    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 200px)' }}>
       {/* <div className="flex gap-2 p-4 pb-2">
         <button onClick={() => setActiveTab("size")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${activeTab === "size" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
           <span className="font-medium text-gray-900">Color & Size</span>
@@ -556,8 +556,34 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
       </div> */}
 
       {activeTab === "size" ? (
-        <div className="flex flex-col flex-1 relative px-4 pb-20">
+        <div className="flex flex-col flex-1 relative px-4 pb-36">
           <h1 className="text-lg font-bold mb-4 text-gray-900">Zipper Hoodie</h1>
+          {/* Color — compact */}
+          <div className="mb-5">
+            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
+            <div className="grid grid-flow-col grid-rows-1 gap-2 w-fit">
+              {colors.map((color) => (
+                <button key={color.name} title={color.name} onClick={() => onUpdate({ selectedColor: color.name })}
+                  className="relative w-8 h-8 rounded-md transition-all focus:outline-none"
+                  style={{ backgroundColor: color.value, border: selectedColor === color.name ? `2px solid ${color.border}` : `1px solid ${color.border}`, boxShadow: selectedColor === color.name ? `0 0 0 2px white, 0 0 0 3px ${color.border}` : "none" }}
+                >
+                  {selectedColor === color.name && <div className="absolute inset-0 rounded-md border border-white pointer-events-none" />}
+                </button>
+              ))}
+            </div>
+            {selectedColor && <p className="text-xs text-gray-500 mt-1.5">{selectedColor}</p>}
+          </div>
+          {/* Size — compact */}
+          <div className="mb-5">
+            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Size</h2>
+            <div className="flex flex-wrap gap-2">
+              {sizes.map((size) => (
+                <button key={size} onClick={() => onUpdate({ selectedSize: size })}
+                  className={`py-1.5 px-3 rounded-lg border-2 transition-all font-medium text-sm ${selectedSize === size ? "border-gray-900 bg-white text-gray-900" : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"}`}
+                >{size}</button>
+              ))}
+            </div>
+          </div>
           {/* ── Back Design Library ── */}
           <div className="mb-4">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
@@ -594,7 +620,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
                   const src = `${BASE_URL}${design.file_path?.replace(/\\/g, "/")}`;
                   const isSelected = libSelectedDesign?.id === design.id;
                   return (
-                    <button key={design.id} onClick={() => { setLibSelectedDesign(design); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: false } } }); }}
+                    <button key={design.id} onClick={() => { setLibSelectedDesign(design); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } }); }}
                       className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all bg-white ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}>
                       <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
                       {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><CheckCircle className="w-3.5 h-3.5 text-white" /></div>}
@@ -603,32 +629,6 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
                 })}
               </div>
             )}
-          </div>
-          {/* Color — compact */}
-          <div className="mb-5">
-            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
-            <div className="grid grid-flow-col grid-rows-1 gap-2 w-fit">
-              {colors.map((color) => (
-                <button key={color.name} title={color.name} onClick={() => onUpdate({ selectedColor: color.name })}
-                  className="relative w-8 h-8 rounded-md transition-all focus:outline-none"
-                  style={{ backgroundColor: color.value, border: selectedColor === color.name ? `2px solid ${color.border}` : `1px solid ${color.border}`, boxShadow: selectedColor === color.name ? `0 0 0 2px white, 0 0 0 3px ${color.border}` : "none" }}
-                >
-                  {selectedColor === color.name && <div className="absolute inset-0 rounded-md border border-white pointer-events-none" />}
-                </button>
-              ))}
-            </div>
-            {selectedColor && <p className="text-xs text-gray-500 mt-1.5">{selectedColor}</p>}
-          </div>
-          {/* Size — compact */}
-          <div className="mb-5">
-            <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Size</h2>
-            <div className="flex flex-wrap gap-2">
-              {sizes.map((size) => (
-                <button key={size} onClick={() => onUpdate({ selectedSize: size })}
-                  className={`py-1.5 px-3 rounded-lg border-2 transition-all font-medium text-sm ${selectedSize === size ? "border-gray-900 bg-white text-gray-900" : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"}`}
-                >{size}</button>
-              ))}
-            </div>
           </div>
           {/* Upload own design */}
           <div className="mb-4">
@@ -644,14 +644,14 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
           </div>
           {/* Next */}
           <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
-            <button onClick={() => setActiveTab("pressure")} className="w-full py-2.5 bg-gray-500 text-white font-semibold rounded-xl hover:bg-gray-600 transition text-sm flex items-center justify-center gap-2">
+            <button onClick={() => setActiveTab("pressure")} className="w-full py-2.5 bg-slate-600 text-white font-semibold rounded-xl hover:bg-slate-700 transition text-sm flex items-center justify-center gap-2">
               Next — Design
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>
         </div>
       ) : (
-        <div className="flex flex-col flex-1 relative px-4 pb-20">
+        <div className="flex flex-col flex-1 relative px-4 pb-36">
           <h1 className="text-lg font-bold mb-4 text-gray-900">Design Options</h1>
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Chest Area</h2>

@@ -27,8 +27,10 @@ const UploadRequestModal = ({ isOpen, onClose, onSendRequest }) => {
         {/* Body */}
         <div className="px-6 py-6">
           <p className="text-slate-600 text-sm leading-relaxed mb-6">
-            To upload your own design, you need to send a request first.
-            Once your request is approved, you will be able to upload your design.
+            For at uploade dit eget design skal din klasse først oprettes i systemet.
+            Når klassen er oprettet, får du adgang til at uploade og arbejde videre med jeres design 😊
+            <br /><br />
+            👉 Start med at oprette din klasse her.
           </p>
 
           <div className="flex gap-3">
@@ -42,7 +44,7 @@ const UploadRequestModal = ({ isOpen, onClose, onSendRequest }) => {
               onClick={() => { onClose(); onSendRequest(); }}
               className="flex-1 py-2.5 rounded-xl bg-green-600 text-white font-semibold text-sm hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
             >
-              Send request
+              Opret klasse
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

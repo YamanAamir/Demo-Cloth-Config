@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import Test from './Test';
 import { X, Globe, Upload, ChevronRight, Loader2, CheckCircle } from 'lucide-react';
 import { getCountries, getLibraryDesigns } from '../api/api';
@@ -159,7 +159,7 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
             pos: { x: 200, y: 200 },
             size: { w: 300, h: 300 },
             angle: 0,
-            locked: false,
+            locked: true,
         };
         // Apply to all students & all garment types
         setCustomizations(prev => {
