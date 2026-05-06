@@ -12,8 +12,10 @@ import { X, Search, Image as ImageIcon, Trash2, Globe, Loader2, CheckCircle } fr
 import { getCountries, getLibraryDesigns } from "../api/api";
 import UploadRequestModal from "./UploadRequestModal";
 
-const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
-  const [activeTab, setActiveTab] = useState("size");
+const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange }) => {
+  const [internalTab, setInternalTab] = useState("size");
+  const activeTab = externalTab ?? internalTab;
+  const setActiveTab = (tab) => { setInternalTab(tab); onTabChange?.(tab); };
   const [showFlagModal, setShowFlagModal] = useState(false);
   const [currentField, setCurrentField] = useState("");
 
@@ -732,18 +734,22 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
               </div>
             ) : (
               <div className="mb-3">
-                <select
-                  value={libSelectedCountry?.id || ''}
-                  onChange={e => {
-                    const found = libCountries.find(c => String(c.id) === e.target.value);
-                    if (found) setLibSelectedCountry(found);
-                  }}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-700 font-medium focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
-                >
+                <div className="max-h-36 overflow-y-auto pr-1 custom-scrollbar-premium"><div className="grid grid-cols-3 gap-1.5">
                   {libCountries.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setLibSelectedCountry(c)}
+                      className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center transition-all border truncate ${
+                        libSelectedCountry?.id === c.id
+                          ? 'bg-green-600 text-white border-green-600 shadow-sm'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-green-400 hover:text-green-700'
+                      }`}
+                    >
+                      {c.name}
+                    </button>
                   ))}
-                </select>
+                </div></div>
               </div>
             )}
             {libDesignsLoading ? (
@@ -753,7 +759,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {libDesigns.map(design => {
-                  const src = `${BASE_URL}${design.file_path?.replace(/\\/g, "/")}`;
+                  const rawPath = (design.file_path || design.image_path || design.thumbnail || "").replace(/\\/g, "/"); const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
                   const isSelected = libSelectedDesign?.id === design.id;
                   return (
                     <button key={design.id} onClick={() => { setLibSelectedDesign(design); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } }); }}
@@ -767,8 +773,8 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
             )}
           </div>
 
-          {/* Upload own design */}
-          <div className="mb-4">
+          {/* Upload own design + Add classmates names */}
+          <div className="mb-4 flex flex-col gap-2">
             <button
               onClick={() => setShowUploadModal(true)}
               className="w-full py-2 px-4 rounded-xl border-2 border-dashed border-gray-300 text-gray-600 text-sm font-semibold hover:border-green-500 hover:text-green-700 transition-all flex items-center justify-center gap-2"
@@ -778,10 +784,19 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
               </svg>
               Upload own design
             </button>
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="w-full py-2 px-4 rounded-xl border-2 border-dashed border-gray-300 text-gray-600 text-sm font-semibold hover:border-green-500 hover:text-green-700 transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Add classmates names
+            </button>
           </div>
 
           {/* Next button */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
+          {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
             <button
               onClick={() => setActiveTab("pressure")}
               className="w-full py-2.5 bg-slate-600 text-white font-semibold rounded-xl hover:bg-slate-700 transition text-sm flex items-center justify-center gap-2"
@@ -791,7 +806,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
-          </div>
+          </div> */}
         </div>
       ) : (
         <div className="flex flex-col flex-1 relative px-4 pb-36">
@@ -1011,12 +1026,12 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
               </div>
             ))}
           </div>
-          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
+          {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
             <button onClick={() => setActiveTab("size")} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
               Back
             </button>
-          </div>
+          </div> */}
         </div>
       )}
 

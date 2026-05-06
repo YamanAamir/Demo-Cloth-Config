@@ -148,6 +148,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     const [profileEditForm] = Form.useForm();
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
     const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
+    const [garmentTab, setGarmentTab] = useState('size'); // 'size' | 'pressure'
     const [undoAvailable, setUndoAvailable] = useState(false);
     const [searchParams] = useSearchParams();
     const packageName = searchParams.get("package");
@@ -1177,6 +1178,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                                         setCopyDesignPrompt({ from: activeMenu, to: item.name });
                                                     } else {
                                                         setActiveMenu(item.name);
+                                        setGarmentTab('size');
                                                     }
                                                 }}
                                                 className={`flex items-center px-2 py-3 rounded-xl transition-all duration-200 group w-full ${activeMenu === item.name
@@ -1200,12 +1202,12 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             <div className="flex-1 bg-white/50 secondDiv overflow-y-auto custom-scrollbar-premium" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                                 <div className="px-6 pt-6 space-y-8">
 
-                                    {activeMenu === 'T-SHIRT' && <Tshirt key={`tshirt-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} />}
-                                    {activeMenu === "SWEATSHIRT" && <SweatShirt key={`sweatshirt-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} />}
-                                    {activeMenu === "HOODIE" && <Hoodie key={`hoodie-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} />}
-                                    {activeMenu === "ZIPPERHOODIE" && <ZippedHoodie key={`zipper-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['ZIPPERHOODIE']} onUpdate={(updates) => handleUpdateSelection('ZIPPERHOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} />}
-                                    {activeMenu === "SWEATPANTS" && <SweatPants key={`sweatpants-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['SWEATPANTS']} onUpdate={(updates) => handleUpdateSelection('SWEATPANTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} />}
-                                    {activeMenu === "SHORTS" && <Shorts key={`shorts-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['SHORTS']} onUpdate={(updates) => handleUpdateSelection('SHORTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} />}
+                                    {activeMenu === 'T-SHIRT' && <Tshirt key={`tshirt-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} />}
+                                    {activeMenu === "SWEATSHIRT" && <SweatShirt key={`sweatshirt-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} />}
+                                    {activeMenu === "HOODIE" && <Hoodie key={`hoodie-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} />}
+                                    {activeMenu === "ZIPPERHOODIE" && <ZippedHoodie key={`zipper-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['ZIPPERHOODIE']} onUpdate={(updates) => handleUpdateSelection('ZIPPERHOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} />}
+                                    {activeMenu === "SWEATPANTS" && <SweatPants key={`sweatpants-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['SWEATPANTS']} onUpdate={(updates) => handleUpdateSelection('SWEATPANTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} />}
+                                    {activeMenu === "SHORTS" && <Shorts key={`shorts-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['SHORTS']} onUpdate={(updates) => handleUpdateSelection('SHORTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} />}
                                 </div>
                             </div>
                         </div>
@@ -1226,17 +1228,40 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                     <span className="text-2xl font-bold text-slate-900">{dynamicPrice} DKK</span>
                                 </div>
                             </div> */}
-                            <button
-                                onClick={() => setIsInquiryModalOpen(true)}
-                                disabled={!sizeFlag}
-                                className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 shadow-md
-           
-        ${sizeFlag
-                                        ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 hover:shadow-lg"
-                                        : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
-                            >
-                                {balanceDue <= 0 && paymentStatus === 'paid' ? 'Save Changes' : (balanceDue > 0 && amountPaid > 0 ? `Pay Balance (${balanceDue} DKK)` : 'Send Inquiry')}
-                            </button>
+                            <div className="flex gap-2">
+                                {garmentTab === 'size' && (
+                                    <button
+                                        onClick={() => setGarmentTab('pressure')}
+                                        className="flex-1 py-3 rounded-xl font-semibold bg-gray-600 text-white hover:bg-gray-700 transition-all duration-200 shadow-md flex items-center justify-center gap-2 text-sm"
+                                    >
+                                        Next — Design
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </button>
+                                )}
+                                {garmentTab === 'pressure' && (
+                                    <button
+                                        onClick={() => setGarmentTab('size')}
+                                        className="flex-1 py-3 rounded-xl font-semibold bg-gray-600 text-white hover:bg-gray-700 transition-all duration-200 shadow-md flex items-center justify-center gap-2 text-sm"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                        Back
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => setIsInquiryModalOpen(true)}
+                                    disabled={!sizeFlag}
+                                    className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 shadow-md text-sm
+                                        ${sizeFlag
+                                            ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 hover:shadow-lg"
+                                            : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
+                                >
+                                    {balanceDue <= 0 && paymentStatus === 'paid' ? 'Save Changes' : (balanceDue > 0 && amountPaid > 0 ? `Pay Balance (${balanceDue} DKK)` : 'Send Inquiry')}
+                                </button>
+                            </div>
                         </div>
                     </div>
                     {/* Main Content Area */}

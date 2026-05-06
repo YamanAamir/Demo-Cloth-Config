@@ -152,7 +152,7 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
     // When user selects a library design → load it into Test canvas via pressureOptions
     const handleLibrarySelect = (design) => {
         setSelectedLibraryDesign(design);
-        const src = `${BASE_URL}${design.file_path.replace(/\\/g, "/")}`;
+        const rawPath = (design.file_path || design.image_path || "").replace(/\\/g, "/"); const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
         const backDesignObj = {
             src,
             designId: design.id,
@@ -274,7 +274,7 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
                                 ) : (
                                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                                         {libraryDesigns.map(design => {
-                                            const src = `${BASE_URL}${design.file_path?.replace(/\\/g, "/")}`;
+                                            const rawPath2 = (design.file_path || design.image_path || "").replace(/\\/g, "/"); const src = rawPath2.startsWith("http") ? rawPath2 : `${BASE_URL}${rawPath2.startsWith("/") ? rawPath2.slice(1) : rawPath2}`;
                                             const isSelected = selectedLibraryDesign?.id === design.id;
                                             return (
                                                 <button

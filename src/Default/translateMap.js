@@ -148,6 +148,7 @@ export const TRANSLATE_MAP = {
     "Mexico": "Mexico",
 
     "Upload own design": "Upload eget design",
+    "Add classmates names": "Tilføj klassekammeraters navne",
     "Your class needs to be signed up before you can add your own design.": "Din klasse skal tilmeldes, før du kan tilføje dit eget design.",
     "To upload your own design, you need to send a request first. Once your request is approved, you will be able to upload your design.": "For at uploade dit eget design skal din klasse først oprettes i systemet. Når klassen er oprettet, får du adgang til at uploade og arbejde videre med jeres design 😊",
     "Send request": "Opret klasse",

@@ -6,8 +6,10 @@ import { BASE_URL } from "../utils/const";
 import { ALL_FLAGS } from "../utils/flags";
 import { X, Image as ImageIcon, Trash2, Flag } from "lucide-react";
 
-const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
-  const [activeTab, setActiveTab] = useState("size");
+const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange }) => {
+  const [internalTab, setInternalTab] = useState("size");
+  const activeTab = externalTab ?? internalTab;
+  const setActiveTab = (tab) => { setInternalTab(tab); onTabChange?.(tab); };
   const [showFlagModal, setShowFlagModal] = useState(false);
   const [currentField, setCurrentField] = useState("");
 
@@ -376,12 +378,12 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
               ))}
             </div>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
+          {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
             <button onClick={() => setActiveTab("pressure")} className="w-full py-2.5 bg-slate-600 text-white font-semibold rounded-xl hover:bg-slate-700 transition text-sm flex items-center justify-center gap-2">
               Next — Design
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
-          </div>
+          </div> */}
         </div>
       ) : (
         <div className="flex flex-col flex-1 relative px-4 pb-36">
@@ -390,12 +392,12 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry }) => {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Leg Area</h2>
             {["rightLeg", "leftLeg"].map(renderArea)}
           </div>
-          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
+          {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
             <button onClick={() => setActiveTab("size")} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
               Back
             </button>
-          </div>
+          </div> */}
         </div>
       )}
 
