@@ -119,7 +119,8 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
     text,
     callback,
     flag2 = "",
-    flagCount = 1
+    flagCount = 1,
+    textColor = "#ffffff"
   ) => {
     const canvas = document.createElement("canvas");
     canvas.width = CANVAS_WIDTH;
@@ -131,7 +132,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       if (text?.trim()) {
         let fontSize = 48;
         ctx.font = `bold ${fontSize}px Arial`;
-        ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = textColor || "#ffffff";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
@@ -155,7 +156,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       let fontSize = 48;
 
       ctx.font = `bold ${fontSize}px Arial`;
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = textColor || "#ffffff";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
@@ -331,9 +332,10 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   useEffect(() => {
     ["rightChest", "leftChest", "bottomChest", "rightSleeve", "leftSleeve"].forEach(area => {
       const text = pressureOptions[`${area}Text`]?.trim() || "", flag = pressureOptions[`${area}Flag`] || "", flag2 = pressureOptions[`${area}Flag2`] || "", flagCount = pressureOptions[`${area}FlagCount`] || 1, logoPre = pressureOptions[`${area}LogoPredefined`] || "", logoCustom = pressureOptions[`${area}LogoCustom`] || "", type = pressureOptions[`${area}Type`] || "";
+      const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
       const p = prevRef.current[area] || {};
-      if (p.text === text && p.flag === flag && p.flag2 === flag2 && p.flagCount === flagCount && p.logoPre === logoPre && p.logoCustom === logoCustom && p.type === type) return;
-      prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type };
+      if (p.text === text && p.flag === flag && p.flag2 === flag2 && p.flagCount === flagCount && p.logoPre === logoPre && p.logoCustom === logoCustom && p.type === type && p.textColor === textColor) return;
+      prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
       const hasFlag = !!flag && type === "flag", hasLogo = !!(logoPre || logoCustom) && type === "logo";
       const hasSecondAsset = !!flag2;
 
@@ -341,7 +343,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Hoodie:${area}_opacity: ${opacity}`, "*"); });
       getDiffuseBase64(flag, logoPre, logoCustom, text, d => {
         ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Hoodie:${area}_diffuse: ${d}`, "*"); });
-      }, flag2, flagCount);
+      }, flag2, flagCount, textColor);
     });
   }, [isAppReady, pressureOptions]);
 
@@ -362,11 +364,35 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
           ))}
         </div>
         {!pressureOptions[`${area}Type`] && (
-          <div className="flex flex-wrap gap-2">
-            <input type="text" value={pressureOptions[`${area}Text`]} onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })} placeholder="Enter text" maxLength={25} className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
-            {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              <input type="text" value={pressureOptions[`${area}Text`]} onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })} placeholder="Enter text" maxLength={25} className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+              {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
+            </div>
+            {pressureOptions[`${area}Text`] && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 font-medium">Text color:</span>
+                {["#ffffff", "#000000"].map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: color } })}
+                    title={color === "#ffffff" ? "White" : "Black"}
+                    className="w-7 h-7 rounded-full border-2 transition-all"
+                    style={{
+                      backgroundColor: color,
+                      borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "#16a34a" : "#d1d5db",
+                      boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "0 0 0 2px #16a34a" : "none",
+                    }}
+                  />
+                ))}
+                <span className="text-xs text-gray-400">
+                  {(pressureOptions[`${area}TextColor`] || "#ffffff") === "#ffffff" ? "White" : "Black"}
+                </span>
+              </div>
+            )}
           </div>
-        )}
+        )} 
         {pressureOptions[`${area}Type`] === "flag" && (
           <div className="flex flex-wrap gap-2">
             <input type="text" value={getFlagDisplay(pressureOptions[`${area}Flag`])} readOnly placeholder="Select flag" className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer" onClick={() => handleFlagSelect(`${area}Flag`)} />
@@ -399,9 +425,33 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
           ))}
         </div>
         {!pressureOptions[`${area}Type`] && (
-          <div className="flex flex-wrap gap-2">
-            <input type="text" value={pressureOptions[`${area}Text`]} onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })} placeholder="Enter text" maxLength={25} className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
-            {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              <input type="text" value={pressureOptions[`${area}Text`]} onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })} placeholder="Enter text" maxLength={25} className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+              {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
+            </div>
+            {pressureOptions[`${area}Text`] && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 font-medium">Text color:</span>
+                {["#ffffff", "#000000"].map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: color } })}
+                    title={color === "#ffffff" ? "White" : "Black"}
+                    className="w-7 h-7 rounded-full border-2 transition-all"
+                    style={{
+                      backgroundColor: color,
+                      borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "#16a34a" : "#d1d5db",
+                      boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "0 0 0 2px #16a34a" : "none",
+                    }}
+                  />
+                ))}
+                <span className="text-xs text-gray-400">
+                  {(pressureOptions[`${area}TextColor`] || "#ffffff") === "#ffffff" ? "White" : "Black"}
+                </span>
+              </div>
+            )}
           </div>
         )}
         {pressureOptions[`${area}Type`] === "flag" && (

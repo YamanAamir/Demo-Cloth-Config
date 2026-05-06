@@ -77,7 +77,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
     }
   };
 
-  const getDiffuseBase64 = (flag, logoPre, logoCustom, text, callback, flag2 = "", flagCount = 1) => {
+  const getDiffuseBase64 = (flag, logoPre, logoCustom, text, callback, flag2 = "", flagCount = 1, textColor = "#ffffff") => {
     const canvas = document.createElement("canvas");
 
     // 🔥 Dynamic canvas dimensions based on flag count
@@ -88,7 +88,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
     const ctx = canvas.getContext("2d");
     if (text?.trim()) {
       let fontSize = 48;
-      ctx.font = `bold ${fontSize}px Arial`; ctx.fillStyle = "#ffffff";
+      ctx.font = `bold ${fontSize}px Arial`; ctx.fillStyle = textColor || "#ffffff";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       while (ctx.measureText(text).width > dimensions.width - 80 && fontSize > 28) { fontSize -= 2; ctx.font = `bold ${fontSize}px Arial`; }
       ctx.fillText(text, dimensions.width / 2, TEXT_HEIGHT / 2);
@@ -249,16 +249,17 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       // Debug logging
       console.log("EFFECT:", area, "TEXT:", text, "TYPE:", type, "FLAG:", flag);
 
+      const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
       const prev = prevRef.current[area] || {};
-      if (prev.text === text && prev.flag === flag && prev.flag2 === flag2 && prev.flagCount === flagCount && prev.logoPre === logoPre && prev.logoCustom === logoCustom && prev.type === type) return;
-      prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type };
+      if (prev.text === text && prev.flag === flag && prev.flag2 === flag2 && prev.flagCount === flagCount && prev.logoPre === logoPre && prev.logoCustom === logoCustom && prev.type === type && prev.textColor === textColor) return;
+      prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
       const hasFlag = !!flag && type === "flag";
       const hasLogo = !!(logoPre || logoCustom) && type === "logo";
       const opacity = getEmissiveBase64(text, hasFlag, hasLogo, flagCount);
       ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Short:${area}_opacity: ${opacity}`, "*"); });
       getDiffuseBase64(flag, logoPre, logoCustom, text, diffuse => {
         ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Short:${area}_diffuse: ${diffuse}`, "*"); });
-      }, flag2, flagCount);
+      }, flag2, flagCount, textColor);
     });
   }, [isAppReady, pressureOptions]);
 
@@ -304,13 +305,37 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
             ))}
           </div>
           {(!pressureOptions[`${area}Type`] || pressureOptions[`${area}Type`]?.trim() === "") && (
-            <div className="flex flex-wrap gap-2">
-              <input type="text" value={pressureOptions[`${area}Text`]}
-                onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
-                placeholder="Enter text" maxLength={25}
-                className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
-              />
-              {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <input type="text" value={pressureOptions[`${area}Text`]}
+                  onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
+                  placeholder="Enter text" maxLength={25}
+                  className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
+                />
+                {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
+              </div>
+              {pressureOptions[`${area}Text`] && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 font-medium">Text color:</span>
+                  {["#ffffff", "#000000"].map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: color } })}
+                      title={color === "#ffffff" ? "White" : "Black"}
+                      className="w-7 h-7 rounded-full border-2 transition-all"
+                      style={{
+                        backgroundColor: color,
+                        borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "#16a34a" : "#d1d5db",
+                        boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "0 0 0 2px #16a34a" : "none",
+                      }}
+                    />
+                  ))}
+                  <span className="text-xs text-gray-400">
+                    {(pressureOptions[`${area}TextColor`] || "#ffffff") === "#ffffff" ? "White" : "Black"}
+                  </span>
+                </div>
+              )}
             </div>
           )}
           {pressureOptions[`${area}Type`]?.trim() === "flag" && (
