@@ -35,7 +35,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       setLibCountriesLoading(true);
       try {
         const res = await getCountries();
-        if (res.data?.success) { const list = res.data.data || []; setLibCountries(list); if (list.length > 0) setLibSelectedCountry(list[0]); }
+        if (res.data?.success) { const list = res.data.data || []; setLibCountries(list); }
       } catch (e) { console.error(e); } finally { setLibCountriesLoading(false); }
     };
     fetchLibCountries();
@@ -403,6 +403,8 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
           const x = (CANVAS_WIDTH - w) / 2;
           const y = TEXT_HEIGHT + (FLAG_HEIGHT - h) / 2;
 
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
           ctx.drawImage(img, x, y, w, h);
           finalize();
         })
@@ -570,10 +572,10 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       const logoPre = pressureOptions[`${area}LogoPredefined`] || "";
       const logoCustom = pressureOptions[`${area}LogoCustom`] || "";
       const type = pressureOptions[`${area}Type`] || "";
+      const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
 
       // Check if anything actually changed for this area
       const prev = prevPressureOptionsRef.current[area] || {};
-      const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
       const hasChanged =
         prev.text !== text ||
         prev.flag !== flag ||
@@ -600,19 +602,17 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
         if (iframe?.contentWindow) {
           const msg = `SweatShirt:${area}_opacity: ${opacity}`;
           iframe.contentWindow.postMessage(msg, "*");
-          console.log("fahhh", msg);
 
         }
       });
 
-      // Diffuse — pass flag2 and flagCount
+      // Diffuse — pass flag2, flagCount, textColor
       getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase) => {
         ["preview-iframe", "preview-iframe2"].forEach((id) => {
           const iframe = document.getElementById(id);
           if (iframe?.contentWindow) {
             const msg = `SweatShirt:${area}_diffuse: ${diffuseBase}`;
             iframe.contentWindow.postMessage(msg, "*");
-            console.log("fahhhhh", msg);
 
           }
         });
@@ -743,11 +743,10 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                       key={c.id}
                       type="button"
                       onClick={() => setLibSelectedCountry(c)}
-                      className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center transition-all border truncate ${
-                        libSelectedCountry?.id === c.id
+                      className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center transition-all border truncate ${libSelectedCountry?.id === c.id
                           ? 'bg-green-600 text-white border-green-600 shadow-sm'
                           : 'bg-white text-gray-600 border-gray-200 hover:border-green-400 hover:text-green-700'
-                      }`}
+                        }`}
                     >
                       {c.name}
                     </button>
@@ -871,17 +870,15 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                       {pressureOptions[`${area}Text`] && (
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-gray-500 font-medium">Text color:</span>
-                          {["#ffffff", "#000000"].map((color) => (
-                            <button
-                              key={color}
-                              type="button"
-                              onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: color } })}
-                              title={color === "#ffffff" ? "White" : "Black"}
+                          {[{ val: "#ffffff", label: "White" }, { val: "#000000", label: "Black" }].map(({ val, label }) => (
+                            <button key={val} type="button"
+                              onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: val } })}
+                              title={label}
                               className="w-7 h-7 rounded-full border-2 transition-all"
                               style={{
-                                backgroundColor: color,
-                                borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "#16a34a" : "#d1d5db",
-                                boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "0 0 0 2px #16a34a" : "none",
+                                backgroundColor: val,
+                                borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "#16a34a" : val === "#ffffff" ? "#d1d5db" : "#374151",
+                                boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "0 0 0 2px #16a34a" : "none",
                               }}
                             />
                           ))}
@@ -937,13 +934,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
 
             {["rightSleeve", "leftSleeve"].map((area) => (
               <div key={area} className="bg-white rounded-lg p-4 mb-4">
-                {
-                  console.log(
-                    area,
-                    pressureOptions[`${area}FlagCount`],
-                    Number(pressureOptions[`${area}FlagCount`] || 1)
-                  )
-                }
                 <h3 className="font-semibold text-gray-900 mb-3">
                   {area === "rightSleeve" ? "Right Sleeve:" : "Left Sleeve:"}
                 </h3>
@@ -980,17 +970,15 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                       {pressureOptions[`${area}Text`] && (
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-gray-500 font-medium">Text color:</span>
-                          {["#ffffff", "#000000"].map((color) => (
-                            <button
-                              key={color}
-                              type="button"
-                              onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: color } })}
-                              title={color === "#ffffff" ? "White" : "Black"}
+                          {[{ val: "#ffffff", label: "White" }, { val: "#000000", label: "Black" }].map(({ val, label }) => (
+                            <button key={val} type="button"
+                              onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: val } })}
+                              title={label}
                               className="w-7 h-7 rounded-full border-2 transition-all"
                               style={{
-                                backgroundColor: color,
-                                borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "#16a34a" : "#d1d5db",
-                                boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "0 0 0 2px #16a34a" : "none",
+                                backgroundColor: val,
+                                borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "#16a34a" : val === "#ffffff" ? "#d1d5db" : "#374151",
+                                boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "0 0 0 2px #16a34a" : "none",
                               }}
                             />
                           ))}
@@ -1010,16 +998,11 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                           {[1, 2].map((n) => (
                             <button key={n} type="button"
                               onClick={() => {
-                                console.log("clicked", n);
-
                                 const updatedOptions = {
                                   ...pressureOptions,
                                   [`${area}FlagCount`]: n,
                                   ...(n === 1 ? { [`${area}Flag2`]: "" } : {}),
                                 };
-
-                                console.log("updatedOptions", updatedOptions);
-
                                 onUpdate({
                                   pressureOptions: updatedOptions,
                                 });

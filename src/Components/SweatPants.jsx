@@ -86,6 +86,8 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       loadImage(logoSrc).then(img => {
         const ratio = Math.min(CANVAS_WIDTH / img.width, FLAG_HEIGHT / img.height);
         const w = img.width * ratio * 0.9; const h = img.height * ratio * 0.9;
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
         ctx.drawImage(img, (CANVAS_WIDTH - w) / 2, TEXT_HEIGHT + (FLAG_HEIGHT - h) / 2, w, h);
         finalize();
       }).catch(finalize);
@@ -209,17 +211,15 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
             {pressureOptions[`${area}Text`] && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-500 font-medium">Text color:</span>
-                {["#ffffff", "#000000"].map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: color } })}
-                    title={color === "#ffffff" ? "White" : "Black"}
+                {[{ val: "#ffffff", label: "White" }, { val: "#000000", label: "Black" }].map(({ val, label }) => (
+                  <button key={val} type="button"
+                    onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: val } })}
+                    title={label}
                     className="w-7 h-7 rounded-full border-2 transition-all"
                     style={{
-                      backgroundColor: color,
-                      borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "#16a34a" : "#d1d5db",
-                      boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "0 0 0 2px #16a34a" : "none",
+                      backgroundColor: val,
+                      borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "#16a34a" : val === "#ffffff" ? "#d1d5db" : "#374151",
+                      boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "0 0 0 2px #16a34a" : "none",
                     }}
                   />
                 ))}

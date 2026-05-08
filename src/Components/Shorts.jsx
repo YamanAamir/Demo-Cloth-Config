@@ -96,7 +96,6 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
     const finalize = () => {
       try {
         const dataURL = canvas.toDataURL("image/png");
-        console.log("✅ Shorts canvas success");
         callback(dataURL);
       } catch (error) {
         console.error("❌ Shorts canvas tainted:", error);
@@ -116,7 +115,6 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       img.crossOrigin = "anonymous";
 
       img.onload = () => {
-        console.log("✅ Shorts image loaded:", src);
         resolve(img);
       };
 
@@ -138,7 +136,6 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
     });
     if (flag && flagImages[flag]) {
       if (flag2 && flagImages[flag2]) {
-        console.log("🔍 Loading dual flags:", flagImages[flag], flagImages[flag2]);
         Promise.all([loadImage(flagImages[flag]), loadImage(flagImages[flag2])])
           .then(([img1, img2]) => {
             // 🔥 Use effective dimensions with better spacing for legs
@@ -153,7 +150,6 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
             finalize();
           });
       } else {
-        console.log("🔍 Loading single flag:", flagImages[flag]);
         loadImage(flagImages[flag]).then(img => {
           ctx.drawImage(img, 0, TEXT_HEIGHT, dimensions.width, dimensions.flagHeight);
           finalize();
@@ -170,15 +166,16 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       if (found?.file_path) logoSrc = `${BASE_URL}${found.file_path.replace(/\\/g, "/")}`;
     }
     if (logoSrc) {
-      console.log("🔍 Shorts loading logo:", logoSrc);
       loadImage(logoSrc).then(img => {
         const ratio = Math.min(dimensions.width / img.width, dimensions.flagHeight / img.height);
         const w = img.width * ratio * 0.9; const h = img.height * ratio * 0.9;
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, TEXT_HEIGHT, dimensions.width, dimensions.flagHeight);
         ctx.drawImage(img, (dimensions.width - w) / 2, TEXT_HEIGHT + (dimensions.flagHeight - h) / 2, w, h);
         finalize();
       }).catch((error) => {
         console.error("❌ Shorts logo failed:", logoSrc, error);
-        finalize(); // Continue without logo
+        finalize();
       });
       return;
     }
@@ -245,11 +242,9 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       const logoPre = pressureOptions[`${area}LogoPredefined`] || "";
       const logoCustom = pressureOptions[`${area}LogoCustom`] || "";
       const type = pressureOptions[`${area}Type`] || "";
-
-      // Debug logging
-      console.log("EFFECT:", area, "TEXT:", text, "TYPE:", type, "FLAG:", flag);
-
       const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
+
+
       const prev = prevRef.current[area] || {};
       if (prev.text === text && prev.flag === flag && prev.flag2 === flag2 && prev.flagCount === flagCount && prev.logoPre === logoPre && prev.logoCustom === logoCustom && prev.type === type && prev.textColor === textColor) return;
       prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
@@ -282,7 +277,6 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
             {["text", "flag", "logo"].map(tab => (
               <button key={tab} type="button"
                 onClick={() => {
-                  console.log("TAB CLICKED:", tab, "AREA:", area);
                   if (tab === "text") {
                     onUpdate({
                       pressureOptions: {
@@ -317,17 +311,15 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
               {pressureOptions[`${area}Text`] && (
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500 font-medium">Text color:</span>
-                  {["#ffffff", "#000000"].map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: color } })}
-                      title={color === "#ffffff" ? "White" : "Black"}
+                  {[{ val: "#ffffff", label: "White" }, { val: "#000000", label: "Black" }].map(({ val, label }) => (
+                    <button key={val} type="button"
+                      onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: val } })}
+                      title={label}
                       className="w-7 h-7 rounded-full border-2 transition-all"
                       style={{
-                        backgroundColor: color,
-                        borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "#16a34a" : "#d1d5db",
-                        boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "0 0 0 2px #16a34a" : "none",
+                        backgroundColor: val,
+                        borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "#16a34a" : val === "#ffffff" ? "#d1d5db" : "#374151",
+                        boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "0 0 0 2px #16a34a" : "none",
                       }}
                     />
                   ))}

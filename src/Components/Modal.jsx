@@ -126,18 +126,15 @@ const QuoteModal = ({
   // Track which field was last focused - ONLY on step 1
   useEffect(() => {
     if (currentStep !== 1) return;
-    console.log('first');
 
     const handleFocus = (index) => {
       lastFocusedIndex.current = index;
-      console.log('second');
     };
 
     // Add focus event listeners to all refs
     refOrder.forEach((ref, index) => {
       if (ref.current) {
         ref.current.addEventListener("focus", () => handleFocus(index));
-        console.log('third');
       }
     });
 
@@ -146,7 +143,6 @@ const QuoteModal = ({
       refOrder.forEach((ref) => {
         if (ref.current) {
           ref.current.removeEventListener("focus", () => { });
-          console.log('fourth');
         }
       });
     };

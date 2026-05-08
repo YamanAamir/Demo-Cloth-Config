@@ -35,10 +35,10 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             selectedColor: 'Red',
             selectedSize: '',
             pressureOptions: {
-                rightChestText: '', rightChestFlag: '', rightChestLogoPredefined: '', rightChestLogoCustom: '', rightChestType: '',
-                leftChestText: '', leftChestFlag: '', leftChestLogoPredefined: '', leftChestLogoCustom: '', leftChestType: '',
-                rightSleeveText: '', rightSleeveFlag: '', rightSleeveFlag2: '', rightSleeveFlagCount: 1, rightSleeveLogoPredefined: '', rightSleeveLogoCustom: '', rightSleeveType: '',
-                leftSleeveText: '', leftSleeveFlag: '', leftSleeveFlag2: '', leftSleeveFlagCount: 1, leftSleeveLogoPredefined: '', leftSleeveLogoCustom: '', leftSleeveType: '',
+                rightChestText: '', rightChestFlag: '', rightChestLogoPredefined: '', rightChestLogoCustom: '', rightChestType: '', rightChestTextColor: '#ffffff',
+                leftChestText: '', leftChestFlag: '', leftChestLogoPredefined: '', leftChestLogoCustom: '', leftChestType: '', leftChestTextColor: '#ffffff',
+                rightSleeveText: '', rightSleeveFlag: '', rightSleeveFlag2: '', rightSleeveFlagCount: 1, rightSleeveLogoPredefined: '', rightSleeveLogoCustom: '', rightSleeveType: '', rightSleeveTextColor: '#ffffff',
+                leftSleeveText: '', leftSleeveFlag: '', leftSleeveFlag2: '', leftSleeveFlagCount: 1, leftSleeveLogoPredefined: '', leftSleeveLogoCustom: '', leftSleeveType: '', leftSleeveTextColor: '#ffffff',
                 backDesign: null,
             }
         },
@@ -46,10 +46,10 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             selectedColor: 'Red',
             selectedSize: '',
             pressureOptions: {
-                rightChestText: '', rightChestFlag: '', rightChestLogoPredefined: '', rightChestLogoCustom: '', rightChestType: '',
-                leftChestText: '', leftChestFlag: '', leftChestLogoPredefined: '', leftChestLogoCustom: '', leftChestType: '',
-                rightSleeveText: '', rightSleeveFlag: '', rightSleeveFlag2: '', rightSleeveFlagCount: 1, rightSleeveLogoPredefined: '', rightSleeveLogoCustom: '', rightSleeveType: '',
-                leftSleeveText: '', leftSleeveFlag: '', leftSleeveFlag2: '', leftSleeveFlagCount: 1, leftSleeveLogoPredefined: '', leftSleeveLogoCustom: '', leftSleeveType: '',
+                rightChestText: '', rightChestFlag: '', rightChestLogoPredefined: '', rightChestLogoCustom: '', rightChestType: '', rightChestTextColor: '#ffffff',
+                leftChestText: '', leftChestFlag: '', leftChestLogoPredefined: '', leftChestLogoCustom: '', leftChestType: '', leftChestTextColor: '#ffffff',
+                rightSleeveText: '', rightSleeveFlag: '', rightSleeveFlag2: '', rightSleeveFlagCount: 1, rightSleeveLogoPredefined: '', rightSleeveLogoCustom: '', rightSleeveType: '', rightSleeveTextColor: '#ffffff',
+                leftSleeveText: '', leftSleeveFlag: '', leftSleeveFlag2: '', leftSleeveFlagCount: 1, leftSleeveLogoPredefined: '', leftSleeveLogoCustom: '', leftSleeveType: '', leftSleeveTextColor: '#ffffff',
                 backDesign: null,
             }
         },
@@ -57,11 +57,11 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             selectedColor: 'Red',
             selectedSize: '',
             pressureOptions: {
-                rightChestText: '', rightChestFlag: '', rightChestLogoPredefined: '', rightChestLogoCustom: '', rightChestType: '',
-                leftChestText: '', leftChestFlag: '', leftChestLogoPredefined: '', leftChestLogoCustom: '', leftChestType: '',
-                bottomChestText: '', bottomChestFlag: '', bottomChestLogoPredefined: '', bottomChestLogoCustom: '', bottomChestType: '',
-                rightSleeveText: '', rightSleeveFlag: '', rightSleeveFlag2: '', rightSleeveFlagCount: 1, rightSleeveLogoPredefined: '', rightSleeveLogoCustom: '', rightSleeveType: '',
-                leftSleeveText: '', leftSleeveFlag: '', leftSleeveFlag2: '', leftSleeveFlagCount: 1, leftSleeveLogoPredefined: '', leftSleeveLogoCustom: '', leftSleeveType: '',
+                rightChestText: '', rightChestFlag: '', rightChestLogoPredefined: '', rightChestLogoCustom: '', rightChestType: '', rightChestTextColor: '#ffffff',
+                leftChestText: '', leftChestFlag: '', leftChestLogoPredefined: '', leftChestLogoCustom: '', leftChestType: '', leftChestTextColor: '#ffffff',
+                bottomChestText: '', bottomChestFlag: '', bottomChestLogoPredefined: '', bottomChestLogoCustom: '', bottomChestType: '', bottomChestTextColor: '#ffffff',
+                rightSleeveText: '', rightSleeveFlag: '', rightSleeveFlag2: '', rightSleeveFlagCount: 1, rightSleeveLogoPredefined: '', rightSleeveLogoCustom: '', rightSleeveType: '', rightSleeveTextColor: '#ffffff',
+                leftSleeveText: '', leftSleeveFlag: '', leftSleeveFlag2: '', leftSleeveFlagCount: 1, leftSleeveLogoPredefined: '', leftSleeveLogoCustom: '', leftSleeveType: '', leftSleeveTextColor: '#ffffff',
                 backDesign: null,
             }
         },
@@ -69,10 +69,10 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             selectedColor: 'Red',
             selectedSize: '',
             pressureOptions: {
-                rightChestText: '', rightChestFlag: '', rightChestLogoPredefined: '', rightChestLogoCustom: '', rightChestType: '',
-                leftChestText: '', leftChestFlag: '', leftChestLogoPredefined: '', leftChestLogoCustom: '', leftChestType: '',
-                rightSleeveText: '', rightSleeveFlag: '', rightSleeveFlag2: '', rightSleeveFlagCount: 1, rightSleeveLogoPredefined: '', rightSleeveLogoCustom: '', rightSleeveType: '',
-                leftSleeveText: '', leftSleeveFlag: '', leftSleeveFlag2: '', leftSleeveFlagCount: 1, leftSleeveLogoPredefined: '', leftSleeveLogoCustom: '', leftSleeveType: '',
+                rightChestText: '', rightChestFlag: '', rightChestLogoPredefined: '', rightChestLogoCustom: '', rightChestType: '', rightChestTextColor: '#ffffff',
+                leftChestText: '', leftChestFlag: '', leftChestLogoPredefined: '', leftChestLogoCustom: '', leftChestType: '', leftChestTextColor: '#ffffff',
+                rightSleeveText: '', rightSleeveFlag: '', rightSleeveFlag2: '', rightSleeveFlagCount: 1, rightSleeveLogoPredefined: '', rightSleeveLogoCustom: '', rightSleeveType: '', rightSleeveTextColor: '#ffffff',
+                leftSleeveText: '', leftSleeveFlag: '', leftSleeveFlag2: '', leftSleeveFlagCount: 1, leftSleeveLogoPredefined: '', leftSleeveLogoCustom: '', leftSleeveType: '', leftSleeveTextColor: '#ffffff',
                 backDesign: null,
             }
         },
@@ -80,16 +80,16 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             selectedColor: 'Red',
             selectedSize: '',
             pressureOptions: {
-                rightLegText: '', rightLegFlag: '', rightLegLogoPredefined: '', rightLegLogoCustom: '', rightLegType: '',
-                leftLegText: '', leftLegFlag: '', leftLegLogoPredefined: '', leftLegLogoCustom: '', leftLegType: '',
+                rightLegText: '', rightLegFlag: '', rightLegLogoPredefined: '', rightLegLogoCustom: '', rightLegType: '', rightLegTextColor: '#ffffff',
+                leftLegText: '', leftLegFlag: '', leftLegLogoPredefined: '', leftLegLogoCustom: '', leftLegType: '', leftLegTextColor: '#ffffff',
             }
         },
         'SHORTS': {
             selectedColor: 'Red',
             selectedSize: '',
             pressureOptions: {
-                rightLegText: '', rightLegFlag: '', rightLegLogoPredefined: '', rightLegLogoCustom: '', rightLegType: '',
-                leftLegText: '', leftLegFlag: '', leftLegLogoPredefined: '', leftLegLogoCustom: '', leftLegType: '',
+                rightLegText: '', rightLegFlag: '', rightLegLogoPredefined: '', rightLegLogoCustom: '', rightLegType: '', rightLegTextColor: '#ffffff',
+                leftLegText: '', leftLegFlag: '', leftLegLogoPredefined: '', leftLegLogoCustom: '', leftLegType: '', leftLegTextColor: '#ffffff',
             }
         }
     };
@@ -290,8 +290,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     };
 
     const handleResetOrder = async () => {
-        console.log("🔄 Reset button clicked, orderId:", orderId);
-
         if (!orderId) {
             message.error("No active order found to reset.");
             return;
@@ -299,9 +297,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
 
         setIsResetting(true);
         try {
-            console.log("🔄 Calling resetOrder API with orderId:", orderId);
             const response = await resetOrder(orderId);
-            console.log("🔄 Reset response:", response);
 
             if (response.data?.success) {
                 message.success("Order reset successfully! Starting fresh design.");
@@ -371,7 +367,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         userId ? `order_update_${userId}` : null,
         `order_update_${userId}`,
         (data) => {
-            console.log('🔔 Real-time order update received:', data);
             fetchOrderData();
             fetchHistoryData();
             fetchBackDesignStatus(); // Also refresh back design status
@@ -382,7 +377,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         userId ? `history_update_${userId}` : null,
         `history_update_${userId}`,
         (data) => {
-            console.log('🔔 Real-time history update received:', data);
             fetchHistoryData();
         }
     );
@@ -392,7 +386,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         user?.class_id ? `back_design_update_${user.class_id}` : null,
         `back_design_update_${user.class_id}`,
         (data) => {
-            console.log('🔔 Real-time back design update received:', data);
             fetchBackDesignStatus();
             if (data.approval_status === 'approved') {
                 message.success('🎉 Your back design has been approved!');
@@ -452,41 +445,29 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     }, [selectedStudent, customizations]);
 
     const handleUpdateSelection = (category, updates) => {
-        console.log("HANDLE UPDATE:", category, updates);
 
         if (isLocked && !isAdmin) {
             message.warning("Editing is locked after the deadline.");
             return;
         }
 
-        // 1. Update LOCAL state immediately for responsive UI
         setAllSelections(prev => {
-            console.log("PREV STATE:", prev[category]);
             const next = JSON.parse(JSON.stringify(prev));
-
-            // Color — sirf active garment pe apply hoga (sync band)
             if (updates.selectedColor) {
                 next[category].selectedColor = updates.selectedColor;
             }
-
-            // Size — sirf active garment pe apply hoga (sync band)
             if (updates.selectedSize) {
                 next[category].selectedSize = updates.selectedSize;
             }
-
-            // Sync Pressure Options with positional mapping
             if (updates.pressureOptions) {
                 const pUpdates = updates.pressureOptions;
-
-                // For SHORTS, apply updates directly without cross-category sync
-                if (category === 'SHORTS') {
+                if (category === 'SHORTS' || category === 'SWEATPANTS') {
                     Object.keys(pUpdates).forEach(key => {
                         if (next[category].pressureOptions) {
                             next[category].pressureOptions[key] = pUpdates[key];
                         }
                     });
                 } else {
-                    // Original complex mapping logic for other categories
                     Object.keys(pUpdates).forEach(key => {
                         if (key === 'backDesign') {
                             const val = pUpdates[key];
@@ -497,7 +478,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         }
 
                         const newValue = pUpdates[key];
-                        // Regex for exact position matching to avoid chest/sleeve cross-contamination
                         const match = key.match(/^(rightChest|leftChest|rightSleeve|leftSleeve|bottomChest|rightLeg|leftLeg)(.*)$/);
                         if (match) {
                             const basePos = match[1];
@@ -552,7 +532,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                 return updated;
             });
 
-            console.log("NEXT STATE:", next[category]);
             return next;
         });
     };
@@ -670,22 +649,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         }
     };
 
-    const handleAdminUnlock = async () => {
-        if (!orderId) {
-            message.error("No order found to unlock.");
-            return;
-        }
-        try {
-            const res = await unlockOrder(orderId);
-            if (res.data?.success) {
-                setIsLocked(false);
-                message.success("Order unlocked for student.");
-            }
-        } catch (err) {
-            console.error("Error unlocking order:", err);
-            message.error("Failed to unlock order.");
-        }
-    };
+   
     const menuItems = [
         { name: 'T-SHIRT', icon: img1 },
         { name: 'SWEATSHIRT', icon: img2 },
@@ -694,9 +658,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         { name: 'SWEATPANTS', icon: img5 },
         { name: 'SHORTS', icon: img6 },
     ];
-    // Generic handler for all option changes
-    // Function to collect all selected options
-    // Force iframe src initialization
     useEffect(() => {
         const playcanvasUrl = 'https://playcanv.as/e/p/1b1eadeb/';
         ['preview-iframe', 'preview-iframe2'].forEach(id => {
@@ -705,7 +666,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         });
     }, []);
 
-    // Unified message sending logic for Page switching and state synchronization
     useEffect(() => {
         if (!isAppReady) return;
 
@@ -715,13 +675,10 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                 const iframe = document.getElementById(id);
                 if (iframe?.contentWindow) {
                     const pageNum = menuIndex + 1;
-                    console.log(`Sending Page : ${pageNum} for ${activeMenu}`);
 
-                    // 1. Switch Page
                     iframe.contentWindow.postMessage(`Page : ${pageNum}`, "*");
                     iframe.contentWindow.postMessage('Tilvælg:no', "*");
 
-                    // 2. Initial state sync for the new model
                     setTimeout(() => {
                         const currentData = allSelections[activeMenu];
                         if (currentData) {
@@ -742,7 +699,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                 if (selectedSize) iframe.contentWindow.postMessage(`${prefix}size:${selectedSize}`, "*");
                             }
                         }
-                        // Force Test component to remount and re-send back design
                         setBackDesignKey(k => k + 1);
                     }, 300);
                 }
@@ -753,7 +709,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     useEffect(() => {
         const handleMessage = (event) => {
             if (event.data === 'app:ready') {
-                console.log("App Ready signal received in Dashboard");
                 setIsAppReady(true);
             }
         };
@@ -762,11 +717,9 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         return () => window.removeEventListener('message', handleMessage);
     }, []);
 
-    // Jab selected student change ho → uske customizations load karo
     useEffect(() => {
         if (!selectedStudent) return;
 
-        // Ensure customizations has an entry for this student
         if (!customizations[selectedStudent]) {
             setCustomizations(prev => ({
                 ...prev,
@@ -777,11 +730,8 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             setAllSelections(customizations[selectedStudent]);
         }
     }, [selectedStudent, customizations]);
-    console.log("logosasasad", logos);
-    console.log("🔄 Debug - showResetModal:", showResetModal, "orderId:", orderId, "isResetting:", isResetting);
     return (
         <>
-            {/* ── Copy Design Prompt Modal ── */}
             {copyDesignPrompt && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
                     <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-100">
@@ -795,7 +745,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         <div className="flex gap-3">
                             <button
                                 onClick={() => {
-                                    // Copy pressureOptions from source to target
                                     const sourceData = allSelections[copyDesignPrompt.from];
                                     setAllSelections(prev => ({
                                         ...prev,
@@ -825,7 +774,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                 </div>
             )}
 
-            {/* ── Save Design — Garment Selection Modal ── */}
             {showSaveModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
                     <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-100">
@@ -871,7 +819,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                 </div>
             )}
 
-            {/* ── Reset Order Modal ── */}
             {showResetModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
                     <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
@@ -891,7 +838,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         <div className="flex gap-3">
                             <button
                                 onClick={() => {
-                                    console.log("🔄 Reset Order button clicked in modal");
                                     handleResetOrder();
                                 }}
                                 disabled={isResetting}
@@ -901,7 +847,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             </button>
                             <button
                                 onClick={() => {
-                                    console.log("🔄 Cancel button clicked in modal");
                                     setShowResetModal(false);
                                 }}
                                 disabled={isResetting}
@@ -936,89 +881,11 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                     </div>
 
                     <div className="flex items-center space-x-2 sm:space-x-4">
-                        {/* Refresh Status Button */}
-                        {/* <button
-                            onClick={handleRefreshStatus}
-                            disabled={isRefreshing}
-                            className="flex items-center space-x-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all font-medium text-sm border border-blue-200 disabled:opacity-50"
-                            title="Refresh approval status"
-                        >
-                            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                            <span className="hidden sm:inline">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
-                        </button> */}
-
-                        {/* Reset Order Button */}
-                        {/* {orderId && (
-                            <button
-                                onClick={() => {
-                                    console.log("🔄 Reset button clicked, orderId:", orderId, "isLocked:", isLocked, "isAdmin:", isAdmin);
-                                    setShowResetModal(true);
-                                }}
-                                disabled={isResetting || (isLocked && !isAdmin)}
-                                className="flex items-center space-x-2 px-3 py-2 bg-orange-50 text-orange-600 rounded-xl hover:bg-orange-100 transition-all font-medium text-sm border border-orange-200 disabled:opacity-50"
-                                title="Reset order and start fresh"
-                            >
-                                <RotateCcw className={`w-4 h-4 ${isResetting ? 'animate-spin' : ''}`} />
-                                <span className="hidden sm:inline">Reset</span>
-                            </button>
-                        )} */}
-
-                        {/* {undoAvailable && (
-                            <button
-                                onClick={handleUndo}
-                                className="flex items-center space-x-2 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all font-medium text-sm border border-slate-200"
-                                title="Undo last change"
-                            >
-                                <span className="rotate-180">↺</span>
-                                <span className="hidden sm:inline">Undo</span>
-                            </button>
-                        )} */}
-                        {/* <button
-                            onClick={handleSaveClick}
-                            disabled={isSaving || (isLocked && !isAdmin)}
-                            className={`flex items-center space-x-2 px-3 py-2 ${isSaving ? 'bg-slate-100' : 'bg-green-600 hover:bg-green-700'} text-white rounded-xl transition-all font-medium text-sm shadow-sm disabled:opacity-50`}
-                        >
-                            <Settings className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
-                            <span className="hidden sm:inline">{isSaving ? 'Saving...' : 'Save Design'}</span>
-                        </button> */}
-                        {/* {dbHistory.length > 0 && (
-                            <button
-                                onClick={() => setIsHistoryModalOpen(true)}
-                                className="flex items-center space-x-2 px-3 py-2 bg-white text-slate-600 rounded-xl hover:bg-slate-50 transition-all font-medium text-sm border border-slate-200"
-                                title="View Saved Versions"
-                            >
-                                <History className="w-4 h-4 text-green-600" />
-                                <span className="hidden sm:inline">History</span>
-                            </button>
-                        )} */}
-                        {/* <button
-                            onClick={() => setShowBackPopup(true)}
-                            className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-slate-800 text-white rounded-xl hover:bg-slate-900 transition-all font-medium text-sm shadow-md"
-                        >
-                            <Settings className="w-4 h-4" />
-                            <span className="hidden sm:inline">Design Back</span>
-                            <span className="sm:hidden text-[10px]">Back</span>
-                        </button>
-                        {/* COMMENTED: Back text feature disabled */}
-                        {/* <button
-                            onClick={() => setShowBackTextPopup(true)}
-                            className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-indigo-700 text-white rounded-xl hover:bg-indigo-800 transition-all font-medium text-sm shadow-md"
-                        >
-                            <Type className="w-4 h-4" />
-                            <span className="hidden sm:inline">Back Text</span>
-                            <span className="sm:hidden text-[10px]">Text</span>
-                        </button> */}
 
                         <Dropdown
                             menu={{
                                 items: [
-                                    // {
-                                    //     key: 'profile',
-                                    //     label: 'Profile',
-                                    //     icon: <User />,
-                                    //     onClick: () => setProfileDrawerOpen(true),
-                                    // },
-                                    // { type: 'divider' },
+
                                     {
                                         key: 'logout',
                                         label: 'Log out',
@@ -1031,129 +898,21 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             trigger={['click']}
                             placement="bottomRight"
                         >
-                        <button className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-slate-100 transition-all">
-                            <Avatar
-                                size={34}
-                                style={{ backgroundColor: '#16a34a', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
-                            >
-                                {user?.name?.charAt(0)?.toUpperCase() || 'S'}
-                            </Avatar>
-                            <span className="hidden sm:inline text-sm font-semibold text-slate-700 max-w-[100px] truncate">
-                                {user?.name || 'Student'}
-                            </span>
-                        </button>
+                            <button className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-slate-100 transition-all">
+                                <Avatar
+                                    size={34}
+                                    style={{ backgroundColor: '#16a34a', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
+                                >
+                                    {user?.name?.charAt(0)?.toUpperCase() || 'S'}
+                                </Avatar>
+                                <span className="hidden sm:inline text-sm font-semibold text-slate-700 max-w-[100px] truncate">
+                                    {user?.name || 'Student'}
+                                </span>
+                            </button>
                         </Dropdown>
                     </div>
                 </header>
-
-                {/* Status Bar for Locked / Deadline / Progress */}
-                {/* <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between shadow-sm">
-                    <div className="flex items-center gap-4 flex-wrap">
-                        <div className="flex items-center gap-1.5">
-                            <Package className="w-3.5 h-3.5 text-green-600" />
-                            <span className="text-xs font-semibold text-slate-600">
-                                {Object.entries(allSelections).filter(([type, options]) => isGarmentConfigured(type, options)).length} configured
-                            </span>
-                        </div>
-
-                        <div className="w-px h-4 bg-slate-200" />
-
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-slate-400 font-medium">Total</span>
-                            <span className="text-xs font-bold text-slate-700">{dynamicPrice} DKK</span>
-                        </div>
-
-                        {amountPaid > 0 && (
-                            <>
-                                <div className="w-px h-4 bg-slate-200" />
-                                <div className="flex items-center gap-1.5">
-                                    <span className="text-xs text-slate-400 font-medium">Paid</span>
-                                    <span className="text-xs font-bold text-green-600">{amountPaid} DKK</span>
-                                </div>
-                            </>
-                        )}
-
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${paymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
-                            paymentStatus === 'partial' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-slate-100 text-slate-500'
-                            }`}>
-                            {paymentStatus}
-                        </span>
-                        {classStatus && (() => {
-                            const statusMap = {
-                                active: { label: 'Order in progress', color: 'bg-blue-100 text-blue-700' },
-                                orders_locked: { label: 'Order locked – going to production', color: 'bg-orange-100 text-orange-700' },
-                                production_ready: { label: 'Being produced', color: 'bg-purple-100 text-purple-700' },
-                                shipped: { label: 'Shipped – check email for tracking', color: 'bg-indigo-100 text-indigo-700' },
-                                completed: { label: 'Delivered', color: 'bg-green-100 text-green-700' },
-                            };
-                            const s = statusMap[classStatus];
-                            if (!s) return null;
-                            return (
-                                <>
-                                    <div className="w-px h-4 bg-slate-200" />
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider ${s.color}`}>
-                                        {s.label}
-                                    </span>
-                                </>
-                            );
-                        })()}
-
-                        {backDesignStatus && (() => {
-                            const statusMap = {
-                                pending: { label: 'Back Design: Pending Review', color: 'bg-yellow-100 text-yellow-700' },
-                                approved: { label: 'Back Design: Approved ✓', color: 'bg-green-100 text-green-700' },
-                                rejected: { label: 'Back Design: Rejected', color: 'bg-red-100 text-red-700' },
-                            };
-                            const s = statusMap[backDesignStatus];
-                            if (!s) return null;
-                            return (
-                                <>
-                                    <div className="w-px h-4 bg-slate-200" />
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider ${s.color}`}>
-                                        {s.label}
-                                    </span>
-                                </>
-                            );
-                        })()}
-
-                        {editDeadline && (
-                            <>
-                                <div className="w-px h-4 bg-slate-200" />
-                                <div className="flex items-center gap-1.5">
-                                    <History className="w-3.5 h-3.5 text-yellow-500" />
-                                    <span className={`text-xs font-semibold ${new Date() > editDeadline ? 'text-red-500' : 'text-slate-500'}`}>
-                                        Edit: {editDeadline.toLocaleDateString()} {new Date() > editDeadline && '· Expired'}
-                                    </span>
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                  
-                        {isLocked && (
-                            <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 px-2.5 py-1 rounded-lg">
-                                <Lock className="w-3 h-3 text-red-500" />
-                                <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider">
-                                    {editDeadline && new Date() > editDeadline ? 'Window Expired' : deadline && new Date() > deadline ? 'Deadline Passed' : 'Locked'}
-                                </span>
-                            </div>
-                        )}
-
-                        {isAdmin && isLocked && (
-                            <button
-                                onClick={handleAdminUnlock}
-                                className="text-xs font-bold text-blue-600 hover:text-blue-700 underline"
-                            >
-                                Unlock
-                            </button>
-                        )}
-                    </div>
-                </div> */}
-
                 <div className="hidden md:flex h-[calc(100vh-80px)] w-full relative">
-                    {/* Sidebar */}
                     <div className="flex flex-col h-full border-r border-slate-200 bg-white shadow-xl z-10 w-[600px] min-w-[500px]">
                         <div className='flex flex-1 min-h-0'>
                             <div className="bg-white/70 border-r border-slate-200 overflow-y-auto firstdiv custom-scrollbar-premium min-w-[100px]">
@@ -1166,8 +925,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                             <button
                                                 key={index}
                                                 onClick={() => {
-                                                    // Agar current garment configured hai aur naya garment configured nahi
-                                                    // toh copy karne ka poochho
                                                     const currentConfigured = isGarmentConfigured(activeMenu, allSelections[activeMenu]);
                                                     const targetConfigured = isGarmentConfigured(item.name, allSelections[item.name]);
                                                     if (
@@ -1178,7 +935,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                                         setCopyDesignPrompt({ from: activeMenu, to: item.name });
                                                     } else {
                                                         setActiveMenu(item.name);
-                                        setGarmentTab('size');
+                                                        setGarmentTab('size');
                                                     }
                                                 }}
                                                 className={`flex items-center px-2 py-3 rounded-xl transition-all duration-200 group w-full ${activeMenu === item.name
@@ -1190,7 +947,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                                     }`}>
                                                     <img src={item.icon} alt={item.name} className="w-10 h-10 object-contain" />
                                                 </div>
-                                                {/* <span className={`text-sm font-medium ${activeMenu === item.name ? 'text-slate-900' : 'text-slate-600'}`}>{item.name}</span> */}
                                                 {activeMenu === item.name && (
                                                     <div className="ml-auto w-2 h-2 bg-green-700 rounded-full"></div>
                                                 )}
@@ -1212,22 +968,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             </div>
                         </div>
                         <div className=" border-slate-200 p-6 bg-white/50 backdrop-blur-sm">
-                            {/* <div className="mb-4 space-y-1.5">
-                                <div className="flex justify-between text-xs text-slate-500">
-                                    <span>Subtotal</span>
-                                    <span>{subtotal} DKK</span>
-                                </div>
-                                {vatPct > 0 && (
-                                    <div className="flex justify-between text-xs text-slate-500">
-                                        <span>VAT ({vatPct}%)</span>
-                                        <span>{vatAmount} DKK</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between items-center pt-1.5 border-t border-slate-200">
-                                    <span className="text-sm font-semibold text-slate-700">Total</span>
-                                    <span className="text-2xl font-bold text-slate-900">{dynamicPrice} DKK</span>
-                                </div>
-                            </div> */}
                             <div className="flex gap-2">
                                 {garmentTab === 'size' && (
                                     <button
@@ -1264,12 +1004,9 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             </div>
                         </div>
                     </div>
-                    {/* Main Content Area */}
                     <div className="flex flex-1 h-full">
-                        {/* Preview Panel */}
                         <div className="flex-1 p-6">
                             <div className="bg-white/50 backdrop-blur-sm rounded-2xl shadow-xl h-full flex flex-col border border-slate-200">
-                                {/* Header */}
                                 <div className="flex items-center justify-between p-6 border-b border-slate-200">
                                     <div className="flex items-center space-x-3">
                                         <div className="w-10 h-10 bg-gradient-to-r from-green-600 to-green-600 rounded-xl flex items-center justify-center">
@@ -1284,7 +1021,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                         <span className="text-xs font-medium text-slate-600">LIVE PREVIEW</span>
                                     </div>
                                 </div>
-                                {/* Iframe Preview */}
                                 <div className="flex-1 rounded-b-2xl overflow-hidden">
                                     <iframe
                                         id="preview-iframe"
@@ -1299,13 +1035,9 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                     </div>
                 </div>
                 <div className="md:hidden flex flex-col ">
-                    {/* Mobile Preview Panel - Top */}
                     <div className="flex flex-col h-screen">
-                        {/* Main content area that will scroll */}
                         <div className="flex-1 flex flex-col overflow-hidden">
-                            {/* Preview section */}
                             <div
-                                // className={`transition-all duration-300 ${isConfigOpen ? 'h-[35vh]' : 'h-[70vh]'
                                 className={`transition-all duration-300 ${isConfigOpen ? 'h-[35vh]' : 'h-[35vh]'
                                     }`}
                             >
@@ -1317,7 +1049,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                             </div>
                                             <div>
                                                 <h4 className="font-semibold text-slate-800 text-sm">Selected {activeMenu}</h4>
-                                                {/* <p className="text-xs text-slate-600 capitalize" >{program.toUpperCase()}</p> */}
                                             </div>
                                         </div>
                                         <div className="flex items-center space-x-2">
@@ -1331,13 +1062,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                             <span className="text-xs font-medium text-slate-600">LIVE</span>
                                         </div>
                                     </div>
-                                    {/* Scrolling Message */}
-                                    {/* <div className="bg-yellow-100 border-y border-yellow-300 px-4 py-2">
-                  <p className="text-[10px] text-yellow-800 font-semibold text-center">
-                    Ændringen vises ikke på huen, men bare rolig — det er ikke en fejl 😉 Din hue bliver præcis, som du designer den.
-                    Er du i tvivl? Skriv til os på Instagram eller TikTok, så uploader vi en video af en hue, der ligner din 🎥✨
-                  </p>
-                </div> */}
                                     <div
                                         className="h-[calc(100%-60px)] rounded-b-2xl overflow-hidden"
                                         style={{
@@ -1354,7 +1078,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                     </div>
                                 </div>
                             </div>
-                            {/* Config Toggle Button */}
                             <div className="px-4 py-2 bg-white/80 border-t border-slate-200 flex justify-center flex-shrink-0">
                                 <button
                                     onClick={() => setIsConfigOpen(!isConfigOpen)}
@@ -1373,17 +1096,12 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                     )}
                                 </button>
                             </div>
-                            {/* Config Panel (collapsible + scrollable) */}
-                            {/* Config Panel (collapsible + scrollable) */}
                             <div
-                                // className={`transition-all duration-300 overflow-y-auto ${isConfigOpen ? '' : 'flex-none h-0'
-                                // }`}
                                 className={`transition-all duration-300 overflow-y-auto max-h-[30vh] md:max-h-full ${isConfigOpen ? 'max-h-[30vh]' : 'max-h-0'
                                     }`}
                             >
                                 {isConfigOpen && (
                                     <div className="p-4 space-y-6">
-                                        {/* Keep all components mounted but conditionally show based on activeMenu */}
                                         {activeMenu === 'T-SHIRT' && <Tshirt isAppReady={isAppReady} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} />}
                                         {activeMenu === "SWEATSHIRT" && <SweatShirt isAppReady={isAppReady} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} />}
                                         {activeMenu === "HOODIE" && <Hoodie isAppReady={isAppReady} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} />}
@@ -1393,7 +1111,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                     </div>
                                 )}
                             </div>
-                            {/* Sidebar - Now inside the scrollable area but above footer */}
                             <div className="bg-white/70 border-t border-slate-200 flex-shrink-0">
                                 <div className="px-4 pt-2">
                                     <h3 className="text-xs font-semibold text-center text-slate-600 uppercase tracking-wider mb-3">
@@ -1433,7 +1150,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                 </div>
                             </div>
                         </div>
-                        {/* Fixed Footer - Always visible at bottom */}
                         <div className="border-t border-slate-200 p-4 bg-white/90 backdrop-blur-sm flex-shrink-0">
                             <div className="mb-3 space-y-1">
                                 <div className="flex justify-between text-xs text-slate-500">
@@ -1472,8 +1188,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             </div>
                             <button
                                 onClick={() => setIsInquiryModalOpen(true)}
-                                // disabled={!sizeFlag}
-                                // disabled={!sizeFlag}
                                 className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 shadow-md
         ${sizeFlag
                                         ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 hover:shadow-lg"
@@ -1483,7 +1197,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             </button>
                         </div>
                     </div>
-                    {/* Quote Modal */}
                 </div>
                 <QuoteModal
                     isOpen={isQuoteModalOpen}
@@ -1511,7 +1224,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                     onHistoryUpdated={fetchHistoryData}
                 />
 
-                {/* ── Profile Drawer ── */}
                 <Drawer
                     title={null}
                     placement="right"
@@ -1537,7 +1249,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         }
                     }}
                 >
-                    {/* Header */}
                     <div className="bg-gradient-to-br from-green-600 to-green-700 px-6 py-8 text-center flex-shrink-0">
                         <Avatar size={72} style={{ backgroundColor: '#fff', color: '#16a34a', fontSize: 28, fontWeight: 700 }}>
                             {user?.name?.charAt(0)?.toUpperCase() || 'S'}
@@ -1551,7 +1262,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         )}
                     </div>
 
-                    {/* Tabs */}
                     <div className="flex border-b border-slate-200 flex-shrink-0">
                         {[['info', 'Info'], ['edit', 'Edit'], ['password', 'Password']].map(([key, label]) => (
                             <button key={key} onClick={() => setProfileTab(key)}
@@ -1560,11 +1270,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             </button>
                         ))}
                     </div>
-
-                    {/* Content */}
                     <div className="flex-1 overflow-y-auto px-6 py-5">
-
-                        {/* INFO TAB */}
                         {profileTab === 'info' && (
                             <div className="space-y-4">
                                 {[
@@ -1581,15 +1287,8 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                         <p className="text-sm font-semibold text-slate-700">{val}</p>
                                     </div>
                                 ))}
-                                {/* <div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Consent</p>
-                                    <p className="text-xs text-slate-600">Production: {profileData?.consent_production ? '✅' : '❌'}</p>
-                                    <p className="text-xs text-slate-600">Marketing: {profileData?.consent_marketing ? '✅' : '❌'}</p>
-                                </div> */}
                             </div>
                         )}
-
-                        {/* EDIT TAB */}
                         {profileTab === 'edit' && (
                             <Form form={profileEditForm} layout="vertical" size="middle"
                                 onFinish={async (vals) => {
@@ -1622,12 +1321,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                         ))}
                                     </select>
                                 </Form.Item>
-                                {/* <Form.Item label="Production Consent" name="consent_production" valuePropName="checked">
-                                    <Switch />
-                                </Form.Item>
-                                <Form.Item label="Marketing Consent" name="consent_marketing" valuePropName="checked">
-                                    <Switch />
-                                </Form.Item> */}
                                 <Form.Item>
                                     <button type="submit" disabled={profileSaving}
                                         className="w-full py-2.5 bg-green-600 text-white rounded-xl font-semibold text-sm hover:bg-green-700 transition-all disabled:opacity-50">
@@ -1636,8 +1329,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                 </Form.Item>
                             </Form>
                         )}
-
-                        {/* PASSWORD TAB */}
                         {profileTab === 'password' && (
                             <Form layout="vertical" size="middle"
                                 onFinish={async (vals) => {

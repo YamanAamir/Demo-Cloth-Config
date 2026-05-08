@@ -71,20 +71,12 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
   }, [designColor, backDesigns]);
 
 
-  useEffect(() => {
-    if (getClassId) {
-      console.log("🔍 Fetching back designs for class:", getClassId);
-      fetchBackDesigns({ class_id: getClassId });
-    }
-  }, [getClassId]);
+  // useEffect(() => {
+  //   if (getClassId) {
+  //     fetchBackDesigns({ class_id: getClassId });
+  //   }
+  // }, [getClassId]);
 
-  console.log("🎨 Current backDesigns:", backDesigns);
-  console.log("🎨 Current propBackDesigns:", propBackDesigns);
-  console.log("🎨 Current storeBackDesigns:", storeBackDesigns);
-  console.log("🎨 Current pressureOptions.backDesign:", pressureOptions?.backDesign);
-  console.log("🎨 Current objects.length:", objects.length);
-
-  // Helper: load image via blob URL to avoid canvas taint from CORS
   const loadImageSafe = (src, callback) => {
     fetch(src)
       .then(res => res.blob())
@@ -111,14 +103,10 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
       });
   };
 
-  // Load saved backDesign when pressureOptions change
   useEffect(() => {
-    console.log("🔄 pressureOptions.backDesign changed:", pressureOptions?.backDesign);
     if (pressureOptions?.backDesign) {
       const config = pressureOptions.backDesign;
-      console.log("🎯 Loading back design config:", config);
       loadImageSafe(config.src, (img) => {
-        console.log("✅ Back design image loaded successfully");
         setObjects([{
           id: 'uploadedImage',
           type: 'image',
@@ -131,12 +119,11 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
         setSelectedId('uploadedImage');
       });
     } else {
-      console.log("🚫 No back design in pressureOptions, clearing objects");
       setObjects([]);
       setSelectedId(null);
     }
   }, [pressureOptions]);
- const selectPredefinedDesign = async (url, design) => {
+  const selectPredefinedDesign = async (url, design) => {
     loadImageSafe(url, async (img) => {
       const scale = Math.min(
         (CANVAS_WIDTH * 0.75) / img.width,
@@ -172,22 +159,11 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
   };
   // Separate effect to handle when backDesigns becomes available after initial mount
   useEffect(() => {
-    console.log("🔄 BackDesigns availability changed:", {
-      backDesigns: backDesigns,
-      hasBackDesigns: !!backDesigns,
-      currentObjectsLength: objects.length,
-      currentPressureBackDesign: pressureOptions?.backDesign
-    });
-    
-    // If backDesigns just became available and we don't have any objects yet
     if (backDesigns && objects.length === 0 && !pressureOptions?.backDesign) {
-      console.log("🚀 BackDesigns just became available, triggering auto-load");
       const design = backDesigns;
       const img = `${BASE_URL}${design.file_path.replace(/\\/g, "/")}`;
-      console.log("🎯 Loading design from availability change:", design.name, img);
-      
+
       loadImageSafe(img, async (imgObj) => {
-        console.log("✅ Image loaded from availability change");
         const scale = Math.min(
           (CANVAS_WIDTH * 0.75) / imgObj.width,
           (CANVAS_HEIGHT * 0.65) / imgObj.height
@@ -205,7 +181,6 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
           locked: false,
         };
 
-        console.log("🎨 Setting objects from availability change:", newImageObj);
         setObjects([newImageObj]);
         setSelectedId('uploadedImage');
 
@@ -247,11 +222,7 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    console.log("🎨 Drawing canvas with objects:", objects.length);
-
-    // Draw all objects on main canvas (for diffuse)
     objects.forEach(obj => {
-      console.log("🖼️ Drawing object:", obj.id, obj.type);
       ctx.save();
       ctx.translate(obj.pos.x, obj.pos.y);
       ctx.rotate((obj.angle * Math.PI) / 180);
@@ -261,12 +232,10 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
       ctx.restore();
     });
 
-    // ── Opacity Mask (pure black/white: bright bg → black, dark design → white) ──
     const opacityCanvas = document.createElement("canvas");
     opacityCanvas.width = CANVAS_WIDTH;
     opacityCanvas.height = CANVAS_HEIGHT;
     const octx = opacityCanvas.getContext("2d");
-    // No background fill — transparent canvas, empty areas = black (no print)
     objects.forEach(obj => {
       octx.save();
       octx.translate(obj.pos.x, obj.pos.y);
@@ -280,7 +249,6 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
     for (let i = 0; i < imgData.data.length; i += 4) {
       const brightness = 0.299 * imgData.data[i] + 0.587 * imgData.data[i + 1] + 0.114 * imgData.data[i + 2];
       const alpha = imgData.data[i + 3];
-      // Transparent pixels (empty canvas) → black, bright pixels (white bg) → black, dark pixels (design) → white
       const bw = (alpha < 10 || brightness > 128) ? 0 : 255;
       imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = bw;
       imgData.data[i + 3] = 255;
@@ -295,18 +263,14 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
       opacityBase64 = opacityCanvas.toDataURL("image/png");
     } catch (err) {
       console.warn("Canvas blocked due to CORS:", err);
-      // If blocked, we still want to try to draw handles but onUpdate might fail
     }
 
-    // Send to parent / PlayCanvas
     if (onUpdate && postEx && diffuseBase64 && opacityBase64) {
-      console.log("📤 Sending canvas data to PlayCanvas:", postEx);
       onUpdate({
         canvasBase64: {
           diffuse: postEx + "back_diffuse: " + diffuseBase64,
           opacity: postEx + "back_opacity: " + opacityBase64,
           emissive: postEx + "back_emissive: " + diffuseBase64,
-          // Special field for PlayCanvas to avoid CORS:
           rawData: {
             diffuse: diffuseBase64,
             opacity: opacityBase64,
@@ -317,7 +281,6 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
       });
     }
 
-    // Draw handles for selected object
     const selected = getSelected();
     if (selected) {
       const handles = {
@@ -383,7 +346,7 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
   //   img.src = url;
   // };
 
- 
+
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -583,8 +546,6 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
     setResizing(false);
     setRotating(false);
   };
-  console.log("backDesigns", backDesigns);
-  console.log("canvasRefasasa", canvasRef);
 
   return (
     <div className="p-0 max-w-2xl mx-auto">

@@ -29,11 +29,11 @@ function App() {
   const userObj = getUser ? JSON.parse(getUser) : null;
   const getClassId = userObj?.class_id;
 
-  useEffect(() => {
-    if (getClassId) {
-      fetchBackDesigns({ page: 1, limit: 100, class_id: getClassId });
-    }
-  }, [getClassId]);
+  // useEffect(() => {
+  //   if (getClassId) {
+  //     fetchBackDesigns({ page: 1, limit: 100, class_id: getClassId });
+  //   }
+  // }, [getClassId]);
 
   // Save customizations internally
 
@@ -42,7 +42,6 @@ function App() {
   useEffect(() => {
     const handleMessage = (event) => {
       if (typeof event.data === 'string' && event.data === 'app:ready') {
-        console.log("App Ready signal received");
         setIsAppReady(true);
       }
     };

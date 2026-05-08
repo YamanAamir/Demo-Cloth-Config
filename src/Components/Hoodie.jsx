@@ -31,7 +31,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       setLibCountriesLoading(true);
       try {
         const res = await getCountries();
-        if (res.data?.success) { const list = res.data.data || []; setLibCountries(list); if (list.length > 0) setLibSelectedCountry(list[0]); }
+        if (res.data?.success) { const list = res.data.data || []; setLibCountries(list); }
       } catch (e) { console.error(e); } finally { setLibCountriesLoading(false); }
     };
     fetchLibCountries();
@@ -270,6 +270,8 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
           const x = (CANVAS_WIDTH - w) / 2;
           const y = TEXT_HEIGHT + (FLAG_HEIGHT - h) / 2;
 
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
           ctx.drawImage(img, x, y, w, h);
           finalize();
         })
@@ -372,17 +374,17 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
             {pressureOptions[`${area}Text`] && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-500 font-medium">Text color:</span>
-                {["#ffffff", "#000000"].map((color) => (
+                {[{ val: "#ffffff", label: "White" }, { val: "#000000", label: "Black" }].map(({ val, label }) => (
                   <button
-                    key={color}
+                    key={val}
                     type="button"
-                    onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: color } })}
-                    title={color === "#ffffff" ? "White" : "Black"}
+                    onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: val } })}
+                    title={label}
                     className="w-7 h-7 rounded-full border-2 transition-all"
                     style={{
-                      backgroundColor: color,
-                      borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "#16a34a" : "#d1d5db",
-                      boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "0 0 0 2px #16a34a" : "none",
+                      backgroundColor: val,
+                      borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "#16a34a" : val === "#ffffff" ? "#d1d5db" : "#374151",
+                      boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "0 0 0 2px #16a34a" : "none",
                     }}
                   />
                 ))}
@@ -433,17 +435,17 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
             {pressureOptions[`${area}Text`] && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-500 font-medium">Text color:</span>
-                {["#ffffff", "#000000"].map((color) => (
+                {[{ val: "#ffffff", label: "White" }, { val: "#000000", label: "Black" }].map(({ val, label }) => (
                   <button
-                    key={color}
+                    key={val}
                     type="button"
-                    onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: color } })}
-                    title={color === "#ffffff" ? "White" : "Black"}
+                    onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: val } })}
+                    title={label}
                     className="w-7 h-7 rounded-full border-2 transition-all"
                     style={{
-                      backgroundColor: color,
-                      borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "#16a34a" : "#d1d5db",
-                      boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === color ? "0 0 0 2px #16a34a" : "none",
+                      backgroundColor: val,
+                      borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "#16a34a" : val === "#ffffff" ? "#d1d5db" : "#374151",
+                      boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "0 0 0 2px #16a34a" : "none",
                     }}
                   />
                 ))}

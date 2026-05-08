@@ -32,7 +32,6 @@ apiFormdata.interceptors.request.use(addAuthToken, (error) =>
 
 const handleUnauthorized = (error) => {
     if (error?.response?.status === 401) {
-        console.log("Session expired. Logging out...");
 
         // Clear storage
         localStorage.removeItem("token");
