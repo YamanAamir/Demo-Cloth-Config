@@ -93,10 +93,10 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       while (ctx.measureText(text).width > dimensions.width - 80 && fontSize > 28) { fontSize -= 2; ctx.font = `bold ${fontSize}px Arial`; }
       ctx.fillText(text, dimensions.width / 2, TEXT_HEIGHT / 2);
     }
-    const finalize = () => {
+    const finalize = (logoOpacityBase64 = null) => {
       try {
         const dataURL = canvas.toDataURL("image/png");
-        callback(dataURL);
+        callback(dataURL, logoOpacityBase64);
       } catch (error) {
         console.error("❌ Shorts canvas tainted:", error);
         const fallbackCanvas = document.createElement("canvas");
@@ -169,10 +169,23 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       loadImage(logoSrc).then(img => {
         const ratio = Math.min(dimensions.width / img.width, dimensions.flagHeight / img.height);
         const w = img.width * ratio * 0.9; const h = img.height * ratio * 0.9;
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, TEXT_HEIGHT, dimensions.width, dimensions.flagHeight);
-        ctx.drawImage(img, (dimensions.width - w) / 2, TEXT_HEIGHT + (dimensions.flagHeight - h) / 2, w, h);
-        finalize();
+        const x = (dimensions.width - w) / 2; const y = TEXT_HEIGHT + (dimensions.flagHeight - h) / 2;
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, TEXT_HEIGHT, dimensions.width, dimensions.flagHeight);
+        ctx.drawImage(img, x, y, w, h);
+        // Brightness-inverted opacity
+        const opacityCanvas = document.createElement("canvas");
+        opacityCanvas.width = dimensions.width; opacityCanvas.height = TEXT_HEIGHT + dimensions.flagHeight;
+        const octx = opacityCanvas.getContext("2d");
+        octx.fillStyle = "#fff"; octx.fillRect(0, TEXT_HEIGHT, dimensions.width, dimensions.flagHeight);
+        octx.drawImage(img, x, y, w, h);
+        const imgData = octx.getImageData(0, 0, dimensions.width, TEXT_HEIGHT + dimensions.flagHeight);
+        for (let i = 0; i < imgData.data.length; i += 4) {
+          const br = 0.299 * imgData.data[i] + 0.587 * imgData.data[i + 1] + 0.114 * imgData.data[i + 2];
+          const bw = (imgData.data[i + 3] < 10 || br > 128) ? 0 : 255;
+          imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = bw; imgData.data[i + 3] = 255;
+        }
+        octx.putImageData(imgData, 0, 0);
+        finalize(opacityCanvas.toDataURL("image/png"));
       }).catch((error) => {
         console.error("❌ Shorts logo failed:", logoSrc, error);
         finalize();
@@ -252,8 +265,11 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       const hasLogo = !!(logoPre || logoCustom) && type === "logo";
       const opacity = getEmissiveBase64(text, hasFlag, hasLogo, flagCount);
       ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Short:${area}_opacity: ${opacity}`, "*"); });
-      getDiffuseBase64(flag, logoPre, logoCustom, text, diffuse => {
-        ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Short:${area}_diffuse: ${diffuse}`, "*"); });
+      getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuse, logoOpacityBase) => {
+        ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) {
+          f.contentWindow.postMessage(`Short:${area}_diffuse: ${diffuse}`, "*");
+          if (logoOpacityBase) f.contentWindow.postMessage(`Short:${area}_opacity: ${logoOpacityBase}`, "*");
+        }});
       }, flag2, flagCount, textColor);
     });
   }, [isAppReady, pressureOptions]);

@@ -57,7 +57,7 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       while (ctx.measureText(text).width > CANVAS_WIDTH - 80 && fontSize > 28) { fontSize -= 2; ctx.font = `bold ${fontSize}px Arial`; }
       ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
     }
-    const finalize = () => callback(canvas.toDataURL("image/png"));
+    const finalize = (logoOpacityBase64 = null) => callback(canvas.toDataURL("image/png"), logoOpacityBase64);
     const loadImage = (src) => new Promise((resolve, reject) => {
       const img = new Image(); img.crossOrigin = "anonymous";
       img.onload = () => resolve(img); img.onerror = () => reject(); img.src = src;
@@ -86,10 +86,23 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       loadImage(logoSrc).then(img => {
         const ratio = Math.min(CANVAS_WIDTH / img.width, FLAG_HEIGHT / img.height);
         const w = img.width * ratio * 0.9; const h = img.height * ratio * 0.9;
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
-        ctx.drawImage(img, (CANVAS_WIDTH - w) / 2, TEXT_HEIGHT + (FLAG_HEIGHT - h) / 2, w, h);
-        finalize();
+        const x = (CANVAS_WIDTH - w) / 2; const y = TEXT_HEIGHT + (FLAG_HEIGHT - h) / 2;
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
+        ctx.drawImage(img, x, y, w, h);
+        // Brightness-inverted opacity
+        const opacityCanvas = document.createElement("canvas");
+        opacityCanvas.width = CANVAS_WIDTH; opacityCanvas.height = CANVAS_HEIGHT;
+        const octx = opacityCanvas.getContext("2d");
+        octx.fillStyle = "#fff"; octx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
+        octx.drawImage(img, x, y, w, h);
+        const imgData = octx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        for (let i = 0; i < imgData.data.length; i += 4) {
+          const br = 0.299 * imgData.data[i] + 0.587 * imgData.data[i + 1] + 0.114 * imgData.data[i + 2];
+          const bw = (imgData.data[i + 3] < 10 || br > 128) ? 0 : 255;
+          imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = bw; imgData.data[i + 3] = 255;
+        }
+        octx.putImageData(imgData, 0, 0);
+        finalize(opacityCanvas.toDataURL("image/png"));
       }).catch(finalize);
       return;
     }
@@ -164,8 +177,11 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       const hasLogo = !!(logoPre || logoCustom) && type === "logo";
       const opacity = getEmissiveBase64(text, hasFlag, hasLogo);
       ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`SweatPant:${area}_opacity: ${opacity}`, "*"); });
-      getDiffuseBase64(flag, logoPre, logoCustom, text, diffuse => {
-        ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`SweatPant:${area}_diffuse: ${diffuse}`, "*"); });
+      getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuse, logoOpacityBase) => {
+        ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) {
+          f.contentWindow.postMessage(`SweatPant:${area}_diffuse: ${diffuse}`, "*");
+          if (logoOpacityBase) f.contentWindow.postMessage(`SweatPant:${area}_opacity: ${logoOpacityBase}`, "*");
+        }});
       }, flag2, flagCount, textColor);
     });
   }, [isAppReady, pressureOptions]);

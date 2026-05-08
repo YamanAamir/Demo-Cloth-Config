@@ -305,8 +305,8 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       ctx.fillText(text, CANVAS_WIDTH / 2, y);
     }
 
-    const finalize = () => {
-      callback(canvas.toDataURL("image/png"));
+    const finalize = (logoOpacityBase64 = null) => {
+      callback(canvas.toDataURL("image/png"), logoOpacityBase64);
     };
 
     const loadImage = (src) =>
@@ -392,21 +392,29 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     if (logoSrc) {
       loadImage(logoSrc)
         .then((img) => {
-          const ratio = Math.min(
-            CANVAS_WIDTH / img.width,
-            FLAG_HEIGHT / img.height
-          );
-
+          const ratio = Math.min(CANVAS_WIDTH / img.width, FLAG_HEIGHT / img.height);
           const w = img.width * ratio * 0.9;
           const h = img.height * ratio * 0.9;
-
           const x = (CANVAS_WIDTH - w) / 2;
           const y = TEXT_HEIGHT + (FLAG_HEIGHT - h) / 2;
-
           ctx.fillStyle = "#fff";
           ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
           ctx.drawImage(img, x, y, w, h);
-          finalize();
+
+          // Brightness-inverted opacity (same as back design)
+          const opacityCanvas = document.createElement("canvas");
+          opacityCanvas.width = CANVAS_WIDTH; opacityCanvas.height = CANVAS_HEIGHT;
+          const octx = opacityCanvas.getContext("2d");
+          octx.fillStyle = "#fff"; octx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
+          octx.drawImage(img, x, y, w, h);
+          const imgData = octx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          for (let i = 0; i < imgData.data.length; i += 4) {
+            const br = 0.299 * imgData.data[i] + 0.587 * imgData.data[i + 1] + 0.114 * imgData.data[i + 2];
+            const bw = (imgData.data[i + 3] < 10 || br > 128) ? 0 : 255;
+            imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = bw; imgData.data[i + 3] = 255;
+          }
+          octx.putImageData(imgData, 0, 0);
+          finalize(opacityCanvas.toDataURL("image/png"));
         })
         .catch(finalize);
 
@@ -607,13 +615,13 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       });
 
       // Diffuse — pass flag2, flagCount, textColor
-      getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase) => {
+      getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase, logoOpacityBase) => {
         ["preview-iframe", "preview-iframe2"].forEach((id) => {
           const iframe = document.getElementById(id);
           if (iframe?.contentWindow) {
             const msg = `SweatShirt:${area}_diffuse: ${diffuseBase}`;
             iframe.contentWindow.postMessage(msg, "*");
-
+            if (logoOpacityBase) iframe.contentWindow.postMessage(`SweatShirt:${area}_opacity: ${logoOpacityBase}`, "*");
           }
         });
       }, flag2, flagCount, textColor);

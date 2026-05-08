@@ -149,11 +149,17 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
     } else if (hasFlag || hasLogo) {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
-    }
 
-    ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 40;
-    ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+      // Border only for single flag/logo — not for 2-flag split (would cut edges)
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 40;
+      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+    } else if (text?.trim()) {
+      // Text-only: border to define print area
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 40;
+      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+    }
 
     return canvas.toDataURL("image/png");
   };
@@ -180,7 +186,13 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
     if (type !== "") {
       try {
         const flagDrawn = await drawFlags(ctx, flag, flag2);
-        if (!flagDrawn) await drawLogo(ctx, logoPre, logoCustom);
+        if (!flagDrawn) {
+          const { drawn, opacityBase64 } = await drawLogo(ctx, logoPre, logoCustom);
+          if (drawn && opacityBase64) {
+            callback(canvas.toDataURL("image/png"), opacityBase64);
+            return;
+          }
+        }
       } catch (e) {
         console.error("Render error:", e);
       }
@@ -237,7 +249,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
       }
     }
 
-    if (!logoSrc) return false;
+    if (!logoSrc) return { drawn: false, opacityBase64: null };
 
     const img = await new Promise((res, rej) => {
       const i = new Image();
@@ -250,18 +262,32 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
 
-    const ratio = Math.min(
-      CANVAS_WIDTH / img.width,
-      FLAG_HEIGHT / img.height
-    );
-
+    const ratio = Math.min(CANVAS_WIDTH / img.width, FLAG_HEIGHT / img.height);
     const w = img.width * ratio * 0.8;
     const h = img.height * ratio * 0.8;
     const x = (CANVAS_WIDTH - w) / 2;
     const y = TEXT_HEIGHT + (FLAG_HEIGHT - h) / 2;
     ctx.drawImage(img, x, y, w, h);
 
-    return true;
+    // Generate brightness-inverted opacity canvas (same as back design)
+    const opacityCanvas = document.createElement("canvas");
+    opacityCanvas.width = CANVAS_WIDTH;
+    opacityCanvas.height = CANVAS_HEIGHT;
+    const octx = opacityCanvas.getContext("2d");
+    octx.fillStyle = "#fff";
+    octx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
+    octx.drawImage(img, x, y, w, h);
+    const imgData = octx.getImageData(0, 0, opacityCanvas.width, opacityCanvas.height);
+    for (let i = 0; i < imgData.data.length; i += 4) {
+      const brightness = 0.299 * imgData.data[i] + 0.587 * imgData.data[i + 1] + 0.114 * imgData.data[i + 2];
+      const alpha = imgData.data[i + 3];
+      const bw = (alpha < 10 || brightness > 128) ? 0 : 255;
+      imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = bw;
+      imgData.data[i + 3] = 255;
+    }
+    octx.putImageData(imgData, 0, 0);
+
+    return { drawn: true, opacityBase64: opacityCanvas.toDataURL("image/png") };
   };
 
   const handleFlagSelect = (field) => {
@@ -420,11 +446,15 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
         }
       });
 
-      getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase) => {
+      getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase, logoOpacityBase) => {
         ["preview-iframe", "preview-iframe2"].forEach((id) => {
           const iframe = document.getElementById(id);
           if (iframe?.contentWindow) {
             iframe.contentWindow.postMessage(`T-Shirt:${area}_diffuse: ${diffuseBase}`, "*");
+            // For logo: send brightness-inverted opacity (same as back design)
+            if (logoOpacityBase) {
+              iframe.contentWindow.postMessage(`T-Shirt:${area}_opacity: ${logoOpacityBase}`, "*");
+            }
           }
         });
       }, flag2, textColor, type);
