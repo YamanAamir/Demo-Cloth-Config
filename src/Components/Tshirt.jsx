@@ -404,6 +404,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
   }, [selectedSize, isAppReady]);
 
   const prevPressureOptionsRef = React.useRef({});
+  const renderCounterRef = React.useRef({});
 
   useEffect(() => {
     const areas = ["rightChest", "leftChest", "rightSleeve", "leftSleeve"];
@@ -433,6 +434,10 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
       prevPressureOptionsRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
 
+      // Increment render counter — stale async callbacks will be ignored
+      const currentRender = (renderCounterRef.current[area] || 0) + 1;
+      renderCounterRef.current[area] = currentRender;
+
       const hasFlag = !!flag && type === "flag";
       const hasLogo = !!(logoPre || logoCustom) && type === "logo";
       const hasSecondAsset = flagCount === 2 && !!flag && !!flag2;
@@ -447,11 +452,12 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
       });
 
       getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase, logoOpacityBase) => {
+        // Ignore stale result if a newer render has started for this area
+        if (renderCounterRef.current[area] !== currentRender) return;
         ["preview-iframe", "preview-iframe2"].forEach((id) => {
           const iframe = document.getElementById(id);
           if (iframe?.contentWindow) {
             iframe.contentWindow.postMessage(`T-Shirt:${area}_diffuse: ${diffuseBase}`, "*");
-            // For logo: send brightness-inverted opacity (same as back design)
             if (logoOpacityBase) {
               iframe.contentWindow.postMessage(`T-Shirt:${area}_opacity: ${logoOpacityBase}`, "*");
             }

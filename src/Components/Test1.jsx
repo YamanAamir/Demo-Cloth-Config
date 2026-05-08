@@ -18,7 +18,7 @@ const rotateIcon = new Image();
 rotateIcon.src = rotateIconImg;
 
 const HANDLE_SIZE = 28;
-const CANVAS_WIDTH = 400;
+const CANVAS_WIDTH = 400; 
 const CANVAS_HEIGHT = 500;
 
 export default function Test1({ pressureOptions, onUpdate, postEx, isAppReady }) {

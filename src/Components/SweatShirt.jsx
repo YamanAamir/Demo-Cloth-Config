@@ -568,6 +568,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
 
   // Ref to track previous options to prevent unnecessary updates
   const prevPressureOptionsRef = React.useRef({});
+  const renderCounterRef = React.useRef({});
 
   useEffect(() => {
     const areas = ["rightChest", "leftChest", "rightSleeve", "leftSleeve"];
@@ -598,6 +599,8 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
 
       // Update the ref for this area
       prevPressureOptionsRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
+      const currentRender = (renderCounterRef.current[area] || 0) + 1;
+      renderCounterRef.current[area] = currentRender;
 
       const hasText = text.length > 0;
       const hasFlag = !!flag && type === "flag";
@@ -610,12 +613,12 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
         if (iframe?.contentWindow) {
           const msg = `SweatShirt:${area}_opacity: ${opacity}`;
           iframe.contentWindow.postMessage(msg, "*");
-
         }
       });
 
       // Diffuse — pass flag2, flagCount, textColor
       getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase, logoOpacityBase) => {
+        if (renderCounterRef.current[area] !== currentRender) return;
         ["preview-iframe", "preview-iframe2"].forEach((id) => {
           const iframe = document.getElementById(id);
           if (iframe?.contentWindow) {

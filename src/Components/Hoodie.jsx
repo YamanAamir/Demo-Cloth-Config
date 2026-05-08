@@ -339,6 +339,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   }, [selectedSize, isAppReady]);
 
   const prevRef = React.useRef({});
+  const renderCounterRef = React.useRef({});
   useEffect(() => {
     ["rightChest", "leftChest", "bottomChest", "rightSleeve", "leftSleeve"].forEach(area => {
       const text = pressureOptions[`${area}Text`]?.trim() || "", flag = pressureOptions[`${area}Flag`] || "", flag2 = pressureOptions[`${area}Flag2`] || "", flagCount = pressureOptions[`${area}FlagCount`] || 1, logoPre = pressureOptions[`${area}LogoPredefined`] || "", logoCustom = pressureOptions[`${area}LogoCustom`] || "", type = pressureOptions[`${area}Type`] || "";
@@ -346,12 +347,15 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       const p = prevRef.current[area] || {};
       if (p.text === text && p.flag === flag && p.flag2 === flag2 && p.flagCount === flagCount && p.logoPre === logoPre && p.logoCustom === logoCustom && p.type === type && p.textColor === textColor) return;
       prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
+      const currentRender = (renderCounterRef.current[area] || 0) + 1;
+      renderCounterRef.current[area] = currentRender;
       const hasFlag = !!flag && type === "flag", hasLogo = !!(logoPre || logoCustom) && type === "logo";
       const hasSecondAsset = !!flag2;
 
       const opacity = getEmissiveBase64(text, hasFlag, hasLogo, hasSecondAsset);
       ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Hoodie:${area}_opacity: ${opacity}`, "*"); });
       getDiffuseBase64(flag, logoPre, logoCustom, text, (d, logoOpacityBase) => {
+        if (renderCounterRef.current[area] !== currentRender) return;
         ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) {
           f.contentWindow.postMessage(`Hoodie:${area}_diffuse: ${d}`, "*");
           if (logoOpacityBase) f.contentWindow.postMessage(`Hoodie:${area}_opacity: ${logoOpacityBase}`, "*");
