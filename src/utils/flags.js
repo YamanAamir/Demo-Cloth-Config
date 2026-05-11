@@ -93,26 +93,26 @@ export const SPECIAL_FLAGS = [
     flag: "https://flagcdn.com/w160/ps.png",
     flagHD: "https://flagcdn.com/w320/ps.png",
   },
-  {
-    name: "Kurdistan",
-    flag: "https://flagcdn.com/w160/iq.png", // fallback
-    flagHD: "https://flagcdn.com/w320/iq.png",
-  },
-  {
-    name: "Tamil Eelam",
-    flag: "https://flagcdn.com/w160/in.png",
-    flagHD: "https://flagcdn.com/w320/in.png",
-  },
-  {
-    name: "Kashmir",
-    flag: "https://flagcdn.com/w160/pk.png",
-    flagHD: "https://flagcdn.com/w320/pk.png",
-  },
-  {
-    name: "Catalonia",
-    flag: "https://flagcdn.com/w160/es.png",
-    flagHD: "https://flagcdn.com/w320/es.png",
-  },
+  // {
+  //   name: "Kurdistan",
+  //   flag: "https://flagcdn.com/w160/iq.png", // fallback
+  //   flagHD: "https://flagcdn.com/w320/iq.png",
+  // },
+  // {
+  //   name: "Tamil Eelam",
+  //   flag: "https://flagcdn.com/w160/in.png",
+  //   flagHD: "https://flagcdn.com/w320/in.png",
+  // },
+  // {
+  //   name: "Kashmir",
+  //   flag: "https://flagcdn.com/w160/pk.png",
+  //   flagHD: "https://flagcdn.com/w320/pk.png",
+  // },
+  // {
+  //   name: "Catalonia",
+  //   flag: "https://flagcdn.com/w160/es.png",
+  //   flagHD: "https://flagcdn.com/w320/es.png",
+  // },
   {
     name: "Scotland",
     flag: "https://flagcdn.com/w160/gb-sct.png",
@@ -133,16 +133,21 @@ export const SPECIAL_FLAGS = [
     flag: "https://flagcdn.com/w160/gl.png",
     flagHD: "https://flagcdn.com/w320/gl.png",
   },
+  // {
+  //   name: "EU",
+  //   flag: "https://flagcdn.com/w160/eu.png",
+  //   flagHD: "https://flagcdn.com/w320/eu.png",
+  // },
   {
     name: "EU",
-    flag: "https://flagcdn.com/w160/eu.png",
-    flagHD: "https://flagcdn.com/w320/eu.png",
+    flag: "flags/eu.png",
+    flagHD: "flags/eu.png",
   },
-  {
-    name: "Rainbow Pride",
-    flag: "https://flagcdn.com/w160/us.png", // fallback
-    flagHD: "https://flagcdn.com/w320/us.png",
-  },
+  // {
+  //   name: "Rainbow Pride",
+  //   flag: "https://flagcdn.com/w160/us.png", // fallback
+  //   flagHD: "https://flagcdn.com/w320/us.png",
+  // },
 ];
 
 // Combined list

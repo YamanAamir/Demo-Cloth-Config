@@ -102,7 +102,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
   const CANVAS_HEIGHT = TEXT_HEIGHT + FLAG_HEIGHT;
   const DIVIDER_W = 2;
   const BOX_W = (CANVAS_WIDTH - DIVIDER_W) / 2;
-  const BOX_H = Math.round(CANVAS_HEIGHT * 0.4);
+  const BOX_H = Math.round(FLAG_HEIGHT * 0.45);
   const BOX_Y = TEXT_HEIGHT + (FLAG_HEIGHT - BOX_H) / 2;
   const drawCover = (ctx, img, x, y, w, h) => {
     const scale = Math.max(w / img.width, h / img.height);
@@ -230,9 +230,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
     if (flag && flagImages[flag]) {
       const img = await loadImage(flagImages[flag]);
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
-      drawCover(ctx, img, 0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
+      ctx.drawImage(img, 0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
       return true;
     }
 
