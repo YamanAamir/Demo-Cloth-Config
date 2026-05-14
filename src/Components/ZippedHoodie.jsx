@@ -7,6 +7,10 @@ import { ALL_FLAGS } from "../utils/flags";
 import { X, Image as ImageIcon, Trash2, Globe, Loader2, CheckCircle, Flag } from "lucide-react";
 import { getCountries, getLibraryDesigns } from "../api/api";
 import UploadRequestModal from "./UploadRequestModal";
+import { TRANSLATE_MAP } from "../Default/translateMap";
+import { postToPreview } from "../utils/postMessage";
+
+const t = (key) => TRANSLATE_MAP[key] || key;
 
 const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange }) => {
   const [internalTab, setInternalTab] = useState("size");
@@ -25,6 +29,8 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
 
   // Upload own design state
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showAllCountries, setShowAllCountries] = useState(false);
+  const COUNTRIES_PREVIEW_COUNT = 9;
 
   useEffect(() => {
     const fetchLibCountries = async () => {
@@ -299,7 +305,12 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
     finalize();
   };
 
-  const handleFlagSelect = (field) => { setCurrentField(field); setShowFlagModal(true); };
+  const handleFlagSelect = (field) => {
+    setCurrentField(field);
+    const area = field.replace("Flag", "").replace("LogoPredefined", "");
+    postToPreview(area);
+    setShowFlagModal(true);
+  };
   const selectFlag = (countryName) => { onUpdate({ pressureOptions: { ...pressureOptions, [currentField]: countryName } }); setShowFlagModal(false); };
   const selectLogo = (logoName, logoId) => { onUpdate({ pressureOptions: { ...pressureOptions, [currentField]: logoName, selectedLogoId: logoId } }); setShowFlagModal(false); };
   const clearField = (field) => { onUpdate({ pressureOptions: { ...pressureOptions, [field]: "" } }); };
@@ -307,6 +318,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
   const getLogoDisplay = (logoName) => logoName || "";
 
   const handleTypeChange = (area, type) => {
+    postToPreview(area);
     onUpdate({
       pressureOptions: {
         ...pressureOptions,
@@ -441,7 +453,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
               }}
               className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`] === tab || (tab === "text" && !pressureOptions[`${area}Type`]) ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
             >
-              {tab === "text" ? "Text" : tab === "flag" ? "Flag" : "Logo"}
+              {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
               {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
             </button>
           ))}
@@ -518,7 +530,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
               }}
               className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`] === tab || (tab === "text" && !pressureOptions[`${area}Type`]) ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
             >
-              {tab === "text" ? "Text" : tab === "flag" ? "Flag" : "Logo"}
+              {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
               {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
             </button>
           ))}
@@ -569,7 +581,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
               </div>
             </div>
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">{Number(pressureOptions[`${area}FlagCount`] || 1) === 2 ? "Flag 1 (50% size)" : "Flag"}</label>
+              <label className="text-xs text-gray-500 mb-1 block">{Number(pressureOptions[`${area}FlagCount`] || 1) === 2 ? t("Flag 1 (50% size)") : t("Flag")}</label>
               <div className="flex flex-wrap gap-2">
                 <input type="text" value={getFlagDisplay(pressureOptions[`${area}Flag`])} readOnly placeholder="Select flag"
                   className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
@@ -581,7 +593,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
             </div>
             {Number(pressureOptions[`${area}FlagCount`] || 1) === 2 && (
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Flag 2 (50% size)</label>
+                <label className="text-xs text-gray-500 mb-1 block">{t("Flag 2 (50% size)")}</label>
                 <div className="flex flex-wrap gap-2">
                   <input type="text" value={getFlagDisplay(pressureOptions[`${area}Flag2`] || "")} readOnly placeholder="Select flag"
                     className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
@@ -662,22 +674,33 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
               </div>
             ) : (
               <div className="mb-3">
-                <div className="max-h-36 overflow-y-auto pr-1 custom-scrollbar-premium"><div className="grid grid-cols-3 gap-1.5">
-                  {libCountries.map(c => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => setLibSelectedCountry(c)}
-                      className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center transition-all border truncate ${
-                        libSelectedCountry?.id === c.id
-                          ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-green-400 hover:text-green-700'
-                      }`}
-                    >
-                      {c.name}
-                    </button>
-                  ))}
-                </div></div>
+                <div className={`${showAllCountries ? 'max-h-48 overflow-y-auto' : ''} pr-1 custom-scrollbar-premium`}>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {(showAllCountries ? libCountries : libCountries.slice(0, COUNTRIES_PREVIEW_COUNT)).map(c => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => setLibSelectedCountry(c)}
+                        className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center transition-all border truncate ${
+                          libSelectedCountry?.id === c.id
+                            ? 'bg-green-600 text-white border-green-600 shadow-sm'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-green-400 hover:text-green-700'
+                        }`}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {libCountries.length > COUNTRIES_PREVIEW_COUNT && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllCountries(v => !v)}
+                    className="mt-2 text-xs font-semibold text-green-600 hover:text-green-700 transition-colors"
+                  >
+                    {showAllCountries ? t('Show Less') : `${t('View More Countries')} (${libCountries.length - COUNTRIES_PREVIEW_COUNT} ${t('more')})`}
+                  </button>
+                )}
               </div>
             )}
             {libDesignsLoading ? (
@@ -690,7 +713,8 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
                   const rawPath = (design.file_path || design.image_path || design.thumbnail || "").replace(/\\/g, "/"); const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
                   const isSelected = libSelectedDesign?.id === design.id;
                   return (
-                    <button key={design.id} onClick={() => { setLibSelectedDesign(design); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } }); }}
+                    <button key={design.id} onClick={() => { setLibSelectedDesign(design); 
+                        postToPreview(`backDesign`); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } }); }}
                       className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all bg-white ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}>
                       <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
                       {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><CheckCircle className="w-3.5 h-3.5 text-white" /></div>}
@@ -780,8 +804,8 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
                   {currentField.includes("Logo") ? <ImageIcon className="w-6 h-6 text-green-600" /> : <Flag className="w-6 h-6 text-green-600" />}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 leading-none">{currentField.includes("Logo") ? "Select a Logo" : "Choose a Flag"}</h2>
-                  <p className="text-slate-500 text-sm mt-1.5 font-medium">{currentField.includes("Logo") ? "Pick a symbol for your design" : "Represent your country"}</p>
+                  <h2 className="text-2xl font-bold text-slate-900 leading-none">{currentField.includes("Logo") ? t("Select a Logo") : t("Choose a Flag")}</h2>
+                  <p className="text-slate-500 text-sm mt-1.5 font-medium">{currentField.includes("Logo") ? t("Pick a symbol for your design") : t("Represent your country")}</p>
                 </div>
               </div>
               <button onClick={() => setShowFlagModal(false)} className="p-3 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all duration-200 group">
@@ -808,7 +832,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
                   {(!logos || logos.length === 0) && (
                     <div className="col-span-full py-20 text-center">
                       <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><ImageIcon className="w-8 h-8 text-slate-400" /></div>
-                      <p className="text-slate-400 font-bold text-lg">No logos found</p>
+                      <p className="text-slate-400 font-bold text-lg">{t("No logos found")}</p>
                       <p className="text-slate-400/60 text-sm">Logos assigned to your class will appear here.</p>
                     </div>
                   )}
@@ -819,7 +843,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
                     <button key={country.name} onClick={() => selectFlag(country.name)}
                       className="group flex flex-col items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 hover:border-green-300 hover:shadow-lg hover:shadow-green-900/5 hover:-translate-y-1 transition-all duration-300"
                     >
-                      <div className="relative w-16 h-12 rounded-lg overflow-hidden shadow-sm border border-slate-100 group-hover:ring-2 group-hover:ring-slate-100 group-hover:ring-green-50 transition-all duration-300">
+                      <div className="relative w-16 h-12 rounded-lg overflow-hidden shadow-sm border border-slate-100 group-hover:ring-2 group-hover:ring-green-50 transition-all duration-300">
                         <img src={country.flag} alt={country.name} className="w-full h-full object-cover" />
                       </div>
                       <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-900 leading-tight uppercase tracking-wider text-center">{country.name}</span>
@@ -829,7 +853,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
               )}
             </div>
             <div className="px-8 py-5 border-t border-slate-50 bg-white/50 sticky bottom-0 z-10">
-              <p className="text-xs text-slate-400 font-medium uppercase tracking-widest text-center">Choose an asset to customize your placement</p>
+              <p className="text-xs text-slate-400 font-medium uppercase tracking-widest text-center">{t("Choose an asset to customize your placement")}</p>
               <div className="flex justify-center items-center gap-2 mt-2">
                 <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
               </div>

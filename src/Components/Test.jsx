@@ -78,7 +78,7 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
   // }, [getClassId]);
 
   const loadImageSafe = (src, callback) => {
-    fetch(src)
+    fetch(src, { mode: 'cors' })
       .then(res => res.blob())
       .then(blob => {
         const blobUrl = URL.createObjectURL(blob);
@@ -88,17 +88,19 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
           URL.revokeObjectURL(blobUrl);
         };
         img.onerror = () => {
-          // fallback: try direct load without crossOrigin
           const img2 = new Image();
+          img2.crossOrigin = "anonymous";
           img2.onload = () => callback(img2);
+          img2.onerror = () => callback(null);
           img2.src = src;
         };
         img.src = blobUrl;
       })
       .catch(() => {
-        // fallback: direct load
         const img = new Image();
+        img.crossOrigin = "anonymous";
         img.onload = () => callback(img);
+        img.onerror = () => callback(null);
         img.src = src;
       });
   };
@@ -107,6 +109,7 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
     if (pressureOptions?.backDesign) {
       const config = pressureOptions.backDesign;
       loadImageSafe(config.src, (img) => {
+        if (!img) return;
         setObjects([{
           id: 'uploadedImage',
           type: 'image',
@@ -245,15 +248,19 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
       }
       octx.restore();
     });
-    const imgData = octx.getImageData(0, 0, opacityCanvas.width, opacityCanvas.height);
-    for (let i = 0; i < imgData.data.length; i += 4) {
-      const brightness = 0.299 * imgData.data[i] + 0.587 * imgData.data[i + 1] + 0.114 * imgData.data[i + 2];
-      const alpha = imgData.data[i + 3];
-      const bw = (alpha < 10 || brightness > 128) ? 0 : 255;
-      imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = bw;
-      imgData.data[i + 3] = 255;
+    try {
+      const imgData = octx.getImageData(0, 0, opacityCanvas.width, opacityCanvas.height);
+      for (let i = 0; i < imgData.data.length; i += 4) {
+        const brightness = 0.299 * imgData.data[i] + 0.587 * imgData.data[i + 1] + 0.114 * imgData.data[i + 2];
+        const alpha = imgData.data[i + 3];
+        const bw = (alpha < 10 || brightness > 128) ? 0 : 255;
+        imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = bw;
+        imgData.data[i + 3] = 255;
+      }
+      octx.putImageData(imgData, 0, 0);
+    } catch (e) {
+      console.warn("getImageData blocked (CORS taint) — opacity map skipped:", e.message);
     }
-    octx.putImageData(imgData, 0, 0);
 
     let diffuseBase64 = "";
     let opacityBase64 = "";

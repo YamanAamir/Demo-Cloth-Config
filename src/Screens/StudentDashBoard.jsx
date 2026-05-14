@@ -956,7 +956,24 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                 </div>
                             </div>
                             <div className="flex-1 bg-white/50 secondDiv overflow-y-auto custom-scrollbar-premium" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                                <div className="px-6 pt-6 space-y-8">
+                                {/* Tab Navigation — top */}
+                                <div className="px-6 pt-4 pb-2">
+                                    <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-white">
+                                        <button
+                                            onClick={() => setGarmentTab('size')}
+                                            className={`flex-1 py-2.5 text-sm font-semibold transition-all ${garmentTab === 'size' ? 'bg-green-700 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                                        >
+                                            Color &amp; Size
+                                        </button>
+                                        <button
+                                            onClick={() => setGarmentTab('pressure')}
+                                            className={`flex-1 py-2.5 text-sm font-semibold transition-all ${garmentTab === 'pressure' ? 'bg-green-700 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                                        >
+                                            Design
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="px-6 pt-2 space-y-8">
 
                                     {activeMenu === 'T-SHIRT' && <Tshirt key={`tshirt-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} />}
                                     {activeMenu === "SWEATSHIRT" && <SweatShirt key={`sweatshirt-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} />}
@@ -969,28 +986,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         </div>
                         <div className=" border-slate-200 p-6 bg-white/50 backdrop-blur-sm">
                             <div className="flex gap-2">
-                                {garmentTab === 'size' && (
-                                    <button
-                                        onClick={() => setGarmentTab('pressure')}
-                                        className="flex-1 py-3 rounded-xl font-semibold bg-gray-600 text-white hover:bg-gray-700 transition-all duration-200 shadow-md flex items-center justify-center gap-2 text-sm"
-                                    >
-                                        Next — Design
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </button>
-                                )}
-                                {garmentTab === 'pressure' && (
-                                    <button
-                                        onClick={() => setGarmentTab('size')}
-                                        className="flex-1 py-3 rounded-xl font-semibold bg-gray-600 text-white hover:bg-gray-700 transition-all duration-200 shadow-md flex items-center justify-center gap-2 text-sm"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                                        </svg>
-                                        Back
-                                    </button>
-                                )}
                                 <button
                                     onClick={() => setIsInquiryModalOpen(true)}
                                     disabled={!sizeFlag}

@@ -5,6 +5,10 @@ import Test1 from "./Test1";
 import { BASE_URL } from "../utils/const";
 import { ALL_FLAGS } from "../utils/flags";
 import { X, Image as ImageIcon, Trash2, Flag } from "lucide-react";
+import { TRANSLATE_MAP } from "../Default/translateMap";
+import { postToPreview } from "../utils/postMessage";
+
+const t = (key) => TRANSLATE_MAP[key] || key;
 
 const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange }) => {
   const [internalTab, setInternalTab] = useState("size");
@@ -195,7 +199,12 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
     finalize();
   };
 
-  const handleFlagSelect = (field) => { setCurrentField(field); setShowFlagModal(true); };
+  const handleFlagSelect = (field) => {
+    setCurrentField(field);
+    const area = field.replace("Flag", "").replace("LogoPredefined", "");
+    postToPreview(area);
+    setShowFlagModal(true);
+  };
   const selectFlag = (countryName) => { onUpdate({ pressureOptions: { ...pressureOptions, [currentField]: countryName } }); setShowFlagModal(false); };
   const selectLogo = (logoName, logoId) => { onUpdate({ pressureOptions: { ...pressureOptions, [currentField]: logoName, selectedLogoId: logoId } }); setShowFlagModal(false); };
   const clearField = (field) => { onUpdate({ pressureOptions: { ...pressureOptions, [field]: "" } }); };
@@ -203,6 +212,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   const getLogoDisplay = (n) => n || "";
 
   const handleTypeChange = (area, type) => {
+    postToPreview(area);
     onUpdate({
       pressureOptions: {
         ...pressureOptions,
@@ -313,7 +323,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
                 }}
                 className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`]?.trim() === tab || (tab === "text" && (!pressureOptions[`${area}Type`] || pressureOptions[`${area}Type`]?.trim() === "")) ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
               >
-                {tab === "text" ? "Text" : tab === "flag" ? "Flag" : "Logo"}
+                {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
                 {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
               </button>
             ))}
@@ -463,8 +473,8 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
                   {currentField.includes("Logo") ? <ImageIcon className="w-6 h-6 text-green-600" /> : <Flag className="w-6 h-6 text-green-600" />}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 leading-none">{currentField.includes("Logo") ? "Select a Logo" : "Choose a Flag"}</h2>
-                  <p className="text-slate-500 text-sm mt-1.5 font-medium">{currentField.includes("Logo") ? "Pick a symbol for your design" : "Represent your country"}</p>
+                  <h2 className="text-2xl font-bold text-slate-900 leading-none">{currentField.includes("Logo") ? t("Select a Logo") : t("Choose a Flag")}</h2>
+                  <p className="text-slate-500 text-sm mt-1.5 font-medium">{currentField.includes("Logo") ? t("Pick a symbol for your design") : t("Represent your country")}</p>
                 </div>
               </div>
               <button onClick={() => setShowFlagModal(false)} className="p-3 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all duration-200 group">
@@ -487,7 +497,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
                   {(!logos || logos.length === 0) && (
                     <div className="col-span-full py-20 text-center">
                       <ImageIcon className="w-8 h-8 text-slate-400 mx-auto mb-4" />
-                      <p className="text-slate-400 font-bold">No logos found</p>
+                      <p className="text-slate-400 font-bold">{t("No logos found")}</p>
                     </div>
                   )}
                 </div>
@@ -508,7 +518,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
             </div>
             <div className="px-8 py-5 border-t border-slate-50 bg-white flex justify-center items-center gap-2">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Choose an asset to customize your placement</p>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{t("Choose an asset to customize your placement")}</p>
             </div>
           </div>
         </div>

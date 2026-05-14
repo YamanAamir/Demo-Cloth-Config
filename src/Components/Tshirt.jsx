@@ -4,9 +4,13 @@ import plus from "../assets/menuimages/shirt-plus.png";
 import Test from "./Test";
 import { BASE_URL } from "../utils/const";
 import { ALL_FLAGS } from "../utils/flags";
-import { X,  Image as ImageIcon, Trash2, Globe, Loader2, CheckCircle, Flag } from "lucide-react";
+import { X, Image as ImageIcon, Trash2, Globe, Loader2, CheckCircle, Flag } from "lucide-react";
 import { getCountries, getLibraryDesigns } from "../api/api";
+import { TRANSLATE_MAP } from "../Default/translateMap";
+
+const t = (key) => TRANSLATE_MAP[key] || key;
 import UploadRequestModal from "./UploadRequestModal";
+import { postToPreview } from "../utils/postMessage";
 
 
 const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry, activeTab: externalTab, onTabChange }) => {
@@ -26,6 +30,8 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
   // Upload own design state
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showAllCountries, setShowAllCountries] = useState(false);
+  const COUNTRIES_PREVIEW_COUNT = 9;
 
   // Upload own design state
   const [classSignedUp, setClassSignedUp] = useState(null); // null=unknown, true, false
@@ -290,6 +296,12 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
   const handleFlagSelect = (field) => {
     setCurrentField(field);
+
+    const area = field
+      .replace("Flag", "")
+      .replace("LogoPredefined", "");
+
+    postToPreview(area);
     setShowFlagModal(true);
   };
 
@@ -350,6 +362,8 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
   const getLogoDisplay = (logoName) => logoName || "";
 
   const handleTypeChange = (area, type) => {
+
+    postToPreview(area);
     onUpdate({
       pressureOptions: {
         ...pressureOptions,
@@ -559,22 +573,32 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
               </div>
             ) : (
               <div className="mb-3">
-                <div className="max-h-36 overflow-y-auto pr-1 custom-scrollbar-premium"><div className="grid grid-cols-3 gap-1.5">
-                  {libCountries.map(c => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => setLibSelectedCountry(c)}
-                      className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center transition-all border truncate ${
-                        libSelectedCountry?.id === c.id
+                <div className={`${showAllCountries ? 'max-h-48 overflow-y-auto' : ''} pr-1 custom-scrollbar-premium`}>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {(showAllCountries ? libCountries : libCountries.slice(0, COUNTRIES_PREVIEW_COUNT)).map(c => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => setLibSelectedCountry(c)}
+                        className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center transition-all border truncate ${libSelectedCountry?.id === c.id
                           ? 'bg-green-600 text-white border-green-600 shadow-sm'
                           : 'bg-white text-gray-600 border-gray-200 hover:border-green-400 hover:text-green-700'
-                      }`}
-                    >
-                      {c.name}
-                    </button>
-                  ))}
-                </div></div>
+                          }`}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {libCountries.length > COUNTRIES_PREVIEW_COUNT && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllCountries(v => !v)}
+                    className="mt-2 text-xs font-semibold text-green-600 hover:text-green-700 transition-colors"
+                  >
+                    {showAllCountries ? t('Show Less') : `${t('View More Countries')} (${libCountries.length - COUNTRIES_PREVIEW_COUNT} ${t('more')})`}
+                  </button>
+                )}
               </div>
             )}
 
@@ -608,10 +632,10 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                             }
                           }
                         });
+                        postToPreview(`backDesign`);
                       }}
-                      className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all bg-white ${
-                        isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'
-                      }`}
+                      className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all bg-white ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'
+                        }`}
                     >
                       <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
                       {isSelected && (
@@ -674,7 +698,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                           : "bg-white text-gray-500 hover:bg-gray-50"
                           }`}
                       >
-                        {tab === "text" ? "Text" : tab === "flag" ? "Flag" : "Logo"}
+                        {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
                         {(tab === "text" && pressureOptions[`${area}Text`]) ||
                           (tab === "flag" && pressureOptions[`${area}Flag`]) ||
                           (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
@@ -685,9 +709,23 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                   {!pressureOptions[`${area}Type`] && (
                     <div className="space-y-2">
                       <div className="flex flex-wrap gap-2">
-                        <input type="text" value={pressureOptions[`${area}Text`]}
-                          onChange={(e) => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
-                          placeholder="Enter text" maxLength={25}
+                        <input
+                          type="text"
+                          value={pressureOptions[`${area}Text`] || ""}
+                          onChange={(e) => {
+                            onUpdate({
+                              pressureOptions: {
+                                ...pressureOptions,
+                                [`${area}Text`]: e.target.value
+                              }
+                            });
+
+                            setTimeout(() => {
+                              postToPreview(area);
+                            }, 0);
+                          }}
+                          placeholder="Enter text"
+                          maxLength={25}
                           className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
                         />
                         {pressureOptions[`${area}Text`] && (
@@ -776,7 +814,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                           ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"
                           }`}
                       >
-                        {tab === "text" ? "Text" : tab === "flag" ? "Flag" : "Logo"}
+                        {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
                         {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
                       </button>
                     ))}
@@ -784,9 +822,23 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                   {!pressureOptions[`${area}Type`] && (
                     <div className="space-y-2">
                       <div className="flex flex-wrap gap-2">
-                        <input type="text" value={pressureOptions[`${area}Text`]}
-                          onChange={(e) => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
-                          placeholder="Enter text" maxLength={25}
+                        <input
+                          type="text"
+                          value={pressureOptions[`${area}Text`] || ""}
+                          onChange={(e) => {
+                            onUpdate({
+                              pressureOptions: {
+                                ...pressureOptions,
+                                [`${area}Text`]: e.target.value
+                              }
+                            });
+
+                            setTimeout(() => {
+                              postToPreview(area);
+                            }, 0);
+                          }}
+                          placeholder="Enter text"
+                          maxLength={25}
                           className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
                         />
                         {pressureOptions[`${area}Text`] && (
@@ -844,7 +896,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                       {/* Flag 1 */}
                       <div>
                         <label className="text-xs text-gray-500 mb-1 block">
-                          {(Number(pressureOptions[`${area}FlagCount`] || 1) === 2) ? "Flag 1 (50% size)" : "Flag"}
+                          {(Number(pressureOptions[`${area}FlagCount`] || 1) === 2) ? t("Flag 1 (50% size)") : t("Flag")}
                         </label>
                         <div className="flex flex-wrap gap-2">
                           <input type="text" value={getFlagDisplay(pressureOptions[`${area}Flag`])} readOnly placeholder="Select flag"
@@ -859,7 +911,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                       {/* Flag 2 — only if count = 2 */}
                       {(Number(pressureOptions[`${area}FlagCount`] || 1) === 2) && (
                         <div>
-                          <label className="text-xs text-gray-500 mb-1 block">Flag 2 (50% size)</label>
+                          <label className="text-xs text-gray-500 mb-1 block">{t("Flag 2 (50% size)")}</label>
                           <div className="flex flex-wrap gap-2">
                             <input type="text" value={getFlagDisplay(pressureOptions[`${area}Flag2`] || "")} readOnly placeholder="Select flag"
                               className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
@@ -888,7 +940,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
           </div>
 
           {/* Back — absolute bottom */}
-            {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
+          {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
               <button
                 onClick={() => setActiveTab("size")}
                 className="w-full py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition text-sm flex items-center justify-center gap-2"
@@ -935,10 +987,10 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900 leading-none">
-                    {currentField.includes("Logo") ? "Select a Logo" : "Choose a Flag"}
+                    {currentField.includes("Logo") ? t("Select a Logo") : t("Choose a Flag")}
                   </h2>
                   <p className="text-slate-500 text-sm mt-1.5 font-medium">
-                    {currentField.includes("Logo") ? "Pick a symbol for your design" : "Represent your country"}
+                    {currentField.includes("Logo") ? t("Pick a symbol for your design") : t("Represent your country")}
                   </p>
                 </div>
               </div>
@@ -984,7 +1036,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                       <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                         <ImageIcon className="w-8 h-8 text-slate-400" />
                       </div>
-                      <p className="text-slate-400 font-bold text-lg">No logos found</p>
+                      <p className="text-slate-400 font-bold text-lg">{t("No logos found")}</p>
                       <p className="text-slate-400/60 text-sm">Logos assigned to your class will appear here.</p>
                     </div>
                   )}
@@ -1017,7 +1069,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
             <div className="px-8 py-5 border-t border-slate-50 bg-white flex justify-center items-center gap-2">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
               <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
-                Choose an asset to customize your placement
+                {t("Choose an asset to customize your placement")}
               </p>
             </div>
           </div>
