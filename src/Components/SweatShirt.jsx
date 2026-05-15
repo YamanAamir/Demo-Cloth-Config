@@ -435,7 +435,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
   const handleFlagSelect = (field) => {
     setCurrentField(field);
     const area = field.replace("Flag", "").replace("LogoPredefined", "");
-    postToPreview(area);
+    postToPreview(`sshirt ${area}`);
     setShowFlagModal(true);
   };
 
@@ -498,7 +498,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
   const getLogoDisplay = (logoName) => logoName || "";
 
   const handleTypeChange = (area, type) => {
-    postToPreview(area);
+    postToPreview(`sshirt ${area}`);
     onUpdate({
       pressureOptions: {
         ...pressureOptions,
@@ -798,7 +798,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                     <button key={design.id} onClick={() => {
                       setLibSelectedDesign(design);
                       onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } });
-                      postToPreview(`backDesign`);
+                      postToPreview(`sshirt backDesign`);
                     }}
                       className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all bg-white ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}>
                       <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />

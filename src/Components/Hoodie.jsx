@@ -293,7 +293,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
 
       return; // ✅ important
     }
-    
+
     // ---------- EMPTY ----------
     finalize();
   };
@@ -301,7 +301,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   const handleFlagSelect = (field) => {
     setCurrentField(field);
     const area = field.replace("Flag", "").replace("LogoPredefined", "");
-    postToPreview(area);
+    postToPreview(`hoodie ${area}`);
     setShowFlagModal(true);
   };
   const selectFlag = (name) => { onUpdate({ pressureOptions: { ...pressureOptions, [currentField]: name } }); setShowFlagModal(false); };
@@ -311,7 +311,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   const getLogoDisplay = (n) => n || "";
 
   const handleTypeChange = (area, type) => {
-    postToPreview(area);
+    postToPreview(`hoodie ${area}`);
     onUpdate({
       pressureOptions: {
         ...pressureOptions,
@@ -368,10 +368,12 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Hoodie:${area}_opacity: ${opacity}`, "*"); });
       getDiffuseBase64(flag, logoPre, logoCustom, text, (d, logoOpacityBase) => {
         if (renderCounterRef.current[area] !== currentRender) return;
-        ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) {
-          f.contentWindow.postMessage(`Hoodie:${area}_diffuse: ${d}`, "*");
-          if (logoOpacityBase) f.contentWindow.postMessage(`Hoodie:${area}_opacity: ${logoOpacityBase}`, "*");
-        }});
+        ["preview-iframe", "preview-iframe2"].forEach(id => {
+          const f = document.getElementById(id); if (f?.contentWindow) {
+            f.contentWindow.postMessage(`Hoodie:${area}_diffuse: ${d}`, "*");
+            if (logoOpacityBase) f.contentWindow.postMessage(`Hoodie:${area}_opacity: ${logoOpacityBase}`, "*");
+          }
+        });
       }, flag2, flagCount, textColor);
     });
   }, [isAppReady, pressureOptions]);
@@ -421,7 +423,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
               </div>
             )}
           </div>
-        )} 
+        )}
         {pressureOptions[`${area}Type`] === "flag" && (
           <div className="flex flex-wrap gap-2">
             <input type="text" value={getFlagDisplay(pressureOptions[`${area}Flag`])} readOnly placeholder="Select flag" className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer" onClick={() => handleFlagSelect(`${area}Flag`)} />
@@ -624,11 +626,10 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
                         key={c.id}
                         type="button"
                         onClick={() => setLibSelectedCountry(c)}
-                        className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center transition-all border truncate ${
-                          libSelectedCountry?.id === c.id
-                            ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                            : 'bg-white text-gray-600 border-gray-200 hover:border-green-400 hover:text-green-700'
-                        }`}
+                        className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center transition-all border truncate ${libSelectedCountry?.id === c.id
+                          ? 'bg-green-600 text-white border-green-600 shadow-sm'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-green-400 hover:text-green-700'
+                          }`}
                       >
                         {c.name}
                       </button>
@@ -656,8 +657,10 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
                   const rawPath = (design.file_path || design.image_path || design.thumbnail || "").replace(/\\/g, "/"); const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
                   const isSelected = libSelectedDesign?.id === design.id;
                   return (
-                    <button key={design.id} onClick={() => { setLibSelectedDesign(design);
-                        postToPreview(`backDesign`); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } }); }}
+                    <button key={design.id} onClick={() => {
+                      setLibSelectedDesign(design);
+                      postToPreview(`hoodie backDesign`); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } });
+                    }}
                       className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all bg-white ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}>
                       <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
                       {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><CheckCircle className="w-3.5 h-3.5 text-white" /></div>}

@@ -301,7 +301,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
       .replace("Flag", "")
       .replace("LogoPredefined", "");
 
-    postToPreview(area);
+    postToPreview(`tshirt ${area}`);
     setShowFlagModal(true);
   };
 
@@ -363,7 +363,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
   const handleTypeChange = (area, type) => {
 
-    postToPreview(area);
+    postToPreview(`tshirt ${area}`);
     onUpdate({
       pressureOptions: {
         ...pressureOptions,
@@ -632,7 +632,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                             }
                           }
                         });
-                        postToPreview(`backDesign`);
+                        postToPreview(`tshirt backDesign`);
                       }}
                       className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all bg-white ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'
                         }`}
@@ -721,7 +721,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                             });
 
                             setTimeout(() => {
-                              postToPreview(area);
+                              postToPreview(`tshirt ${area}`);
                             }, 0);
                           }}
                           placeholder="Enter text"
@@ -834,7 +834,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                             });
 
                             setTimeout(() => {
-                              postToPreview(area);
+                              postToPreview(`tshirt ${area}`);
                             }, 0);
                           }}
                           placeholder="Enter text"

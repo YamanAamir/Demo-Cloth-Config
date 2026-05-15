@@ -202,7 +202,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   const handleFlagSelect = (field) => {
     setCurrentField(field);
     const area = field.replace("Flag", "").replace("LogoPredefined", "");
-    postToPreview(area);
+    postToPreview(`shorts ${area}`);
     setShowFlagModal(true);
   };
   const selectFlag = (countryName) => { onUpdate({ pressureOptions: { ...pressureOptions, [currentField]: countryName } }); setShowFlagModal(false); };
@@ -212,7 +212,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   const getLogoDisplay = (n) => n || "";
 
   const handleTypeChange = (area, type) => {
-    postToPreview(area);
+    postToPreview(`shorts ${area}`);
     onUpdate({
       pressureOptions: {
         ...pressureOptions,
@@ -280,10 +280,12 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Short:${area}_opacity: ${opacity}`, "*"); });
       getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuse, logoOpacityBase) => {
         if (renderCounterRef.current[area] !== currentRender) return;
-        ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) {
-          f.contentWindow.postMessage(`Short:${area}_diffuse: ${diffuse}`, "*");
-          if (logoOpacityBase) f.contentWindow.postMessage(`Short:${area}_opacity: ${logoOpacityBase}`, "*");
-        }});
+        ["preview-iframe", "preview-iframe2"].forEach(id => {
+          const f = document.getElementById(id); if (f?.contentWindow) {
+            f.contentWindow.postMessage(`Short:${area}_diffuse: ${diffuse}`, "*");
+            if (logoOpacityBase) f.contentWindow.postMessage(`Short:${area}_opacity: ${logoOpacityBase}`, "*");
+          }
+        });
       }, flag2, flagCount, textColor);
     });
   }, [isAppReady, pressureOptions]);

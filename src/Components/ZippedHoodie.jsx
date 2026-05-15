@@ -308,7 +308,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
   const handleFlagSelect = (field) => {
     setCurrentField(field);
     const area = field.replace("Flag", "").replace("LogoPredefined", "");
-    postToPreview(area);
+    postToPreview(`zhoodie ${area}`);
     setShowFlagModal(true);
   };
   const selectFlag = (countryName) => { onUpdate({ pressureOptions: { ...pressureOptions, [currentField]: countryName } }); setShowFlagModal(false); };
@@ -318,7 +318,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
   const getLogoDisplay = (logoName) => logoName || "";
 
   const handleTypeChange = (area, type) => {
-    postToPreview(area);
+    postToPreview(`zhoodie ${area}`);
     onUpdate({
       pressureOptions: {
         ...pressureOptions,
@@ -681,11 +681,10 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
                         key={c.id}
                         type="button"
                         onClick={() => setLibSelectedCountry(c)}
-                        className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center transition-all border truncate ${
-                          libSelectedCountry?.id === c.id
-                            ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                            : 'bg-white text-gray-600 border-gray-200 hover:border-green-400 hover:text-green-700'
-                        }`}
+                        className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center transition-all border truncate ${libSelectedCountry?.id === c.id
+                          ? 'bg-green-600 text-white border-green-600 shadow-sm'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-green-400 hover:text-green-700'
+                          }`}
                       >
                         {c.name}
                       </button>
@@ -713,8 +712,10 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
                   const rawPath = (design.file_path || design.image_path || design.thumbnail || "").replace(/\\/g, "/"); const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
                   const isSelected = libSelectedDesign?.id === design.id;
                   return (
-                    <button key={design.id} onClick={() => { setLibSelectedDesign(design); 
-                        postToPreview(`backDesign`); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } }); }}
+                    <button key={design.id} onClick={() => {
+                      setLibSelectedDesign(design);
+                      postToPreview(`zhoodie backDesign`); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } });
+                    }}
                       className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all bg-white ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}>
                       <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
                       {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><CheckCircle className="w-3.5 h-3.5 text-white" /></div>}

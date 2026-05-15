@@ -116,7 +116,7 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
   const handleFlagSelect = (field) => {
     setCurrentField(field);
     const area = field.replace("Flag", "").replace("LogoPredefined", "");
-    postToPreview(area);
+    postToPreview(`pant ${area}`);
     setShowFlagModal(true);
   };
   const selectFlag = (countryName) => { onUpdate({ pressureOptions: { ...pressureOptions, [currentField]: countryName } }); setShowFlagModal(false); };
@@ -126,14 +126,14 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
   const getLogoDisplay = (n) => n || "";
 
   const handleTypeChange = (area, type) => {
-    postToPreview(area);
+    postToPreview(`pant ${area}`);
     onUpdate({
       pressureOptions: {
         ...pressureOptions,
         [`${area}Type`]: type, [`${area}Text`]: "",
         ...(type === "flag" ? { [`${area}LogoPredefined`]: "", [`${area}LogoCustom`]: "" }
           : type === "logo" ? { [`${area}Flag`]: "" }
-          : { [`${area}Flag`]: "", [`${area}LogoPredefined`]: "", [`${area}LogoCustom`]: "" }),
+            : { [`${area}Flag`]: "", [`${area}LogoPredefined`]: "", [`${area}LogoCustom`]: "" }),
       },
     });
   };
@@ -192,10 +192,12 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`SweatPant:${area}_opacity: ${opacity}`, "*"); });
       getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuse, logoOpacityBase) => {
         if (renderCounterRef.current[area] !== currentRender) return;
-        ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) {
-          f.contentWindow.postMessage(`SweatPant:${area}_diffuse: ${diffuse}`, "*");
-          if (logoOpacityBase) f.contentWindow.postMessage(`SweatPant:${area}_opacity: ${logoOpacityBase}`, "*");
-        }});
+        ["preview-iframe", "preview-iframe2"].forEach(id => {
+          const f = document.getElementById(id); if (f?.contentWindow) {
+            f.contentWindow.postMessage(`SweatPant:${area}_diffuse: ${diffuse}`, "*");
+            if (logoOpacityBase) f.contentWindow.postMessage(`SweatPant:${area}_opacity: ${logoOpacityBase}`, "*");
+          }
+        });
       }, flag2, flagCount, textColor);
     });
   }, [isAppReady, pressureOptions]);
