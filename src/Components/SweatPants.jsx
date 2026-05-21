@@ -34,22 +34,67 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
   const FLAG_HEIGHT = 240;
   const CANVAS_HEIGHT = TEXT_HEIGHT + FLAG_HEIGHT;
 
+  // const getEmissiveBase64 = (text, hasFlag = false, hasLogo = false) => {
+  //   const canvas = document.createElement("canvas");
+  //   canvas.width = CANVAS_WIDTH; canvas.height = CANVAS_HEIGHT;
+  //   const ctx = canvas.getContext("2d");
+  //   if (text?.trim()) {
+  //     let fontSize = 48;
+  //     ctx.font = `bold ${fontSize}px Arial`; ctx.fillStyle = "#ffffff";
+  //     ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  //     while (ctx.measureText(text).width > CANVAS_WIDTH - 80 && fontSize > 28) { fontSize -= 2; ctx.font = `bold ${fontSize}px Arial`; }
+  //     ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
+  //   }
+  //   if (hasFlag || hasLogo) { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT); }
+  //   if (hasFlag || hasLogo) { ctx.strokeStyle = "#000000"; ctx.lineWidth = 40; ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10); }
+  //   return canvas.toDataURL("image/png");
+  // };
   const getEmissiveBase64 = (text, hasFlag = false, hasLogo = false) => {
     const canvas = document.createElement("canvas");
-    canvas.width = CANVAS_WIDTH; canvas.height = CANVAS_HEIGHT;
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
+
     const ctx = canvas.getContext("2d");
+
+    // ---------- TEXT ----------
     if (text?.trim()) {
       let fontSize = 48;
-      ctx.font = `bold ${fontSize}px Arial`; ctx.fillStyle = "#ffffff";
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      while (ctx.measureText(text).width > CANVAS_WIDTH - 80 && fontSize > 28) { fontSize -= 2; ctx.font = `bold ${fontSize}px Arial`; }
+
+      ctx.font = `bold ${fontSize}px Arial`;
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      while (
+        ctx.measureText(text).width > CANVAS_WIDTH - 80 &&
+        fontSize > 28
+      ) {
+        fontSize -= 2;
+        ctx.font = `bold ${fontSize}px Arial`;
+      }
+
       ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
     }
-    if (hasFlag || hasLogo) { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT); }
-    if (hasFlag || hasLogo) { ctx.strokeStyle = "#000000"; ctx.lineWidth = 40; ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10); }
+
+    // ---------- FRAME (MATCH DIFFUSE EXACTLY) ----------
+    if (hasFlag || hasLogo) {
+
+      // white area (same as diffuse)
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH - 20, FLAG_HEIGHT);
+
+      // top black strip (IMPORTANT FIX)
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, 20);
+
+      // border (same thickness as diffuse)
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 40;
+      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+    }
+
     return canvas.toDataURL("image/png");
   };
-
   const getDiffuseBase64 = (flag, logoPre, logoCustom, text, callback, flag2 = "", flagCount = 1, textColor = "#ffffff") => {
     const canvas = document.createElement("canvas");
     canvas.width = CANVAS_WIDTH; canvas.height = CANVAS_HEIGHT;
@@ -66,19 +111,83 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       const img = new Image(); img.crossOrigin = "anonymous";
       img.onload = () => resolve(img); img.onerror = () => reject(); img.src = src;
     });
+    // if (flag && flagImages[flag]) {
+    //   if (flag2 && flagImages[flag2]) {
+    //     Promise.all([loadImage(flagImages[flag]), loadImage(flagImages[flag2])])
+    //       .then(([img1, img2]) => {
+    //         const gap = 10; const flagH = FLAG_HEIGHT / 2;
+    //         const flagW = (CANVAS_WIDTH - gap) / 2; const startX = (CANVAS_WIDTH - flagW) / 2;
+    //         ctx.drawImage(img1, startX, TEXT_HEIGHT, flagW, flagH);
+    //         ctx.drawImage(img2, startX, TEXT_HEIGHT + flagH + gap, flagW, flagH - gap);
+    //         finalize();
+    //       }).catch(finalize);
+    //   } else {
+    //     loadImage(flagImages[flag]).then(img => { ctx.drawImage(img, 0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT); finalize(); }).catch(finalize);
+    //   }
+    //   return;
+    // }
     if (flag && flagImages[flag]) {
+
+      const drawFrame = () => {
+        // white background
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH - 20, FLAG_HEIGHT);
+
+        // top black padding strip
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, 20);
+
+        // border
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 40;
+        ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+      };
+
+      const drawSingle = (img) => {
+        drawFrame();
+
+        const targetWidth = CANVAS_WIDTH * 0.9;
+        const targetHeight = FLAG_HEIGHT * 0.85;
+
+        const x = (CANVAS_WIDTH - targetWidth) / 2;
+        const y = TEXT_HEIGHT + (FLAG_HEIGHT - targetHeight) / 2;
+
+        ctx.drawImage(img, x, y, targetWidth, targetHeight);
+      };
+
+      const drawDouble = (img1, img2) => {
+        drawFrame();
+
+        const gap = 10;
+        const flagH = FLAG_HEIGHT / 2;
+        const flagW = (CANVAS_WIDTH - gap) / 2;
+        const startX = (CANVAS_WIDTH - flagW) / 2;
+
+        ctx.drawImage(img1, startX, TEXT_HEIGHT, flagW, flagH);
+        ctx.drawImage(img2, startX, TEXT_HEIGHT + flagH + gap, flagW, flagH - gap);
+      };
+
       if (flag2 && flagImages[flag2]) {
-        Promise.all([loadImage(flagImages[flag]), loadImage(flagImages[flag2])])
+        Promise.all([
+          loadImage(flagImages[flag]),
+          loadImage(flagImages[flag2])
+        ])
           .then(([img1, img2]) => {
-            const gap = 10; const flagH = FLAG_HEIGHT / 2;
-            const flagW = (CANVAS_WIDTH - gap) / 2; const startX = (CANVAS_WIDTH - flagW) / 2;
-            ctx.drawImage(img1, startX, TEXT_HEIGHT, flagW, flagH);
-            ctx.drawImage(img2, startX, TEXT_HEIGHT + flagH + gap, flagW, flagH - gap);
+            drawDouble(img1, img2);
             finalize();
-          }).catch(finalize);
-      } else {
-        loadImage(flagImages[flag]).then(img => { ctx.drawImage(img, 0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT); finalize(); }).catch(finalize);
+          })
+          .catch(finalize);
+
+        return;
       }
+
+      loadImage(flagImages[flag])
+        .then((img) => {
+          drawSingle(img);
+          finalize();
+        })
+        .catch(finalize);
+
       return;
     }
     let logoSrc = logoCustom;

@@ -90,9 +90,18 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
     }
 
     if (hasFlag || hasLogo) {
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
-    }
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH - 20, FLAG_HEIGHT);
+
+  // Top black padding
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 120, canvas.width, 20);
+
+  // Border
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = 40;
+  ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+}
 
     // Add black border (mask) if flag or logo is present
     if (hasFlag || hasLogo) {
@@ -228,23 +237,34 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       return;
     }
 
-    // ---------- SINGLE FLAG ----------
-    if (flag && flagImages[flag]) {
-      loadImage(flagImages[flag])
-        .then((img) => {
-          ctx.drawImage(
-            img,
-            0,
-            TEXT_HEIGHT,
-            CANVAS_WIDTH,
-            FLAG_HEIGHT
-          );
-          finalize();
-        })
-        .catch(finalize);
+if (flag && flagImages[flag]) {
+  loadImage(flagImages[flag])
+    .then((img) => {
 
-      return;
-    }
+      // white background
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH - 20, FLAG_HEIGHT);
+
+      // top black padding
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 120, canvas.width, 20);
+
+      // custom size
+      const targetWidth = CANVAS_WIDTH * 0.9;
+      const targetHeight = FLAG_HEIGHT * 0.85;
+
+      // centered position
+      const x = (CANVAS_WIDTH - targetWidth) / 2;
+      const y = TEXT_HEIGHT + (FLAG_HEIGHT - targetHeight) / 2;
+
+      ctx.drawImage(img, x, y, targetWidth, targetHeight);
+
+      finalize();
+    })
+    .catch(finalize);
+
+  return;
+}
 
     // ---------- LOGO ONLY ----------
     let logoSrc = logoCustom;

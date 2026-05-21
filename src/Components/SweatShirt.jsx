@@ -59,7 +59,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     fetchDesigns();
   }, [libSelectedCountry]);
 
-  // Defaults
   const selectedColor = data?.selectedColor || "Red";
   const selectedSize = data?.selectedSize || "";
 
@@ -68,7 +67,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     rightChestFlag: "",
     rightChestLogoPredefined: "",
     rightChestLogoCustom: "",
-    rightChestType: "", // 'flag' | 'logo' | ''
+    rightChestType: "",
 
     leftChestText: "",
     leftChestFlag: "",
@@ -91,21 +90,8 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     backDesign: null,
   };
 
-  // Use centralized flags list
   const countries = ALL_FLAGS;
   const flagImages = Object.fromEntries(ALL_FLAGS.map(f => [f.name, f.flagHD || f.flag]));
-
-  // const predefinedLogos = [
-  //   { name: "Logo 1", url: logo1 },
-  //   { name: "Logo 2", url: logo2 },
-  //   { name: "Logo 3", url: logo3 },
-  //   { name: "Logo 4", url: logo4 },
-  // ];
-
-  // CANVAS CONSTANTS
-  // const CANVAS_WIDTH = 300;
-  // const TEXT_HEIGHT = 80;
-  // const FLAG_HEIGHT = 210;
 
   const CANVAS_WIDTH = 320;
   const TEXT_HEIGHT = 120;
@@ -118,7 +104,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     canvas.height = CANVAS_HEIGHT;
     const ctx = canvas.getContext("2d");
 
-    // Use transparency instead of black background for cleaner blending
     if (text?.trim()) {
       let fontSize = 48;
       ctx.font = `bold ${fontSize}px Arial`;
@@ -135,17 +120,20 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
 
     if (hasFlag || hasLogo) {
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
+      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH - 20, FLAG_HEIGHT);
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 120, canvas.width, 20);
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 40;
+      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
     }
 
-    // Add black border (mask) if flag or logo is present
     if (hasFlag || hasLogo) {
       ctx.strokeStyle = "#000000";
       ctx.lineWidth = 40;
       ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
     }
     if (hasSecondAsset) {
-      // 🔲 BLACK BASE
       ctx.globalAlpha = 1;
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -162,95 +150,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     return canvas.toDataURL("image/png");
   };
 
-
-  // const getDiffuseBase64 = (flag, logoPre, logoCustom, text, callback, flag2 = "", flagCount = 1) => {
-  //   const canvas = document.createElement("canvas");
-  //   canvas.width = CANVAS_WIDTH;
-  //   canvas.height = CANVAS_HEIGHT;
-  //   const ctx = canvas.getContext("2d");
-
-  //   if (text?.trim()) {
-  //     let fontSize = 48;
-  //     ctx.font = `bold ${fontSize}px Arial`;
-  //     ctx.fillStyle = "#ffffff";
-  //     ctx.textAlign = "center";
-  //     ctx.textBaseline = "middle";
-
-  //     while (ctx.measureText(text).width > CANVAS_WIDTH - 80 && fontSize > 28) {
-  //       fontSize -= 2;
-  //       ctx.font = `bold ${fontSize}px Arial`;
-  //     }
-  //     ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
-  //   }
-
-  //   const drawBorder = () => {
-  //     if (flag || logoPre || logoCustom) {
-  //       ctx.strokeStyle = "#ffffff";
-  //       ctx.lineWidth = 40;
-  //       ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
-  //     }
-  //   };
-
-  //   const finalize = () => {
-  //     drawBorder();
-  //     callback(canvas.toDataURL("image/png"));
-  //   };
-
-  //   if (flag && flagImages[flag]) {
-  //     const flagW = flagCount === 2 ? CANVAS_WIDTH / 2 : CANVAS_WIDTH;
-  //     const img1 = new Image();
-  //     img1.crossOrigin = "anonymous";
-  //     img1.onload = () => {
-  //       ctx.drawImage(img1, 0, TEXT_HEIGHT, flagW, FLAG_HEIGHT);
-  //       if (flagCount === 2 && flag2 && flagImages[flag2]) {
-  //         const img2 = new Image();
-  //         img2.crossOrigin = "anonymous";
-  //         img2.onload = () => {
-  //           ctx.drawImage(img2, flagW, TEXT_HEIGHT, flagW, FLAG_HEIGHT);
-  //           finalize();
-  //         };
-  //         img2.onerror = finalize;
-  //         img2.src = flagImages[flag2];
-  //       } else {
-  //         finalize();
-  //       }
-  //     };
-  //     img1.onerror = finalize;
-  //     img1.src = flagImages[flag];
-  //     return;
-  //   }
-
-  //   let logoSrc = logoCustom;
-  //   if (!logoSrc && logoPre) {
-  //     const foundLogo = logos.find((l) => l.name === logoPre);
-  //     if (foundLogo?.file_path) {
-  //       const cleanPath = foundLogo.file_path.replace(/\\/g, "/");
-  //       logoSrc = `${BASE_URL}${cleanPath}`;
-  //     }
-  //   }
-
-  //   if (logoSrc) {
-  //     const img = new Image();
-  //     img.crossOrigin = "anonymous";
-  //     img.onload = () => {
-  //       const ratio = Math.min(
-  //         CANVAS_WIDTH / img.width,
-  //         FLAG_HEIGHT / img.height
-  //       );
-  //       const w = img.width * ratio * 0.9;
-  //       const h = img.height * ratio * 0.9;
-  //       const x = (CANVAS_WIDTH - w) / 2;
-  //       const y = TEXT_HEIGHT + (FLAG_HEIGHT - h) / 2;
-  //       ctx.drawImage(img, x, y, w, h);
-  //       finalize();
-  //     };
-  //     img.onerror = finalize;
-  //     img.src = logoSrc;
-  //     return;
-  //   }
-
-  //   finalize();
-  // };
   const getDiffuseBase64 = (
     flag,
     logoPre,
@@ -267,8 +166,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     const ctx = canvas.getContext("2d");
 
     if (!flag && !flag2 && !logoPre && !logoCustom) {
-      // ONLY TEXT MODE
-      if (text?.trim()) {
+        if (text?.trim()) {
         let fontSize = 48;
         ctx.font = `bold ${fontSize}px Arial`;
         ctx.fillStyle = textColor || "#ffffff";
@@ -290,7 +188,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     const hasTwoFlags =
       flag && flagImages[flag] && flag2 && flagImages[flag2];
 
-    // ---------- TEXT ----------
     if (text?.trim() && !hasTwoFlags) {
       let fontSize = 48;
 
@@ -361,25 +258,36 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       return;
     }
 
-    // ---------- SINGLE FLAG ----------
-    if (flag && flagImages[flag]) {
-      loadImage(flagImages[flag])
-        .then((img) => {
-          ctx.drawImage(
-            img,
-            0,
-            TEXT_HEIGHT,
-            CANVAS_WIDTH,
-            FLAG_HEIGHT
-          );
-          finalize();
-        })
-        .catch(finalize);
+  // ---------- SINGLE FLAG ----------
+if (flag && flagImages[flag]) {
+  loadImage(flagImages[flag])
+    .then((img) => {
 
-      return; // ✅ important
-    }
+      // white background
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH - 20, FLAG_HEIGHT);
 
-    // ---------- LOGO ONLY ----------
+      // top black padding
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 120, canvas.width, 20);
+
+      // custom size
+      const targetWidth = CANVAS_WIDTH * 0.9;
+      const targetHeight = FLAG_HEIGHT * 0.85;
+
+      // centered position
+      const x = (CANVAS_WIDTH - targetWidth) / 2;
+      const y = TEXT_HEIGHT + (FLAG_HEIGHT - targetHeight) / 2;
+
+      ctx.drawImage(img, x, y, targetWidth, targetHeight);
+
+      finalize();
+    })
+    .catch(finalize);
+
+  return;
+}
+
     let logoSrc = logoCustom;
 
     if (!logoSrc && logoPre) {
@@ -454,13 +362,12 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       pressureOptions: {
         ...pressureOptions,
         [currentField]: logoName,
-        selectedLogoId: logoId, // save logo ID for order
+        selectedLogoId: logoId,
       },
     });
     setShowFlagModal(false);
   };
 
-  // Auto-select if only one logo exists and none selected yet
   useEffect(() => {
     if (logos && logos.length === 1) {
       const allLogoFields = [
@@ -491,7 +398,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
 
   const getFlagDisplay = (countryName) => {
     if (!countryName) return "";
-    // countryName is stored as name — just return it directly
     return countryName;
   };
 
@@ -522,18 +428,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
   // ── Effects ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    // const colorMap = {
-    //   red: 'SweatShirt:red',
-    //   orange: 'SweatShirt:orange',
-    //   lime: 'SweatShirt:lime',
-    //   kit: 'SweatShirt:kit',
-    //   'light blue': 'SweatShirt:light blue',
-    //   turquoise: 'SweatShirt:turquoise',
-    //   navy: 'SweatShirt:navy',
-    //   black: 'SweatShirt:black',
-    //   'white (black print)': 'SweatShirt:white',
-    // };
-
     const colorMap = {
       red: "SweatShirt:red",
       black: "SweatShirt:black",
@@ -558,12 +452,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     });
   }, [selectedColor, isAppReady]);
 
-  // useEffect(() => {
-  //   if (!data?.selectedColor) {
-  //     onUpdate({ selectedColor: "Red" });
-  //   }
-  // }, []);
-
   useEffect(() => {
     if (!selectedSize) return;
     const message = `SweatShirt:size:${selectedSize}`;
@@ -575,7 +463,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     });
   }, [selectedSize, isAppReady]);
 
-  // Ref to track previous options to prevent unnecessary updates
   const prevPressureOptionsRef = React.useRef({});
   const renderCounterRef = React.useRef({});
 
@@ -592,7 +479,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       const type = pressureOptions[`${area}Type`] || "";
       const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
 
-      // Check if anything actually changed for this area
       const prev = prevPressureOptionsRef.current[area] || {};
       const hasChanged =
         prev.text !== text ||
@@ -606,7 +492,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
 
       if (!hasChanged) return;
 
-      // Update the ref for this area
       prevPressureOptionsRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
       const currentRender = (renderCounterRef.current[area] || 0) + 1;
       renderCounterRef.current[area] = currentRender;
@@ -615,7 +500,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       const hasFlag = !!flag && type === "flag";
       const hasLogo = !!(logoPre || logoCustom) && type === "logo";
       const hasSecondAsset = !!flag2;
-      // Emissive
       const opacity = getEmissiveBase64(text, hasFlag, hasLogo, hasSecondAsset);
       ["preview-iframe", "preview-iframe2"].forEach((id) => {
         const iframe = document.getElementById(id);
@@ -625,7 +509,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
         }
       });
 
-      // Diffuse — pass flag2, flagCount, textColor
       getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase, logoOpacityBase) => {
         if (renderCounterRef.current[area] !== currentRender) return;
         ["preview-iframe", "preview-iframe2"].forEach((id) => {
@@ -639,18 +522,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       }, flag2, flagCount, textColor);
     });
   }, [isAppReady, pressureOptions]);
-
-  // const colors = [
-  //   { name: "Red", value: "#DC143C", border: "#DC143C" },
-  //   { name: "Orange", value: "#FF4500", border: "#FF4500" },
-  //   { name: "Lime", value: "#C5D86D", border: "#C5D86D" },
-  //   { name: "Kit", value: "#D4B896", border: "#D4B896" },
-  //   { name: "Light blue", value: "#A8C5D6", border: "#A8C5D6" },
-  //   { name: "Turquoise", value: "#0891B2", border: "#0891B2" },
-  //   { name: "Navy", value: "#1F2937", border: "#1F2937" },
-  //   { name: "Black", value: "#000000", border: "#000000" },
-  //   { name: "White (black print)", value: "#FFFFFF", border: "#D1D5DB" },
-  // ];
 
   const colors = [
     { name: "Red", value: "#E61709", border: "#E61709" },
@@ -669,35 +540,11 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
 
   return (
     <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 200px)' }}>
-      {/* Tab Navigation */}
-      {/* <div className="flex gap-2 p-4 pb-2">
-        <button
-          onClick={() => setActiveTab("size")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${activeTab === "size"
-            ? "bg-white shadow-sm border-2 border-green-700"
-            : "bg-white border-2 border-transparent hover:border-gray-300"
-            }`}
-        >
-          <span className="font-medium text-gray-900">Color & Size</span>
-          <img className="w-6" src={cog} alt="settings" />
-        </button>
-        <button
-          onClick={() => setActiveTab("pressure")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${activeTab === "pressure"
-            ? "bg-white shadow-sm border-2 border-green-700"
-            : "bg-white border-2 border-transparent hover:border-gray-300"
-            }`}
-        >
-          <span className="font-medium text-gray-900">Design</span>
-          <img className="w-6" src={plus} alt="add" />
-        </button>
-      </div> */}
 
       {activeTab === "size" ? (
         <div className="flex flex-col flex-1 relative px-4 pb-36">
           <h1 className="text-lg font-bold mb-4 text-gray-900">SweatShirt</h1>
 
-          {/* Color Section — compact */}
           <div className="mb-5">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
             <div className="grid grid-flow-col grid-rows-1 gap-2 w-fit">
@@ -726,7 +573,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
             {selectedColor && <p className="text-xs text-gray-500 mt-1.5">{selectedColor}</p>}
           </div>
 
-          {/* Size Section — compact */}
           <div className="mb-5">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Size</h2>
             <div className="flex flex-wrap gap-2">
@@ -744,13 +590,10 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
               ))}
             </div>
           </div>
-
-          {/* ── Back Design Library ── */}
           <div className="mb-4">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5" /> Back Design Library
             </h2>
-            {/* Country dropdown */}
             {libCountriesLoading ? (
               <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading countries...
@@ -810,7 +653,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
             )}
           </div>
 
-          {/* Upload own design + Add classmates names */}
           <div className="mb-4 flex flex-col gap-2">
             <button
               onClick={() => setShowUploadModal(true)}
@@ -832,23 +674,10 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
             </button>
           </div>
 
-          {/* Next button */}
-          {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
-            <button
-              onClick={() => setActiveTab("pressure")}
-              className="w-full py-2.5 bg-slate-600 text-white font-semibold rounded-xl hover:bg-slate-700 transition text-sm flex items-center justify-center gap-2"
-            >
-              Next — Design
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div> */}
         </div>
       ) : (
         <div className="flex flex-col flex-1 relative px-4 pb-36">
 
-          {/* Chest Area */}
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
               Chest Area
@@ -860,18 +689,12 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                   {area === "rightChest" ? "Right Chest:" : "Left Chest:"}
                 </h3>
                 <div className="space-y-3">
-                  {/* Tabs: Text | Flag | Logo */}
                   <div className="flex rounded-lg overflow-hidden border border-gray-200">
                     {["text", "flag", "logo"].map((tab) => (
                       <button
                         key={tab}
                         type="button"
                         onClick={() => {
-                          // if (tab === "text") {
-                          //   onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Type`]: "", [`${area}Flag`]: "", [`${area}LogoPredefined`]: "", [`${area}LogoCustom`]: "" } });
-                          // } else {
-                          //   handleTypeChange(area, tab);
-                          // }
                           handleTypeChange(area, tab === "text" ? "" : tab);
                         }}
                         className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`] === tab || (tab === "text" && !pressureOptions[`${area}Type`])
@@ -887,7 +710,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                     ))}
                   </div>
 
-                  {/* Text */}
                   {!pressureOptions[`${area}Type`] && (
                     <div className="space-y-2">
                       <div className="flex flex-wrap gap-2">
@@ -925,7 +747,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                     </div>
                   )}
 
-                  {/* Flag */}
                   {pressureOptions[`${area}Type`] === "flag" && (
                     <div className="flex flex-wrap gap-2">
                       <input type="text" value={getFlagDisplay(pressureOptions[`${area}Flag`])} readOnly placeholder="Select flag"
@@ -941,7 +762,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                     </div>
                   )}
 
-                  {/* Logo — predefined only, no upload */}
                   {pressureOptions[`${area}Type`] === "logo" && (
                     <div className="flex flex-wrap gap-2">
                       <input type="text" value={getLogoDisplay(pressureOptions[`${area}LogoPredefined`])} readOnly placeholder="Select logo"
@@ -961,7 +781,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
             ))}
           </div>
 
-          {/* Sleeves */}
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
               Sleeves
@@ -1026,7 +845,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                   )}
                   {pressureOptions[`${area}Type`] === "flag" && (
                     <div className="space-y-3">
-                      {/* 1 or 2 flags toggle */}
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-semibold text-gray-600">Number of flags:</span>
                         <div className="flex rounded-lg overflow-hidden border border-gray-200">
@@ -1050,7 +868,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                         </div>
                       </div>
 
-                      {/* Flag 1 */}
                       <div>
                         <label className="text-xs text-gray-500 mb-1 block">
                           {(Number(pressureOptions[`${area}FlagCount`] || 1) === 2) ? t("Flag 1 (50% size)") : t("Flag")}
@@ -1065,7 +882,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                         </div>
                       </div>
 
-                      {/* Flag 2 — only if count = 2 */}
                       {(Number(pressureOptions[`${area}FlagCount`] || 1) === 2) && (
                         <div>
                           <label className="text-xs text-gray-500 mb-1 block">{t("Flag 2 (50% size)")}</label>
@@ -1095,16 +911,9 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
               </div>
             ))}
           </div>
-          {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
-            <button onClick={() => setActiveTab("size")} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-              Back
-            </button>
-          </div> */}
         </div>
       )}
 
-      {/* Test Component - visible only in pressure tab, but always mounted for back design broadcast */}
       <div className={activeTab === "pressure" ? "mt-10" : ""} style={activeTab !== "pressure" ? { visibility: 'hidden', position: 'absolute', pointerEvents: 'none', height: 0, overflow: 'hidden' } : {}}>
         <Test
           key={`sweatshirt-test-${JSON.stringify(pressureOptions?.backDesign)}`}
@@ -1135,17 +944,14 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
         />
       </div>
 
-      {/* Modal / Asset Picker */}
       {showFlagModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          {/* Backdrop with enhanced blur */}
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300"
             onClick={() => setShowFlagModal(false)}
           />
 
           <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
-            {/* Header */}
             <div className="flex items-center justify-between px-8 py-7 border-b border-slate-50 bg-white/50 sticky top-0 z-10">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-green-50 rounded-2xl">
@@ -1172,7 +978,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
               </button>
             </div>
 
-            {/* Selection Grid Area */}
             <div className="p-8 overflow-y-auto custom-scrollbar-premium bg-slate-50/30">
               {currentField.includes("Logo") ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
@@ -1188,14 +993,11 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                           alt={logo.name}
                           className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
                         />
-                        {/* Hover Overlay Overlay */}
                         <div className="absolute inset-0 bg-green-600/0 group-hover:bg-green-600/5 transition-colors duration-300" />
                       </div>
                       <span className="text-xs font-bold text-slate-500 group-hover:text-green-700 truncate w-full px-2 text-center uppercase tracking-wider transition-colors">
                         {logo.name}
                       </span>
-
-                      {/* Active Indicator (Hidden by default) */}
                       <div className="absolute top-4 right-4 bg-green-600 rounded-full p-1 opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all duration-300 shadow-lg">
                         <X className="w-3 h-3 text-white rotate-45" />
                       </div>

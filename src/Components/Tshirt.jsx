@@ -154,12 +154,16 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
       ctx.fillRect(BOX_W, BOX_Y, DIVIDER_W, BOX_H);
     } else if (hasFlag || hasLogo) {
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
-
+      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH - 20, FLAG_HEIGHT);
+      // Top black padding
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 120, canvas.width, 20);
       // Border only for single flag/logo — not for 2-flag split (would cut edges)
+      // if (hasLogo) {
       ctx.strokeStyle = "#000000";
       ctx.lineWidth = 40;
       ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+      // }
     } else if (text?.trim()) {
       // Text-only: border to define print area
       ctx.strokeStyle = "#000000";
@@ -236,7 +240,17 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
     if (flag && flagImages[flag]) {
       const img = await loadImage(flagImages[flag]);
-      ctx.drawImage(img, 0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
+
+      // custom size
+      const targetWidth = CANVAS_WIDTH * 0.9; // 80% width
+      const targetHeight = FLAG_HEIGHT * 0.85;
+
+      // center position
+      const x = (CANVAS_WIDTH - targetWidth) / 2;
+      const y = TEXT_HEIGHT + (FLAG_HEIGHT - targetHeight) / 2;
+
+      ctx.drawImage(img, x, y, targetWidth, targetHeight);
+
       return true;
     }
 

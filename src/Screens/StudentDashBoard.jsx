@@ -994,7 +994,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                             ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 hover:shadow-lg"
                                             : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
                                 >
-                                    {balanceDue <= 0 && paymentStatus === 'paid' ? 'Save Changes' : (balanceDue > 0 && amountPaid > 0 ? `Pay Balance (${balanceDue} DKK)` : 'Send Inquiry')}
+                                    {balanceDue <= 0 && paymentStatus === 'paid' ? 'Save Changes' : (balanceDue > 0 && amountPaid > 0 ? `Pay Balance (${balanceDue} DKK)` : 'Send forespørgsel')}
                                 </button>
                             </div>
                         </div>
@@ -1188,7 +1188,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                         ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 hover:shadow-lg"
                                         : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
                             >
-                                Send Inquiry
+                                Send forespørgsel
                             </button>
                         </div>
                     </div>
