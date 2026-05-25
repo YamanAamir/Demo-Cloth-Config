@@ -166,7 +166,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     const ctx = canvas.getContext("2d");
 
     if (!flag && !flag2 && !logoPre && !logoCustom) {
-        if (text?.trim()) {
+      if (text?.trim()) {
         let fontSize = 48;
         ctx.font = `bold ${fontSize}px Arial`;
         ctx.fillStyle = textColor || "#ffffff";
@@ -258,35 +258,35 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       return;
     }
 
-  // ---------- SINGLE FLAG ----------
-if (flag && flagImages[flag]) {
-  loadImage(flagImages[flag])
-    .then((img) => {
+    // ---------- SINGLE FLAG ----------
+    if (flag && flagImages[flag]) {
+      loadImage(flagImages[flag])
+        .then((img) => {
 
-      // white background
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH - 20, FLAG_HEIGHT);
+          // white background
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH - 20, FLAG_HEIGHT);
 
-      // top black padding
-      ctx.fillStyle = "#000000";
-      ctx.fillRect(0, 120, canvas.width, 20);
+          // top black padding
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(0, 120, canvas.width, 20);
 
-      // custom size
-      const targetWidth = CANVAS_WIDTH * 0.9;
-      const targetHeight = FLAG_HEIGHT * 0.85;
+          // custom size
+          const targetWidth = CANVAS_WIDTH * 0.9;
+          const targetHeight = FLAG_HEIGHT * 0.85;
 
-      // centered position
-      const x = (CANVAS_WIDTH - targetWidth) / 2;
-      const y = TEXT_HEIGHT + (FLAG_HEIGHT - targetHeight) / 2;
+          // centered position
+          const x = (CANVAS_WIDTH - targetWidth) / 2;
+          const y = TEXT_HEIGHT + (FLAG_HEIGHT - targetHeight) / 2;
 
-      ctx.drawImage(img, x, y, targetWidth, targetHeight);
+          ctx.drawImage(img, x, y, targetWidth, targetHeight);
 
-      finalize();
-    })
-    .catch(finalize);
+          finalize();
+        })
+        .catch(finalize);
 
-  return;
-}
+      return;
+    }
 
     let logoSrc = logoCustom;
 
@@ -596,7 +596,7 @@ if (flag && flagImages[flag]) {
             </h2>
             {libCountriesLoading ? (
               <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading countries...
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Indlæser lande...
               </div>
             ) : (
               <div className="mb-3">

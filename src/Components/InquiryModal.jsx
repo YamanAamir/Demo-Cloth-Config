@@ -3,23 +3,31 @@ import { X, Send, User, Mail, Phone, School, MessageSquare, Loader2, CheckCircle
 import { sendInquiry, getPublicSchools, getClassesBySchool } from '../api/api';
 
 const InquiryModal = ({ isOpen, onClose }) => {
+  // const emptyForm = {
+  //   name: '',
+  //   email: '',
+  //   phone: '',
+  //   req_for: 'student',
+  //   school_name: '',
+  //   class_name: '',
+  //   message: '',
+  // };
   const emptyForm = {
     name: '',
     email: '',
     phone: '',
-    req_for: 'student',
-    school_id: '',
-    class_id: '',
+    req_for: 'class_rep',
+    school_name: '',
+    class_name: '',
     message: '',
   };
-
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   // School dropdown
-  const [schools, setSchools] = useState([]);
+  // const [schools, setSchools] = useState([]);
   const [schoolsLoading, setSchoolsLoading] = useState(false);
   const [schoolSearch, setSchoolSearch] = useState('');
   const [schoolDropdownOpen, setSchoolDropdownOpen] = useState(false);
@@ -41,7 +49,7 @@ const InquiryModal = ({ isOpen, onClose }) => {
       setSchoolSearch('');
       setClassSearch('');
       setClasses([]);
-      fetchSchools();
+      // fetchSchools();
     }
   }, [isOpen]);
 
@@ -61,51 +69,51 @@ const InquiryModal = ({ isOpen, onClose }) => {
 
   // Fetch classes when school changes
   useEffect(() => {
-    if (form.school_id) {
-      fetchClasses(form.school_id);
+    if (form.school_name) {
+      // fetchClasses(form.school_name);
     } else {
       setClasses([]);
-      setForm(prev => ({ ...prev, class_id: '' }));
+      setForm(prev => ({ ...prev, class_name: '' }));
     }
-  }, [form.school_id]);
+  }, [form.school_name]);
 
-  const fetchSchools = async () => {
-    setSchoolsLoading(true);
-    try {
-      const res = await getPublicSchools();
-      if (res.data?.success) setSchools(res.data.data || []);
-    } catch (err) {
-      console.error('Kunne ikke hente skoler:', err);
-    } finally {
-      setSchoolsLoading(false);
-    }
-  };
+  // const fetchSchools = async () => {
+  //   setSchoolsLoading(true);
+  //   try {
+  //     const res = await getPublicSchools();
+  //     if (res.data?.success) setSchools(res.data.data || []);
+  //   } catch (err) {
+  //     console.error('Kunne ikke hente skoler:', err);
+  //   } finally {
+  //     setSchoolsLoading(false);
+  //   }
+  // };
 
-  const fetchClasses = async (schoolId) => {
-    setClassesLoading(true);
-    setClasses([]);
-    setForm(prev => ({ ...prev, class_id: '' }));
-    try {
-      const res = await getClassesBySchool(schoolId);
-      if (res.data?.success) setClasses(res.data.data || []);
-    } catch (err) {
-      console.error('Kunne ikke hente klasser:', err);
-    } finally {
-      setClassesLoading(false);
-    }
-  };
+  // const fetchClasses = async (schoolId) => {
+  //   setClassesLoading(true);
+  //   setClasses([]);
+  //   setForm(prev => ({ ...prev, class_name: '' }));
+  //   try {
+  //     const res = await getClassesBySchool(schoolId);
+  //     if (res.data?.success) setClasses(res.data.data || []);
+  //   } catch (err) {
+  //     console.error('Kunne ikke hente klasser:', err);
+  //   } finally {
+  //     setClassesLoading(false);
+  //   }
+  // };
 
   if (!isOpen) return null;
 
-  const selectedSchool = schools.find(s => String(s.id) === String(form.school_id));
-  const selectedClass = classes.find(c => String(c.id) === String(form.class_id));
+  // const selectedSchool = schools.find(s => String(s.id) === String(form.school_name));
+  // const selectedClass = classes.find(c => String(c.id) === String(form.class_name));
 
-  const filteredSchools = schools.filter(s =>
-    s.name?.toLowerCase().includes(schoolSearch.toLowerCase())
-  );
-  const filteredClasses = classes.filter(c =>
-    c.name?.toLowerCase().includes(classSearch.toLowerCase())
-  );
+  // const filteredSchools = schools.filter(s =>
+  //   s.name?.toLowerCase().includes(schoolSearch.toLowerCase())
+  // );
+  // const filteredClasses = classes.filter(c =>
+  //   c.name?.toLowerCase().includes(classSearch.toLowerCase())
+  // );
 
   const validate = () => {
     const e = {};
@@ -113,7 +121,7 @@ const InquiryModal = ({ isOpen, onClose }) => {
     if (!form.email.trim()) e.email = 'E-mail er påkrævet';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Ugyldig e-mailadresse';
     if (!form.phone.trim()) e.phone = 'Telefonnummer er påkrævet';
-    if (!form.school_id) e.school_id = 'Vælg venligst en skole';
+    if (!form.school_name.trim()) e.school_name = 'School is required';
     if (!form.message.trim()) e.message = 'Besked er påkrævet';
     return e;
   };
@@ -124,14 +132,14 @@ const InquiryModal = ({ isOpen, onClose }) => {
   };
 
   const handleSchoolSelect = (school) => {
-    setForm(prev => ({ ...prev, school_id: String(school.id), class_id: '' }));
-    if (errors.school_id) setErrors(prev => ({ ...prev, school_id: undefined }));
+    setForm(prev => ({ ...prev, school_name: String(school.id), class_name: '' }));
+    if (errors.school_name) setErrors(prev => ({ ...prev, school_name: undefined }));
     setSchoolSearch('');
     setSchoolDropdownOpen(false);
   };
 
   const handleClassSelect = (cls) => {
-    setForm(prev => ({ ...prev, class_id: String(cls.id) }));
+    setForm(prev => ({ ...prev, class_name: String(cls.id) }));
     setClassSearch('');
     setClassDropdownOpen(false);
   };
@@ -174,13 +182,12 @@ const InquiryModal = ({ isOpen, onClose }) => {
         <button
           type="button"
           onClick={() => setOpen(prev => !prev)}
-          className={`w-full px-4 py-3 bg-slate-50 border rounded-xl flex items-center justify-between text-sm font-medium transition-all duration-200 ${
-            error
-              ? 'border-red-400 bg-red-50'
-              : open
+          className={`w-full px-4 py-3 bg-slate-50 border rounded-xl flex items-center justify-between text-sm font-medium transition-all duration-200 ${error
+            ? 'border-red-400 bg-red-50'
+            : open
               ? 'border-green-500 bg-white ring-2 ring-green-500/20'
               : 'border-slate-200 hover:border-slate-300'
-          }`}
+            }`}
         >
           <span className={selected ? 'text-slate-700' : 'text-slate-400'}>
             {loading ? loadingText : selected ? selected.name : placeholder}
@@ -216,11 +223,10 @@ const InquiryModal = ({ isOpen, onClose }) => {
                     <button
                       type="button"
                       onClick={() => onSelect(item)}
-                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-green-50 hover:text-green-700 ${
-                        selected && String(selected.id) === String(item.id)
-                          ? 'bg-green-50 text-green-700 font-semibold'
-                          : 'text-slate-700'
-                      }`}
+                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-green-50 hover:text-green-700 ${selected && String(selected.id) === String(item.id)
+                        ? 'bg-green-50 text-green-700 font-semibold'
+                        : 'text-slate-700'
+                        }`}
                     >
                       {item.name}
                     </button>
@@ -339,7 +345,7 @@ const InquiryModal = ({ isOpen, onClose }) => {
               </div>
 
               {/* Forespørgsel som */}
-              <div>
+              {/* <div>
                 <label className={labelBase}>Forespørgsel som</label>
                 <div className="flex gap-3">
                   {[
@@ -350,56 +356,45 @@ const InquiryModal = ({ isOpen, onClose }) => {
                       key={opt.value}
                       type="button"
                       onClick={() => handleChange('req_for', opt.value)}
-                      className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all duration-200 ${
-                        form.req_for === opt.value
-                          ? 'bg-green-600 border-green-600 text-white shadow-md'
-                          : 'bg-white border-slate-200 text-slate-600 hover:border-green-300'
-                      }`}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all duration-200 ${form.req_for === opt.value
+                        ? 'bg-green-600 border-green-600 text-white shadow-md'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-green-300'
+                        }`}
                     >
                       {opt.label}
                     </button>
                   ))}
                 </div>
+              </div> */}
+
+              <div>
+                <label className={labelBase}>
+                  <School className="inline w-3 h-3 mr-1 mb-0.5" />
+                  School Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter school name"
+                  value={form.school_name}
+                  onChange={e => handleChange('school_name', e.target.value)}
+                  className={`${inputBase} ${errors.school_name ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
+                />
+                {errors.school_name && <p className="text-red-500 text-xs mt-1">{errors.school_name}</p>}
               </div>
 
-              {/* Skole dropdown */}
-              {renderDropdown({
-                ref: schoolDropdownRef,
-                label: 'Skole',
-                icon: School,
-                placeholder: 'Vælg din skole',
-                loadingText: 'Henter skoler...',
-                emptyText: 'Ingen skoler fundet',
-                isOpen: schoolDropdownOpen,
-                setOpen: setSchoolDropdownOpen,
-                search: schoolSearch,
-                setSearch: setSchoolSearch,
-                loading: schoolsLoading,
-                filtered: filteredSchools,
-                selected: selectedSchool,
-                onSelect: handleSchoolSelect,
-                error: errors.school_id,
-              })}
-
-              {/* Klasse dropdown — vises kun når skole er valgt */}
-              {form.school_id && renderDropdown({
-                ref: classDropdownRef,
-                label: 'Klasse (valgfri)',
-                icon: BookOpen,
-                placeholder: classesLoading ? 'Henter klasser...' : classes.length === 0 ? 'Ingen klasser tilgængelige' : 'Vælg din klasse',
-                loadingText: 'Henter klasser...',
-                emptyText: 'Ingen klasser fundet',
-                isOpen: classDropdownOpen,
-                setOpen: setClassDropdownOpen,
-                search: classSearch,
-                setSearch: setClassSearch,
-                loading: classesLoading,
-                filtered: filteredClasses,
-                selected: selectedClass,
-                onSelect: handleClassSelect,
-                error: errors.class_id,
-              })}
-
+              <div>
+                <label className={labelBase}>
+                  <BookOpen className="inline w-3 h-3 mr-1 mb-0.5" />
+                  Class (optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter class name"
+                  value={form.class_name}
+                  onChange={e => handleChange('class_name', e.target.value)}
+                  className={`${inputBase} border-slate-200`}
+                />
+              </div>
               {/* Besked */}
               <div>
                 <label className={labelBase}>

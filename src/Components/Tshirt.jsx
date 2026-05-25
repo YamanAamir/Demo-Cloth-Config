@@ -583,7 +583,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
             {/* Country dropdown */}
             {libCountriesLoading ? (
               <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading countries...
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Indlæser lande...
               </div>
             ) : (
               <div className="mb-3">
