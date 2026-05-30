@@ -6,10 +6,10 @@ import "./index.css";
 import "./AutoTranslate";
 import { AuthProvider } from "./context/AuthContext";
 
-
+// basename="/Demo-Clothing-Configurator"
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <AuthProvider>
-    <BrowserRouter basename="/Demo-Clothing-Configurator">
+  <AuthProvider >
+    <BrowserRouter>
       <App />
     </BrowserRouter>
   </AuthProvider>

@@ -15,7 +15,7 @@ export default defineConfig({
     webp: { quality: 75 }
   })
   ],
-  base: '/Demo-Clothing-Configurator/'
+  // base: '/Demo-Clothing-Configurator/'
 
 
 })
