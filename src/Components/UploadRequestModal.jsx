@@ -27,10 +27,7 @@ const UploadRequestModal = ({ isOpen, onClose, onSendRequest }) => {
         {/* Body */}
         <div className="px-6 py-6">
           <p className="text-slate-600 text-sm leading-relaxed mb-6">
-            For at uploade dit eget design skal din klasse først oprettes i systemet.
-            Når klassen er oprettet, får du adgang til at uploade og arbejde videre med jeres design 😊
-            <br /><br />
-            👉 Start med at oprette din klasse her.
+            Du skal først sende en anmodning, hvis du ønsker at uploade et design. Så snart din anmodning er godkendt, har du mulighed for at bruge dit eget design.
           </p>
 
           <div className="flex gap-3">

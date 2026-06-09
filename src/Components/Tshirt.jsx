@@ -1,4 +1,4 @@
-ï»¿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 import Test from "./Test";
@@ -13,7 +13,7 @@ import UploadRequestModal from "./UploadRequestModal";
 import { postToPreview } from "../utils/postMessage";
 
 
-const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry, activeTab: externalTab, onTabChange }) => {
+const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry, activeTab: externalTab, onTabChange, maxCharsText = 25 }) => {
   const [internalTab, setInternalTab] = useState("size");
   const activeTab = externalTab ?? internalTab;
   const setActiveTab = (tab) => { setInternalTab(tab); onTabChange?.(tab); };
@@ -46,7 +46,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
         if (res.data?.success) {
           const list = res.data.data || [];
           setLibCountries(list);
-          // Do NOT auto-select â€” user must click a country to load designs
+          // Do NOT auto-select — user must click a country to load designs
         }
       } catch (e) { console.error(e); }
       finally { setLibCountriesLoading(false); }
@@ -144,7 +144,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
     }
 
     if (hasFlag && flagCount === 2 && flag && flag2) {
-      // Emissive = pure white mask only â€” no actual flag colors
+      // Emissive = pure white mask only — no actual flag colors
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, BOX_Y, BOX_W, BOX_H);
       ctx.fillRect(BOX_W + DIVIDER_W, BOX_Y, BOX_W, BOX_H);
@@ -158,7 +158,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
       // Top black padding
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 120, canvas.width, 20);
-      // Border only for single flag/logo â€” not for 2-flag split (would cut edges)
+      // Border only for single flag/logo — not for 2-flag split (would cut edges)
       // if (hasLogo) {
       ctx.strokeStyle = "#000000";
       ctx.lineWidth = 40;
@@ -192,7 +192,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
       ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
     }
 
-    // type === "" means text-only mode â€” skip flag/logo drawing
+    // type === "" means text-only mode — skip flag/logo drawing
     if (type !== "") {
       try {
         const flagDrawn = await drawFlags(ctx, flag, flag2);
@@ -460,7 +460,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
       prevPressureOptionsRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
 
-      // Increment render counter â€” stale async callbacks will be ignored
+      // Increment render counter — stale async callbacks will be ignored
       const currentRender = (renderCounterRef.current[area] || 0) + 1;
       renderCounterRef.current[area] = currentRender;
 
@@ -574,7 +574,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
             </div>
           </div>
 
-          {/* â”€â”€ Back Design Library â”€â”€ */}
+          {/* -- Back Design Library -- */}
           <div className="mb-4">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5" /> Back Design Library
@@ -583,7 +583,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
             {/* Country dropdown */}
             {libCountriesLoading ? (
               <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> IndlÃ¦ser lande...
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Indlæser lande...
               </div>
             ) : (
               <div className="mb-3">
@@ -715,7 +715,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                         {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
                         {(tab === "text" && pressureOptions[`${area}Text`]) ||
                           (tab === "flag" && pressureOptions[`${area}Flag`]) ||
-                          (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " âœ“" : ""}
+                          (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ?" : ""}
                       </button>
                     ))}
                   </div>
@@ -739,7 +739,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                             }, 0);
                           }}
                           placeholder="Enter text"
-                          maxLength={25}
+                          maxLength={maxCharsText}
                           className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
                         />
                         {pressureOptions[`${area}Text`] && (
@@ -829,7 +829,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                           }`}
                       >
                         {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
-                        {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " âœ“" : ""}
+                        {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ?" : ""}
                       </button>
                     ))}
                   </div>
@@ -852,7 +852,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                             }, 0);
                           }}
                           placeholder="Enter text"
-                          maxLength={25}
+                          maxLength={maxCharsText}
                           className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
                         />
                         {pressureOptions[`${area}Text`] && (
@@ -922,7 +922,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                         </div>
                       </div>
 
-                      {/* Flag 2 â€” only if count = 2 */}
+                      {/* Flag 2 — only if count = 2 */}
                       {(Number(pressureOptions[`${area}FlagCount`] || 1) === 2) && (
                         <div>
                           <label className="text-xs text-gray-500 mb-1 block">{t("Flag 2 (50% size)")}</label>
@@ -953,7 +953,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
             ))}
           </div>
 
-          {/* Back â€” absolute bottom */}
+          {/* Back — absolute bottom */}
           {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
               <button
                 onClick={() => setActiveTab("size")}

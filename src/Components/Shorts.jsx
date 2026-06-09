@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 import Test1 from "./Test1";
@@ -10,7 +10,7 @@ import { postToPreview } from "../utils/postMessage";
 
 const t = (key) => TRANSLATE_MAP[key] || key;
 
-const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange }) => {
+const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange, maxCharsText = 25 }) => {
   const [internalTab, setInternalTab] = useState("size");
   const activeTab = externalTab ?? internalTab;
   const setActiveTab = (tab) => { setInternalTab(tab); onTabChange?.(tab); };
@@ -34,7 +34,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   const FLAG_HEIGHT = 240;
   const CANVAS_WIDTH = 320;
   const CANVAS_HEIGHT = TEXT_HEIGHT + FLAG_HEIGHT;
-  // 🔥 Dynamic dimensions based on flag count for optimal UI
+  // ?? Dynamic dimensions based on flag count for optimal UI
   const getEffectiveDimensions = (flagCount) => {
     const DIMENSION_MAP = {
       1: {
@@ -52,7 +52,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   // const getEmissiveBase64 = (text, hasFlag = false, hasLogo = false, flagCount = 1) => {
   //   const canvas = document.createElement("canvas");
 
-  //   // 🔥 Dynamic canvas dimensions based on flag count
+  //   // ?? Dynamic canvas dimensions based on flag count
   //   const dimensions = getEffectiveDimensions(flagCount);
   //   canvas.width = dimensions.width;
   //   canvas.height = TEXT_HEIGHT + dimensions.flagHeight;
@@ -71,7 +71,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   //   try {
   //     return canvas.toDataURL("image/png");
   //   } catch (error) {
-  //     console.error("❌ Shorts getEmissiveBase64 tainted:", error);
+  //     console.error("? Shorts getEmissiveBase64 tainted:", error);
   //     const fallbackCanvas = document.createElement("canvas");
   //     fallbackCanvas.width = dimensions.width; fallbackCanvas.height = TEXT_HEIGHT + dimensions.flagHeight;
   //     const fallbackCtx = fallbackCanvas.getContext("2d");
@@ -128,7 +128,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   const getDiffuseBase64 = (flag, logoPre, logoCustom, text, callback, flag2 = "", flagCount = 1, textColor = "#ffffff") => {
     const canvas = document.createElement("canvas");
 
-    // 🔥 Dynamic canvas dimensions based on flag count
+    // ?? Dynamic canvas dimensions based on flag count
     const dimensions = getEffectiveDimensions(flagCount);
     canvas.width = dimensions.width;
     canvas.height = TEXT_HEIGHT + dimensions.flagHeight;
@@ -146,7 +146,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
         const dataURL = canvas.toDataURL("image/png");
         callback(dataURL, logoOpacityBase64);
       } catch (error) {
-        console.error("❌ Shorts canvas tainted:", error);
+        console.error("? Shorts canvas tainted:", error);
         const fallbackCanvas = document.createElement("canvas");
         fallbackCanvas.width = dimensions.width; fallbackCanvas.height = TEXT_HEIGHT + dimensions.flagHeight;
         const fallbackCtx = fallbackCanvas.getContext("2d");
@@ -159,7 +159,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
     const loadImage = (src) => new Promise((resolve, reject) => {
       const img = new Image();
 
-      // 🔥 CRITICAL: Set crossOrigin BEFORE src to prevent canvas taint
+      // ?? CRITICAL: Set crossOrigin BEFORE src to prevent canvas taint
       img.crossOrigin = "anonymous";
 
       img.onload = () => {
@@ -167,7 +167,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       };
 
       img.onerror = (e) => {
-        console.error("❌ Shorts image failed:", src, e);
+        console.error("? Shorts image failed:", src, e);
         // Create fallback
         const fallbackCanvas = document.createElement("canvas");
         fallbackCanvas.width = 160; fallbackCanvas.height = 120;
@@ -273,7 +273,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
         octx.putImageData(imgData, 0, 0);
         finalize(opacityCanvas.toDataURL("image/png"));
       }).catch((error) => {
-        console.error("❌ Shorts logo failed:", logoSrc, error);
+        console.error("? Shorts logo failed:", logoSrc, error);
         finalize();
       });
       return;
@@ -408,7 +408,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
                 className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`]?.trim() === tab || (tab === "text" && (!pressureOptions[`${area}Type`] || pressureOptions[`${area}Type`]?.trim() === "")) ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
               >
                 {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
-                {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
+                {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ?" : ""}
               </button>
             ))}
           </div>
@@ -417,7 +417,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
               <div className="flex flex-wrap gap-2">
                 <input type="text" value={pressureOptions[`${area}Text`]}
                   onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
-                  placeholder="Enter text" maxLength={25}
+                  placeholder="Enter text" maxLength={maxCharsText}
                   className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
                 />
                 {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
@@ -511,7 +511,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
           </div>
           {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
             <button onClick={() => setActiveTab("pressure")} className="w-full py-2.5 bg-slate-600 text-white font-semibold rounded-xl hover:bg-slate-700 transition text-sm flex items-center justify-center gap-2">
-              Next — Design
+              Next � Design
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           </div> */}

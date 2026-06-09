@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 import Test from "./Test";
@@ -12,7 +12,7 @@ import { postToPreview } from "../utils/postMessage";
 
 const t = (key) => TRANSLATE_MAP[key] || key;
 
-const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange }) => {
+const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange, maxCharsText = 25 }) => {
   const [internalTab, setInternalTab] = useState("size");
   const activeTab = externalTab ?? internalTab;
   const setActiveTab = (tab) => { setInternalTab(tab); onTabChange?.(tab); };
@@ -115,7 +115,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
   ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
 }
     if (hasSecondAsset) {
-      // 🔲 BLACK BASE
+      // ?? BLACK BASE
       ctx.globalAlpha = 1;
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -213,7 +213,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
       const BOX_Y = TEXT_HEIGHT + (FLAG_HEIGHT - BOX_H) / 2;
 
       const drawFlagInBox = (img, x, y, w, h) => {
-        // cover: scale to fill box, clip overflow — no padding, no distortion
+        // cover: scale to fill box, clip overflow � no padding, no distortion
         const scale = Math.max(w / img.width, h / img.height);
         const dw = img.width * scale;
         const dh = img.height * scale;
@@ -319,7 +319,7 @@ if (flag && flagImages[flag]) {
         })
         .catch(finalize);
 
-      return; // ✅ important
+      return; // ? important
     }
 
     // ---------- EMPTY ----------
@@ -475,7 +475,7 @@ if (flag && flagImages[flag]) {
               className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`] === tab || (tab === "text" && !pressureOptions[`${area}Type`]) ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
             >
               {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
-              {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
+              {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ?" : ""}
             </button>
           ))}
         </div>
@@ -484,7 +484,7 @@ if (flag && flagImages[flag]) {
             <div className="flex flex-wrap gap-2">
               <input type="text" value={pressureOptions[`${area}Text`]}
                 onChange={(e) => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
-                placeholder="Enter text" maxLength={25}
+                placeholder="Enter text" maxLength={maxCharsText}
                 className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
               />
               {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
@@ -552,7 +552,7 @@ if (flag && flagImages[flag]) {
               className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`] === tab || (tab === "text" && !pressureOptions[`${area}Type`]) ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
             >
               {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
-              {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
+              {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ?" : ""}
             </button>
           ))}
         </div>
@@ -561,7 +561,7 @@ if (flag && flagImages[flag]) {
             <div className="flex flex-wrap gap-2">
               <input type="text" value={pressureOptions[`${area}Text`]}
                 onChange={(e) => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
-                placeholder="Enter text" maxLength={25}
+                placeholder="Enter text" maxLength={maxCharsText}
                 className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
               />
               {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
@@ -657,7 +657,7 @@ if (flag && flagImages[flag]) {
       {activeTab === "size" ? (
         <div className="flex flex-col flex-1 relative px-4 pb-36">
           <h1 className="text-lg font-bold mb-4 text-gray-900">Zipper Hoodie</h1>
-          {/* Color — compact */}
+          {/* Color � compact */}
           <div className="mb-5">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
             <div className="grid grid-flow-col grid-rows-1 gap-2 w-fit">
@@ -672,7 +672,7 @@ if (flag && flagImages[flag]) {
             </div>
             {selectedColor && <p className="text-xs text-gray-500 mt-1.5">{selectedColor}</p>}
           </div>
-          {/* Size — compact */}
+          {/* Size � compact */}
           <div className="mb-5">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Size</h2>
             <div className="flex flex-wrap gap-2">
@@ -683,7 +683,7 @@ if (flag && flagImages[flag]) {
               ))}
             </div>
           </div>
-          {/* ── Back Design Library ── */}
+          {/* -- Back Design Library -- */}
           <div className="mb-4">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5" /> Back Design Library
@@ -691,7 +691,7 @@ if (flag && flagImages[flag]) {
             {/* Country dropdown */}
             {libCountriesLoading ? (
               <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Indlæser lande...
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Indl�ser lande...
               </div>
             ) : (
               <div className="mb-3">
@@ -770,7 +770,7 @@ if (flag && flagImages[flag]) {
           {/* Next */}
           {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
             <button onClick={() => setActiveTab("pressure")} className="w-full py-2.5 bg-slate-600 text-white font-semibold rounded-xl hover:bg-slate-700 transition text-sm flex items-center justify-center gap-2">
-              Next — Design
+              Next � Design
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           </div> */}

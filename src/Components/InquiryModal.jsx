@@ -345,11 +345,10 @@ const InquiryModal = ({ isOpen, onClose }) => {
               </div>
 
               {/* Forespørgsel som */}
-              {/* <div>
+              <div>
                 <label className={labelBase}>Forespørgsel som</label>
                 <div className="flex gap-3">
                   {[
-                    { value: 'student', label: 'Elev' },
                     { value: 'class_rep', label: 'Klasserepræsentant' },
                   ].map(opt => (
                     <button
@@ -365,7 +364,7 @@ const InquiryModal = ({ isOpen, onClose }) => {
                     </button>
                   ))}
                 </div>
-              </div> */}
+              </div>
 
               <div>
                 <label className={labelBase}>

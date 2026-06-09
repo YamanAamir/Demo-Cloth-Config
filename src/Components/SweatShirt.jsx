@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 import Test from "./Test";
@@ -16,7 +16,7 @@ import { postToPreview } from "../utils/postMessage";
 
 const t = (key) => TRANSLATE_MAP[key] || key;
 
-const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange }) => {
+const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange, maxCharsText = 25 }) => {
   const [internalTab, setInternalTab] = useState("size");
   const activeTab = externalTab ?? internalTab;
   const setActiveTab = (tab) => { setInternalTab(tab); onTabChange?.(tab); };
@@ -332,7 +332,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
         })
         .catch(finalize);
 
-      return; // ✅ important
+      return; // ? important
     }
 
 
@@ -425,7 +425,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     });
   };
 
-  // ── Effects ──────────────────────────────────────────────────────────────
+  // -- Effects --------------------------------------------------------------
 
   useEffect(() => {
     const colorMap = {
@@ -596,7 +596,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
             </h2>
             {libCountriesLoading ? (
               <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Indlæser lande...
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Indl�ser lande...
               </div>
             ) : (
               <div className="mb-3">
@@ -705,7 +705,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                         {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
                         {(tab === "text" && pressureOptions[`${area}Text`]) ||
                           (tab === "flag" && pressureOptions[`${area}Flag`]) ||
-                          (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
+                          (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ?" : ""}
                       </button>
                     ))}
                   </div>
@@ -715,7 +715,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                       <div className="flex flex-wrap gap-2">
                         <input type="text" value={pressureOptions[`${area}Text`]}
                           onChange={(e) => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
-                          placeholder="Enter text" maxLength={25}
+                          placeholder="Enter text" maxLength={maxCharsText}
                           className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
                         />
                         {pressureOptions[`${area}Text`] && (
@@ -805,7 +805,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                           }`}
                       >
                         {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
-                        {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
+                        {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ?" : ""}
                       </button>
                     ))}
                   </div>
@@ -814,7 +814,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                       <div className="flex flex-wrap gap-2">
                         <input type="text" value={pressureOptions[`${area}Text`]}
                           onChange={(e) => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
-                          placeholder="Enter text" maxLength={25}
+                          placeholder="Enter text" maxLength={maxCharsText}
                           className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
                         />
                         {pressureOptions[`${area}Text`] && (
