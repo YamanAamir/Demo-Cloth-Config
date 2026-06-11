@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 import Test from "./Test";
@@ -118,24 +118,9 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
         fontSize -= 2;
         ctx.font = `bold ${fontSize}px Arial`;
       }
-      ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
+      ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT + FLAG_HEIGHT / 2);
     }
 
-    if (hasFlag || hasLogo) {
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH - 20, FLAG_HEIGHT);
-      ctx.fillStyle = "#000000";
-      ctx.fillRect(0, 120, canvas.width, 20);
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 40;
-      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
-    }
-
-    if (hasFlag || hasLogo) {
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 40;
-      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
-    }
     if (hasSecondAsset) {
       ctx.globalAlpha = 1;
       ctx.fillStyle = "#000000";
@@ -149,7 +134,21 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, BOX_Y, BOX_W, BOX_H);
       ctx.fillRect(BOX_W + DIVIDER_W, BOX_Y, BOX_W, BOX_H);
+    } else if (hasFlag || hasLogo) {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH - 20, FLAG_HEIGHT);
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 120, canvas.width, 20);
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 40;
+      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+    } else if (text?.trim()) {
+      // Text-only: border to define print area
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 40;
+      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
     }
+
     return canvas.toDataURL("image/png");
   };
 
@@ -181,7 +180,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
           ctx.font = `bold ${fontSize}px Arial`;
         }
 
-        ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
+        ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT + FLAG_HEIGHT / 2);
       }
 
       callback(canvas.toDataURL("image/png"));
@@ -207,7 +206,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
         ctx.font = `bold ${fontSize}px Arial`;
       }
 
-      const y = TEXT_HEIGHT / 2;
+      const y = TEXT_HEIGHT + FLAG_HEIGHT / 2;
       ctx.fillText(text, CANVAS_WIDTH / 2, y);
     }
 
@@ -964,6 +963,15 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
               const diffuseB64 = raw?.diffuse || "";
               const opacityB64 = raw?.opacity || "";
               const color = libDesignColorRef.current;
+
+              // Plain white canvas for back_white_opacity
+              const whiteCanvas = document.createElement("canvas");
+              whiteCanvas.width = 400; whiteCanvas.height = 400;
+              const wctx = whiteCanvas.getContext("2d");
+              wctx.fillStyle = "#ffffff";
+              wctx.fillRect(0, 0, 400, 400);
+              const opacityW64 = whiteCanvas.toDataURL("image/png");
+
               ["preview-iframe", "preview-iframe2"].forEach((id) => {
                 const iframe = document.getElementById(id);
                 if (iframe?.contentWindow) {
@@ -971,7 +979,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                     if (diffuseB64) iframe.contentWindow.postMessage("SweatShirt:back_black_diffuse: " + diffuseB64, "*");
                     if (opacityB64) iframe.contentWindow.postMessage("SweatShirt:back_black_opacity: " + opacityB64, "*");
                   } else if (color === 'black') {
-                    if (opacityB64) iframe.contentWindow.postMessage("SweatShirt:back_white_opacity: " + opacityB64, "*");
+                    iframe.contentWindow.postMessage("SweatShirt:back_white_opacity: " + opacityW64, "*");
                   }
                 }
               });

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 import Test from "./Test";
@@ -49,7 +49,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
         if (res.data?.success) {
           const list = res.data.data || [];
           setLibCountries(list);
-          // Do NOT auto-select � user must click a country to load designs
+          // Do NOT auto-select ? user must click a country to load designs
         }
       } catch (e) { console.error(e); }
       finally { setLibCountriesLoading(false); }
@@ -143,11 +143,11 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
         fontSize -= 2;
         ctx.font = `bold ${fontSize}px Arial`;
       }
-      ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
+      ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT + FLAG_HEIGHT / 2);
     }
 
     if (hasFlag && flagCount === 2 && flag && flag2) {
-      // Emissive = pure white mask only � no actual flag colors
+      // Emissive = pure white mask only ? no actual flag colors
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, BOX_Y, BOX_W, BOX_H);
       ctx.fillRect(BOX_W + DIVIDER_W, BOX_Y, BOX_W, BOX_H);
@@ -161,7 +161,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
       // Top black padding
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 120, canvas.width, 20);
-      // Border only for single flag/logo � not for 2-flag split (would cut edges)
+      // Border only for single flag/logo ? not for 2-flag split (would cut edges)
       // if (hasLogo) {
       ctx.strokeStyle = "#000000";
       ctx.lineWidth = 40;
@@ -192,10 +192,10 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
         fontSize -= 2;
         ctx.font = `bold ${fontSize}px Arial`;
       }
-      ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
+      ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT + FLAG_HEIGHT / 2);
     }
 
-    // type === "" means text-only mode � skip flag/logo drawing
+    // type === "" means text-only mode ? skip flag/logo drawing
     if (type !== "") {
       try {
         const flagDrawn = await drawFlags(ctx, flag, flag2);
@@ -463,7 +463,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
       prevPressureOptionsRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
 
-      // Increment render counter � stale async callbacks will be ignored
+      // Increment render counter ? stale async callbacks will be ignored
       const currentRender = (renderCounterRef.current[area] || 0) + 1;
       renderCounterRef.current[area] = currentRender;
 
@@ -501,7 +501,16 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
       const raw = update.canvasBase64.rawData;
       const diffuseB64 = raw?.diffuse || "";
       const opacityB64 = raw?.opacity || "";
-      const color = libDesignColorRef.current; // always latest, no stale closure
+      const color = libDesignColorRef.current;
+
+      // Plain white canvas for back_white_opacity
+      const whiteCanvas = document.createElement("canvas");
+      whiteCanvas.width = 400; whiteCanvas.height = 400;
+      const wctx = whiteCanvas.getContext("2d");
+      wctx.fillStyle = "#ffffff";
+      wctx.fillRect(0, 0, 400, 400);
+      const opacityW64 = whiteCanvas.toDataURL("image/png");
+
       ["preview-iframe", "preview-iframe2"].forEach((id) => {
         const iframe = document.getElementById(id);
         if (iframe?.contentWindow) {
@@ -509,7 +518,8 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
             if (diffuseB64) iframe.contentWindow.postMessage("T-Shirt:back_black_diffuse: " + diffuseB64, "*");
             if (opacityB64) iframe.contentWindow.postMessage("T-Shirt:back_black_opacity: " + opacityB64, "*");
           } else if (color === 'black') {
-            if (opacityB64) iframe.contentWindow.postMessage("T-Shirt:back_white_opacity: " + opacityB64, "*");
+            iframe.contentWindow.postMessage("T-Shirt:back_white_opacity: " + opacityB64, "*");
+            iframe.contentWindow.postMessage("T-Shirt:back_white_diffuse: " + opacityW64, "*");
           }
         }
       });
@@ -970,7 +980,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                         </div>
                       </div>
 
-                      {/* Flag 2 � only if count = 2 */}
+                      {/* Flag 2 ? only if count = 2 */}
                       {(Number(pressureOptions[`${area}FlagCount`] || 1) === 2) && (
                         <div>
                           <label className="text-xs text-gray-500 mb-1 block">{t("Flag 2 (50% size)")}</label>
@@ -1001,7 +1011,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
             ))}
           </div>
 
-          {/* Back � absolute bottom */}
+          {/* Back ? absolute bottom */}
           {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
               <button
                 onClick={() => setActiveTab("size")}

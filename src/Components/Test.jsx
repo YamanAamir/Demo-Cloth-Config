@@ -239,6 +239,11 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
     opacityCanvas.width = CANVAS_WIDTH;
     opacityCanvas.height = CANVAS_HEIGHT;
     const octx = opacityCanvas.getContext("2d");
+
+    // White background first (same as PreviewModal's createOpacityTexture)
+    octx.fillStyle = "white";
+    octx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
     objects.forEach(obj => {
       octx.save();
       octx.translate(obj.pos.x, obj.pos.y);
@@ -252,8 +257,9 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
       const imgData = octx.getImageData(0, 0, opacityCanvas.width, opacityCanvas.height);
       for (let i = 0; i < imgData.data.length; i += 4) {
         const brightness = 0.299 * imgData.data[i] + 0.587 * imgData.data[i + 1] + 0.114 * imgData.data[i + 2];
-        const alpha = imgData.data[i + 3];
-        const bw = (alpha < 10 || brightness > 128) ? 0 : 255;
+        // White bg + dark design pixels → bw=255 (print area)
+        // White bg areas (no design) → bw=0 (no print)
+        const bw = brightness > 128 ? 0 : 255;
         imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = bw;
         imgData.data[i + 3] = 255;
       }
@@ -555,7 +561,7 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
   };
 
   return (
-    <div className="p-0 max-w-2xl mx-auto">
+    <div className="p-0 max-w-2xl mx-auto hidden">
       {/* Show message when design is auto-applied */}
       {backDesigns && objects.length > 0 && (
         <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -570,7 +576,7 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
         ref={canvasRef}
         width={CANVAS_WIDTH}
         height={CANVAS_HEIGHT}
-        className="border-2 border-gray-300 rounded-lg shadow-lg block mx-auto bg-gray-50"
+        className="border-2 border-gray-300 rounded-lg shadow-lg block mx-auto bg-gray-50 hidden"
         style={{ cursor: getSelected()?.locked ? "not-allowed" : "move" }}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}

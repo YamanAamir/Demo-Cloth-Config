@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 import Test from "./Test";
@@ -77,7 +77,6 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
     canvas.height = CANVAS_HEIGHT;
     const ctx = canvas.getContext("2d");
 
-    // Use transparency instead of black background for cleaner blending
     if (text?.trim()) {
       let fontSize = 48;
       ctx.font = `bold ${fontSize}px Arial`;
@@ -89,31 +88,10 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
         fontSize -= 2;
         ctx.font = `bold ${fontSize}px Arial`;
       }
-      ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
+      ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT + FLAG_HEIGHT / 2);
     }
 
-    if (hasFlag || hasLogo) {
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH - 20, FLAG_HEIGHT);
-
-  // Top black padding
-  ctx.fillStyle = "#000000";
-  ctx.fillRect(0, 120, canvas.width, 20);
-
-  // Border
-  ctx.strokeStyle = "#000000";
-  ctx.lineWidth = 40;
-  ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
-}
-
-    // Add black border (mask) if flag or logo is present
-    if (hasFlag || hasLogo) {
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 40;
-      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
-    }
     if (hasSecondAsset) {
-      // ?? BLACK BASE
       ctx.globalAlpha = 1;
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -126,7 +104,23 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, BOX_Y, BOX_W, BOX_H);
       ctx.fillRect(BOX_W + DIVIDER_W, BOX_Y, BOX_W, BOX_H);
+    } else if (hasFlag || hasLogo) {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH - 20, FLAG_HEIGHT);
+
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 120, canvas.width, 20);
+
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 40;
+      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+    } else if (text?.trim()) {
+      // Text-only: border to define print area (same as Tshirt)
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 40;
+      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
     }
+
     return canvas.toDataURL("image/png");
   };
 
@@ -159,7 +153,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
           ctx.font = `bold ${fontSize}px Arial`;
         }
 
-        ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
+        ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT + FLAG_HEIGHT / 2);
       }
 
       callback(canvas.toDataURL("image/png"));
@@ -186,7 +180,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
         ctx.font = `bold ${fontSize}px Arial`;
       }
 
-      const y = TEXT_HEIGHT / 2;
+      const y = TEXT_HEIGHT + FLAG_HEIGHT / 2;
       ctx.fillText(text, CANVAS_WIDTH / 2, y);
     }
 
@@ -619,7 +613,7 @@ if (flag && flagImages[flag]) {
       {activeTab === "size" ? (
         <div className="flex flex-col flex-1 relative p-2">
           <h1 className="text-lg font-bold mb-3 text-gray-900">Hoodie</h1>
-          {/* Color � 2-row grid */}
+          {/* Color ? 2-row grid */}
           <div className="mb-4">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
             <div className="grid grid-flow-col grid-rows-1 gap-2 w-fit">
@@ -762,7 +756,7 @@ if (flag && flagImages[flag]) {
           {/* Next */}
           {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
             <button onClick={() => setActiveTab("pressure")} className="w-full py-2.5 bg-slate-600 text-white font-semibold rounded-xl hover:bg-slate-700 transition text-sm flex items-center justify-center gap-2">
-              Next � Design
+              Next ? Design
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           </div> */}
@@ -788,6 +782,15 @@ if (flag && flagImages[flag]) {
             const diffuseB64 = raw?.diffuse || "";
             const opacityB64 = raw?.opacity || "";
             const color = libDesignColorRef.current;
+
+            // Plain white canvas for back_white_opacity
+            const whiteCanvas = document.createElement("canvas");
+            whiteCanvas.width = 400; whiteCanvas.height = 400;
+            const wctx = whiteCanvas.getContext("2d");
+            wctx.fillStyle = "#ffffff";
+            wctx.fillRect(0, 0, 400, 400);
+            const opacityW64 = whiteCanvas.toDataURL("image/png");
+
             ["preview-iframe", "preview-iframe2"].forEach(id => {
               const f = document.getElementById(id);
               if (f?.contentWindow) {
@@ -795,7 +798,7 @@ if (flag && flagImages[flag]) {
                   if (diffuseB64) f.contentWindow.postMessage("Hoodie:back_black_diffuse: " + diffuseB64, "*");
                   if (opacityB64) f.contentWindow.postMessage("Hoodie:back_black_opacity: " + opacityB64, "*");
                 } else if (color === 'black') {
-                  if (opacityB64) f.contentWindow.postMessage("Hoodie:back_white_opacity: " + opacityB64, "*");
+                  f.contentWindow.postMessage("Hoodie:back_white_opacity: " + opacityW64, "*");
                 }
               }
             });

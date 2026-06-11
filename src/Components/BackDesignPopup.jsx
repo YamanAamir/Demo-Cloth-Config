@@ -144,7 +144,15 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
                         if (rawOpacity) iframe.contentWindow.postMessage(prefix + 'back_black_opacity: ' + rawOpacity, '*');
                     } else if (designColorTab === 'black') {
                         // Black garment → white print
-                        if (rawOpacity) iframe.contentWindow.postMessage(prefix + 'back_white_opacity: ' + rawOpacity, '*');
+                        // Plain white opacity for full white print area
+                        const whiteCanvas = document.createElement("canvas");
+                        whiteCanvas.width = 400; whiteCanvas.height = 400;
+                        const wctx = whiteCanvas.getContext("2d");
+                        wctx.fillStyle = "#ffffff";
+                        wctx.fillRect(0, 0, 400, 400);
+                        const opacityW64 = whiteCanvas.toDataURL("image/png");
+                        if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_white_diffuse: ' + "", '*');
+                        iframe.contentWindow.postMessage(prefix + 'back_white_opacity: ' + opacityW64, '*');
                     } else {
                         // Normal → original (disabled)
                         // if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_normal_diffuse: ' + rawDiffuse, '*');

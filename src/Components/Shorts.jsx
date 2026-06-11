@@ -103,7 +103,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
         ctx.font = `bold ${fontSize}px Arial`;
       }
 
-      ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
+      ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT + FLAG_HEIGHT / 2);
     }
 
     // ---------- FRAME (MATCH DIFFUSE EXACTLY) ----------
@@ -118,6 +118,11 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, 20);
 
       // border (same thickness as diffuse)
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 40;
+      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+    } else if (text?.trim()) {
+      // Text-only: border to define print area
       ctx.strokeStyle = "#000000";
       ctx.lineWidth = 40;
       ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
@@ -139,7 +144,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       ctx.font = `bold ${fontSize}px Arial`; ctx.fillStyle = textColor || "#ffffff";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       while (ctx.measureText(text).width > dimensions.width - 80 && fontSize > 28) { fontSize -= 2; ctx.font = `bold ${fontSize}px Arial`; }
-      ctx.fillText(text, dimensions.width / 2, TEXT_HEIGHT / 2);
+      ctx.fillText(text, dimensions.width / 2, (TEXT_HEIGHT + dimensions.flagHeight) / 2);
     }
     const finalize = (logoOpacityBase64 = null) => {
       try {
