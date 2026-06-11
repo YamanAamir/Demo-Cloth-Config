@@ -1,12 +1,20 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import Test from './Test';
 import { X, Globe, Upload, ChevronRight, Loader2, CheckCircle } from 'lucide-react';
 import { getCountries, getLibraryDesigns } from '../api/api';
 import { BASE_URL } from '../utils/const';
 
+// Color tab definitions (English labels)
+const COLOR_TABS = [
+    { key: 'white',  label: 'White',  sub: 'Black print' },
+    { key: 'black',  label: 'Black',  sub: 'White print' },
+    // { key: 'normal', label: 'Normal', sub: 'Original print' },
+];
+
 const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students, backDesigns }) => {
     const [activeTab, setActiveTab] = useState('T-SHIRT');
     const [activeSection, setActiveSection] = useState('library'); // 'library' | 'upload'
+    const [designColorTab, setDesignColorTab] = useState('white'); // 'normal' | 'white' | 'black'
 
     // Library state
     const [countries, setCountries] = useState([]);
@@ -94,6 +102,15 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
     const currentCategoryData = firstStudentData[activeTab] || {};
     const currentBackDesign = currentCategoryData.pressureOptions?.backDesign;
 
+    // Filter library designs by active color tab
+    // normal tab → designs where designColor is null, undefined, or 'normal'
+    // white/black tab → exact match
+    const filteredLibraryDesigns = libraryDesigns.filter(d => {
+        const dc = d.designColor;
+        if (designColorTab === 'normal') return !dc || dc === 'normal';
+        return dc === designColorTab;
+    });
+
     // Switch PlayCanvas page when tab changes
     useEffect(() => {
         const pageIndex = productTabs.findIndex(t => t.name === activeTab) + 1;
@@ -107,25 +124,33 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
 
     const handleUpdate = (update) => {
         if (update.canvasBase64) {
-            const { diffuse, opacity, emissive } = update.canvasBase64;
-            const allPrefixes = ['T-Shirt:', 'SweatShirt:', 'Hoodie:', 'ZipperHoodie:'];
+            const raw = update.canvasBase64.rawData;
+            const rawDiffuse = raw?.diffuse || "";
+            const rawOpacity = raw?.opacity || "";
+            // Garment prefix map: postEx → PlayCanvas prefix
+            const prefixMap = {
+                'T-Shirt:':       'T-Shirt:',
+                'SweatShirt:':    'SweatShirt:',
+                'Hoodie:':        'Hoodie:',
+                'ZipperHoodie:':  'ZipperHoodie:',
+            };
             ['preview-iframe', 'preview-iframe2'].forEach((id) => {
                 const iframe = document.getElementById(id);
-                if (iframe?.contentWindow) {
-                    if (diffuse) iframe.contentWindow.postMessage(diffuse, '*');
-                    if (opacity) iframe.contentWindow.postMessage(opacity, '*');
-                    if (emissive) iframe.contentWindow.postMessage(emissive, '*');
-                    allPrefixes.forEach(prefix => {
-                        if (prefix !== currentTab.postEx) {
-                            const rawDiffuse = update.canvasBase64.rawData?.diffuse;
-                            const rawOpacity = update.canvasBase64.rawData?.opacity;
-                            const rawEmissive = update.canvasBase64.rawData?.emissive;
-                            if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_diffuse: ' + rawDiffuse, '*');
-                            if (rawOpacity) iframe.contentWindow.postMessage(prefix + 'back_opacity: ' + rawOpacity, '*');
-                            if (rawEmissive) iframe.contentWindow.postMessage(prefix + 'back_emissive: ' + rawEmissive, '*');
-                        }
-                    });
-                }
+                if (!iframe?.contentWindow) return;
+                Object.values(prefixMap).forEach(prefix => {
+                    if (designColorTab === 'white') {
+                        // White garment → black print
+                        if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_black_diffuse: ' + rawDiffuse, '*');
+                        if (rawOpacity) iframe.contentWindow.postMessage(prefix + 'back_black_opacity: ' + rawOpacity, '*');
+                    } else if (designColorTab === 'black') {
+                        // Black garment → white print
+                        if (rawOpacity) iframe.contentWindow.postMessage(prefix + 'back_white_opacity: ' + rawOpacity, '*');
+                    } else {
+                        // Normal → original (disabled)
+                        // if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_normal_diffuse: ' + rawDiffuse, '*');
+                        // if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_diffuse: ' + rawOpacity, '*');
+                    }
+                });
             });
         }
         if (update.backDesign !== undefined) {
@@ -156,6 +181,7 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
         const backDesignObj = {
             src,
             designId: design.id,
+            designColor: design.designColor || designColorTab, // use design's own color or active tab
             pos: { x: 200, y: 200 },
             size: { w: 300, h: 300 },
             angle: 0,
@@ -231,95 +257,133 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
                 <div className="flex flex-1 overflow-hidden">
                     {/* ── LIBRARY SECTION ── */}
                     {activeSection === 'library' && (
-                        <div className="flex flex-1 overflow-hidden">
-                            {/* Country sidebar */}
-                            <div className="w-44 border-r border-gray-100 overflow-y-auto flex-shrink-0 py-3">
-                                {countriesLoading ? (
-                                    <div className="flex items-center justify-center py-8">
-                                        <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-                                    </div>
-                                ) : countries.length === 0 ? (
-                                    <p className="text-xs text-gray-400 text-center py-6 px-3">No countries found</p>
-                                ) : (
-                                    countries.map(country => (
+                        <div className="flex flex-1 overflow-hidden flex-col">
+                            {/* Color tabs: White / Black — card style */}
+                            <div className="px-5 pt-4 pb-3 border-b border-gray-100">
+                                <p className="text-sm font-semibold text-gray-800 mb-3">Garment Color</p>
+                                <div className="flex gap-3">
+                                    {COLOR_TABS.map(tab => (
                                         <button
-                                            key={country.id}
-                                            onClick={() => setSelectedCountry(country)}
-                                            className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all flex items-center justify-between ${
-                                                selectedCountry?.id === country.id
-                                                    ? 'bg-green-50 text-green-700 border-r-2 border-green-600'
-                                                    : 'text-gray-600 hover:bg-gray-50'
+                                            key={tab.key}
+                                            onClick={() => {
+                                                setDesignColorTab(tab.key);
+                                                setSelectedLibraryDesign(null);
+                                            }}
+                                            className={`flex-1 flex flex-col items-center justify-center py-3 px-4 rounded-xl border-2 transition-all bg-white ${
+                                                designColorTab === tab.key
+                                                    ? 'border-green-500 bg-green-50 shadow-sm'
+                                                    : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                         >
-                                            <span className="truncate">{country.name}</span>
-                                            {selectedCountry?.id === country.id && (
-                                                <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />
-                                            )}
+                                            <span className={`text-sm font-bold ${designColorTab === tab.key ? 'text-gray-900' : 'text-gray-700'}`}>
+                                                {tab.label}
+                                            </span>
+                                            <span className="text-xs text-gray-400 mt-0.5">{tab.sub}</span>
                                         </button>
-                                    ))
-                                )}
+                                    ))}
+                                </div>
                             </div>
 
-                            {/* Designs grid */}
-                            <div className="flex-1 overflow-y-auto p-4">
-                                {designsLoading ? (
-                                    <div className="flex items-center justify-center h-40">
-                                        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-                                    </div>
-                                ) : libraryDesigns.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-40 text-gray-400">
-                                        <Globe className="w-8 h-8 mb-2 opacity-40" />
-                                        <p className="text-sm">No designs for this country</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                        {libraryDesigns.map(design => {
-                                            const rawPath2 = (design.file_path || design.image_path || "").replace(/\\/g, "/"); const src = rawPath2.startsWith("http") ? rawPath2 : `${BASE_URL}${rawPath2.startsWith("/") ? rawPath2.slice(1) : rawPath2}`;
-                                            const isSelected = selectedLibraryDesign?.id === design.id;
-                                            return (
-                                                <button
-                                                    key={design.id}
-                                                    onClick={() => handleLibrarySelect(design)}
-                                                    className={`relative group rounded-xl overflow-hidden border-2 transition-all aspect-square bg-gray-50 ${
-                                                        isSelected
-                                                            ? 'border-green-500 shadow-lg shadow-green-100'
-                                                            : 'border-gray-200 hover:border-green-300 hover:shadow-md'
-                                                    }`}
-                                                >
-                                                    <img
-                                                        src={src}
-                                                        alt={design.name}
-                                                        className="w-full h-full object-contain p-2"
-                                                        onError={e => { e.target.style.display = 'none'; }}
-                                                    />
-                                                    {/* Selected badge */}
-                                                    {isSelected && (
-                                                        <div className="absolute top-1.5 right-1.5 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow">
-                                                            <CheckCircle className="w-4 h-4 text-white" />
-                                                        </div>
-                                                    )}
-                                                    {/* Name tooltip on hover */}
-                                                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity truncate">
-                                                        {design.name}
-                                                    </div>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-
-                                {/* Selected design info */}
-                                {selectedLibraryDesign && (
-                                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
-                                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-semibold text-green-800">
-                                                "{selectedLibraryDesign.name}" selected
-                                            </p>
-                                            <p className="text-xs text-green-600">Applied to all students. Switch to "Upload / Edit" to adjust position.</p>
+                            <div className="flex flex-1 overflow-hidden">
+                                {/* Country sidebar */}
+                                <div className="w-44 border-r border-gray-100 overflow-y-auto flex-shrink-0 py-3">
+                                    {countriesLoading ? (
+                                        <div className="flex items-center justify-center py-8">
+                                            <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
                                         </div>
-                                    </div>
-                                )}
+                                    ) : countries.length === 0 ? (
+                                        <p className="text-xs text-gray-400 text-center py-6 px-3">No countries found</p>
+                                    ) : (
+                                        countries.map(country => (
+                                            <button
+                                                key={country.id}
+                                                onClick={() => setSelectedCountry(country)}
+                                                className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-all flex items-center justify-between ${
+                                                    selectedCountry?.id === country.id
+                                                        ? 'bg-green-50 text-green-700 border-r-2 border-green-600'
+                                                        : 'text-gray-600 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                <span className="truncate">{country.name}</span>
+                                                {selectedCountry?.id === country.id && (
+                                                    <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />
+                                                )}
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+
+                                {/* Designs grid — filtered by designColorTab */}
+                                <div className="flex-1 overflow-y-auto p-4">
+                                    {designsLoading ? (
+                                        <div className="flex items-center justify-center h-40">
+                                            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                                        </div>
+                                    ) : filteredLibraryDesigns.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+                                            <Globe className="w-8 h-8 mb-2 opacity-40" />
+                                            <p className="text-sm">
+                                                {libraryDesigns.length === 0
+                                                    ? 'No designs for this country'
+                                                    : `No ${designColorTab} designs for this country`}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                            {filteredLibraryDesigns.map(design => {
+                                                const rawPath2 = (design.file_path || design.image_path || "").replace(/\\/g, "/");
+                                                const src = rawPath2.startsWith("http") ? rawPath2 : `${BASE_URL}${rawPath2.startsWith("/") ? rawPath2.slice(1) : rawPath2}`;
+                                                const isSelected = selectedLibraryDesign?.id === design.id;
+                                                // Background preview colour based on designColor
+                                                const previewBg = design.designColor === 'black' ? '#222' : '#f9fafb';
+                                                return (
+                                                    <button
+                                                        key={design.id}
+                                                        onClick={() => handleLibrarySelect(design)}
+                                                        className={`relative group rounded-xl overflow-hidden border-2 transition-all aspect-square ${
+                                                            isSelected
+                                                                ? 'border-green-500 shadow-lg shadow-green-100'
+                                                                : 'border-gray-200 hover:border-green-300 hover:shadow-md'
+                                                        }`}
+                                                        style={{ background: previewBg }}
+                                                    >
+                                                        <img
+                                                            src={src}
+                                                            alt={design.name}
+                                                            className="w-full h-full object-contain p-2"
+                                                            onError={e => { e.target.style.display = 'none'; }}
+                                                        />
+                                                        {/* Selected badge */}
+                                                        {isSelected && (
+                                                            <div className="absolute top-1.5 right-1.5 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow">
+                                                                <CheckCircle className="w-4 h-4 text-white" />
+                                                            </div>
+                                                        )}
+                                                        {/* Name tooltip on hover */}
+                                                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity truncate">
+                                                            {design.name}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {/* Selected design info */}
+                                    {selectedLibraryDesign && (
+                                        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+                                            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                                            <div>
+                                                <p className="text-sm font-semibold text-green-800">
+                                                    "{selectedLibraryDesign.name}" selected
+                                                </p>
+                                                <p className="text-xs text-green-600">
+                                                    Applied to all students ({designColorTab} mode). Switch to "Upload / Edit" to adjust position.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -327,14 +391,36 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
                     {/* ── UPLOAD / EDIT SECTION ── */}
                     {activeSection === 'upload' && (
                         <div className="flex-1 overflow-y-auto p-6">
+                            {/* Color tabs above canvas — card style */}
+                            <div className="mb-5">
+                                <p className="text-sm font-semibold text-gray-800 mb-3">Garment Color</p>
+                                <div className="flex gap-3">
+                                    {COLOR_TABS.map(tab => (
+                                        <button
+                                            key={tab.key}
+                                            onClick={() => setDesignColorTab(tab.key)}
+                                            className={`flex-1 flex flex-col items-center justify-center py-3 px-4 rounded-xl border-2 transition-all bg-white ${
+                                                designColorTab === tab.key
+                                                    ? 'border-green-500 bg-green-50 shadow-sm'
+                                                    : 'border-gray-200 hover:border-gray-300'
+                                            }`}
+                                        >
+                                            <span className={`text-sm font-bold ${designColorTab === tab.key ? 'text-gray-900' : 'text-gray-700'}`}>
+                                                {tab.label}
+                                            </span>
+                                            <span className="text-xs text-gray-400 mt-0.5">{tab.sub}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                             <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
                                 <Test
-                                    key={activeTab}
+                                    key={`${activeTab}-${designColorTab}`}
                                     postEx={currentTab.postEx}
                                     pressureOptions={{ backDesign: currentBackDesign }}
                                     onUpdate={handleUpdate}
                                     backDesigns={backDesigns}
-                                    designColor={backDesigns?.designColor}
+                                    designColor={designColorTab}
                                 />
                             </div>
                         </div>

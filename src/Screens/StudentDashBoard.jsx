@@ -653,7 +653,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         }
     };
 
-   
+
     const menuItems = [
         { name: 'T-SHIRT', icon: img1 },
         { name: 'SWEATSHIRT', icon: img2 },
@@ -867,13 +867,14 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                 {/* Global Header */}
                 <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-40">
                     <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-200">
-                            <GraduationCap className="w-6 h-6 text-white" />
+                        <div className="w-22 flex items-center justify-center">
+                            {/* <GraduationCap className="w-6 h-6 text-white" /> */}
+                            <img src="clothLogo.png" alt="" />
                         </div>
                         <div>
-                            <h1 className="text-lg font-bold text-slate-900 tracking-tight">StudentLife</h1>
+                            {/* <h1 className="text-lg font-bold text-slate-900 tracking-tight">StudentLife</h1> */}
                             <div className="flex items-center space-x-2">
-                                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-widest leading-none">Cloth Configurator</p>
+                                {/* <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-widest leading-none">Cloth Configurator</p> */}
                                 {isLocked && (
                                     <Tag color="error" className="flex items-center space-x-1 px-1.5 py-0 rounded border-red-100 h-4">
                                         <Lock className="w-2.5 h-2.5" />
@@ -886,7 +887,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
 
                     <div className="flex items-center space-x-2 sm:space-x-4">
 
-                        <Dropdown
+                        {/* <Dropdown
                             menu={{
                                 items: [
 
@@ -901,19 +902,19 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             }}
                             trigger={['click']}
                             placement="bottomRight"
-                        >
-                            <button className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-slate-100 transition-all">
-                                <Avatar
-                                    size={34}
-                                    style={{ backgroundColor: '#16a34a', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
-                                >
-                                    {user?.name?.charAt(0)?.toUpperCase() || 'S'}
-                                </Avatar>
-                                <span className="hidden sm:inline text-sm font-semibold text-slate-700 max-w-[100px] truncate">
-                                    {user?.name || 'Student'}
-                                </span>
-                            </button>
-                        </Dropdown>
+                        > */}
+                        <div className="flex items-center gap-2 px-2 py-1 rounded-xl transition-all">
+                            <Avatar
+                                size={34}
+                                style={{ backgroundColor: '#16a34a', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
+                            >
+                                {user?.name?.charAt(0)?.toUpperCase() || 'S'}
+                            </Avatar>
+                            <span className="hidden sm:inline text-sm font-semibold text-slate-700 max-w-[150px] truncate">
+                                {user?.name || 'Student'}
+                            </span>
+                        </div>
+                        {/* </Dropdown> */}
                     </div>
                 </header>
                 <div className="hidden md:flex h-[calc(100vh-80px)] w-full relative">
@@ -961,13 +962,13 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             </div>
                             <div className="flex-1 bg-white/50 secondDiv overflow-y-auto custom-scrollbar-premium" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                                 {/* Tab Navigation — top */}
-                                <div className="px-6 pt-4 pb-2">
+                                <div className="px-6 pt-6 pb-2">
                                     <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
                                         <button
                                             onClick={() => setGarmentTab('size')}
                                             className={`flex-1 py-2.5 text-sm font-semibold transition-all rounded-xl ${garmentTab === 'size' ? 'bg-green-700 text-white' : 'text-gray-500 bg-white hover:bg-gray-50'}`}
                                         >
-                                            Farve & Størrelse
+                                            Color & Size
                                         </button>
                                         <button
                                             onClick={() => setGarmentTab('pressure')}
@@ -998,15 +999,15 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                             ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 hover:shadow-lg"
                                             : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
                                 >
-                                    {balanceDue <= 0 && paymentStatus === 'paid' ? 'Save Changes' : (balanceDue > 0 && amountPaid > 0 ? `Pay Balance (${balanceDue} DKK)` : 'Send forespørgsel')}
+                                    {balanceDue <= 0 && paymentStatus === 'paid' ? 'Save Changes' : (balanceDue > 0 && amountPaid > 0 ? `Pay Balance (${balanceDue} DKK)` : 'Send Inquiry')}
                                 </button>
                             </div>
                         </div>
                     </div>
                     <div className="flex flex-1 h-full">
-                        <div className="flex-1 p-6">
+                        <div className="flex-1">
                             <div className="bg-white/50 backdrop-blur-sm rounded-2xl shadow-xl h-full flex flex-col border border-slate-200">
-                                <div className="flex items-center justify-between p-6 border-b border-slate-200">
+                                {/* <div className="flex items-center justify-between p-6 border-b border-slate-200">
                                     <div className="flex items-center space-x-3">
                                         <div className="w-10 h-10 bg-gradient-to-r from-green-600 to-green-600 rounded-xl flex items-center justify-center">
                                             <GraduationCap className="w-5 h-5 text-white" />
@@ -1019,8 +1020,8 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                         <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                                         <span className="text-xs font-medium text-slate-600">LIVE PREVIEW</span>
                                     </div>
-                                </div>
-                                <div className="flex-1 rounded-b-2xl overflow-hidden">
+                                </div> */}
+                                <div className="flex-1 overflow-hidden">
                                     <iframe
                                         id="preview-iframe"
                                         src={'https://playcanv.as/e/p/1b1eadeb/'}
@@ -1192,7 +1193,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                         ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 hover:shadow-lg"
                                         : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
                             >
-                                Send forespørgsel
+                                Send Inquiry
                             </button>
                         </div>
                     </div>

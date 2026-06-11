@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+ï»¿import React, { useState, useEffect } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 import Test1 from "./Test1";
@@ -470,7 +470,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   };
 
   return (
-    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 200px)' }}>
+    <div className="max-w-md mx-auto flex flex-col">
       {/* <div className="flex gap-2 p-4 pb-2">
         <button onClick={() => setActiveTab("size")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${activeTab === "size" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
           <span className="font-medium text-gray-900">Color & Size</span>
@@ -483,7 +483,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       </div> */}
 
       {activeTab === "size" ? (
-        <div className="flex flex-col flex-1 relative px-4 pb-36">
+        <div className="flex flex-col flex-1 relative p-2">
           <h1 className="text-lg font-bold mb-4 text-gray-900">Shorts</h1>
           <div className="mb-5">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
@@ -511,13 +511,13 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
           </div>
           {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
             <button onClick={() => setActiveTab("pressure")} className="w-full py-2.5 bg-slate-600 text-white font-semibold rounded-xl hover:bg-slate-700 transition text-sm flex items-center justify-center gap-2">
-              Next — Design
+              Next ï¿½ Design
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           </div> */}
         </div>
       ) : (
-        <div className="flex flex-col flex-1 relative px-4 pb-36">
+        <div className="flex flex-col flex-1 relative p-2">
           <h1 className="text-lg font-bold mb-4 text-gray-900">Design Options</h1>
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Leg Area</h2>
@@ -532,7 +532,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
         </div>
       )}
 
-      <div className={activeTab === "pressure" ? "mt-10" : ""} style={activeTab !== "pressure" ? { visibility: "hidden", position: "absolute", pointerEvents: "none", height: 0, overflow: "hidden" } : {}}>
+      <div  style={activeTab !== "pressure" ? { visibility: "hidden", position: "absolute", pointerEvents: "none", height: 0, overflow: "hidden" } : {}}>
         <Test1 postEx="Short:" pressureOptions={pressureOptions} isAppReady={isAppReady}
           onUpdate={update => {
             if (update.canvasBase64) {

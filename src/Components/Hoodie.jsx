@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 import Test from "./Test";
@@ -26,6 +26,9 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   const [libCountriesLoading, setLibCountriesLoading] = useState(false);
   const [libDesignsLoading, setLibDesignsLoading] = useState(false);
   const [libSelectedDesign, setLibSelectedDesign] = useState(null);
+  const [libDesignColor, setLibDesignColor] = useState('white'); // 'white' | 'black'
+  const libDesignColorRef = useRef('white');
+  const setLibDesignColorSafe = (val) => { libDesignColorRef.current = val; setLibDesignColor(val); };
 
   // Upload own design state
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -604,7 +607,7 @@ if (flag && flagImages[flag]) {
   ) : null;
 
   return (
-    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 200px)' }}>
+    <div className="max-w-md mx-auto flex flex-col">
       {/* <div className="flex gap-2 p-4 pb-2">
         <button onClick={() => setActiveTab("size")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${activeTab === "size" ? "bg-white shadow-sm border-2 border-green-700" : "bg-white border-2 border-transparent hover:border-gray-300"}`}>
           <span className="font-medium text-gray-900">Color & Size</span><img className="w-6" src={cog} alt="settings" />
@@ -614,7 +617,7 @@ if (flag && flagImages[flag]) {
         </button>
       </div> */}
       {activeTab === "size" ? (
-        <div className="flex flex-col flex-1 relative px-4 pb-36">
+        <div className="flex flex-col flex-1 relative p-2">
           <h1 className="text-lg font-bold mb-3 text-gray-900">Hoodie</h1>
           {/* Color � 2-row grid */}
           <div className="mb-4">
@@ -642,10 +645,33 @@ if (flag && flagImages[flag]) {
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5" /> Back Design Library
             </h2>
+            {/* Garment Color tabs */}
+            <div className="mb-3">
+              <p className="text-xs font-semibold text-gray-700 mb-2">Garment Color</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { key: 'white',  label: 'White',  sub: 'Black print' },
+                  { key: 'black',  label: 'Black',  sub: 'White print' },
+                  // { key: 'normal', label: 'Normal', sub: 'Original print' },
+                ].map(tab => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => { setLibDesignColorSafe(tab.key); setLibSelectedDesign(null); }}
+                    className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border-2 transition-all bg-white ${
+                      libDesignColor === tab.key ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <span className={`text-xs font-bold ${libDesignColor === tab.key ? 'text-gray-900' : 'text-gray-600'}`}>{tab.label}</span>
+                    <span className="text-[10px] text-gray-400 mt-0.5 leading-tight text-center">{tab.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
             {/* Country dropdown */}
             {libCountriesLoading ? (
               <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Indl�ser lande...
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading countries...
               </div>
             ) : (
               <div className="mb-3">
@@ -679,26 +705,38 @@ if (flag && flagImages[flag]) {
             )}
             {libDesignsLoading ? (
               <div className="flex items-center justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
-            ) : libDesigns.length === 0 ? (
-              <p className="text-xs text-gray-400 py-3 text-center">No designs for this country</p>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {libDesigns.map(design => {
-                  const rawPath = (design.file_path || design.image_path || design.thumbnail || "").replace(/\\/g, "/"); const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
-                  const isSelected = libSelectedDesign?.id === design.id;
-                  return (
-                    <button key={design.id} onClick={() => {
-                      setLibSelectedDesign(design);
-                      postToPreview(`hoodie backDesign`); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } });
-                    }}
-                      className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all bg-white ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}>
-                      <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
-                      {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><CheckCircle className="w-3.5 h-3.5 text-white" /></div>}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            ) : (() => {
+              const filtered = libDesigns.filter(d => {
+                const dc = d.designColor;
+                if (libDesignColor === 'normal') return !dc || dc === 'normal';
+                return dc === libDesignColor;
+              });
+              if (!libSelectedCountry) return <p className="text-xs text-gray-400 py-3 text-center">Select a country above</p>;
+              return filtered.length === 0 ? (
+                <p className="text-xs text-gray-400 py-3 text-center">
+                  {libDesigns.length === 0 ? 'No designs for this country' : `No ${libDesignColor} designs for this country`}
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {filtered.map(design => {
+                    const rawPath = (design.file_path || design.image_path || design.thumbnail || "").replace(/\\/g, "/"); const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
+                    const isSelected = libSelectedDesign?.id === design.id;
+                    const previewBg = design.designColor === 'black' ? '#1f2937' : '#ffffff';
+                    return (
+                      <button key={design.id} onClick={() => {
+                        setLibSelectedDesign(design);
+                        postToPreview(`hoodie backDesign`); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, designColor: design.designColor || libDesignColor, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } });
+                      }}
+                        className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}
+                        style={{ background: previewBg }}>
+                        <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
+                        {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><CheckCircle className="w-3.5 h-3.5 text-white" /></div>}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
           {/* Upload own design + Add classmates names */}
           <div className="mb-4 flex flex-col gap-2">
@@ -730,7 +768,7 @@ if (flag && flagImages[flag]) {
           </div> */}
         </div>
       ) : (
-        <div className="flex flex-col flex-1 relative px-4 pb-36">
+        <div className="flex flex-col flex-1 relative p-2">
           <h1 className="text-lg font-bold mb-4 text-gray-900">Design Options</h1>
           <div className="mb-6"><h2 className="text-xl font-semibold text-gray-900 mb-4">Chest Area</h2>{["rightChest", "leftChest", "bottomChest"].map(renderChestArea)}</div>
           <div className="mb-6"><h2 className="text-xl font-semibold text-gray-900 mb-4">Sleeves</h2>{["rightSleeve", "leftSleeve"].map(renderSleeveArea)}</div>
@@ -743,9 +781,25 @@ if (flag && flagImages[flag]) {
           </div> */}
         </div>
       )}
-      <div className={activeTab === "pressure" ? "mt-10" : ""} style={activeTab !== "pressure" ? { visibility: "hidden", position: "absolute", pointerEvents: "none", height: 0, overflow: "hidden" } : {}}>
+      <div style={activeTab !== "pressure" ? { visibility: "hidden", position: "absolute", pointerEvents: "none", height: 0, overflow: "hidden" } : {}}>
         <Test postEx="Hoodie:" pressureOptions={pressureOptions} isAppReady={isAppReady} onUpdate={u => {
-          if (u.canvasBase64) { const { diffuse, opacity, emissive } = u.canvasBase64;["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) { f.contentWindow.postMessage(diffuse, "*"); f.contentWindow.postMessage(opacity, "*"); if (emissive) f.contentWindow.postMessage(emissive, "*"); } }); }
+          if (u.canvasBase64) {
+            const raw = u.canvasBase64.rawData;
+            const diffuseB64 = raw?.diffuse || "";
+            const opacityB64 = raw?.opacity || "";
+            const color = libDesignColorRef.current;
+            ["preview-iframe", "preview-iframe2"].forEach(id => {
+              const f = document.getElementById(id);
+              if (f?.contentWindow) {
+                if (color === 'white') {
+                  if (diffuseB64) f.contentWindow.postMessage("Hoodie:back_black_diffuse: " + diffuseB64, "*");
+                  if (opacityB64) f.contentWindow.postMessage("Hoodie:back_black_opacity: " + opacityB64, "*");
+                } else if (color === 'black') {
+                  if (opacityB64) f.contentWindow.postMessage("Hoodie:back_white_opacity: " + opacityB64, "*");
+                }
+              }
+            });
+          }
           if (u.backDesign !== undefined) onUpdate({ pressureOptions: { ...pressureOptions, backDesign: u.backDesign } });
         }} />
       </div>

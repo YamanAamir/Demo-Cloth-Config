@@ -176,12 +176,12 @@ export default function Test1({ pressureOptions, onUpdate, postEx, isAppReady })
 
   return (
     <div className="p-0 max-w-2xl mx-auto">
-      <canvas
+      {/* <canvas
         ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT}
         className="border-2 border-gray-300 rounded-lg shadow-lg block mx-auto bg-gray-50"
         onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
         style={{ cursor: objects.find(o => o.id === selectedId)?.locked ? "not-allowed" : "move" }}
-      />
+      /> */}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+ï»¿import React, { useState, useEffect, useRef } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 import Test from "./Test";
@@ -27,6 +27,9 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
   const [libCountriesLoading, setLibCountriesLoading] = useState(false);
   const [libDesignsLoading, setLibDesignsLoading] = useState(false);
   const [libSelectedDesign, setLibSelectedDesign] = useState(null);
+  const [libDesignColor, setLibDesignColor] = useState('white'); // 'white' | 'black'
+  const libDesignColorRef = useRef('white');
+  const setLibDesignColorSafe = (val) => { libDesignColorRef.current = val; setLibDesignColor(val); };
 
   // Upload own design state
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -46,7 +49,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
         if (res.data?.success) {
           const list = res.data.data || [];
           setLibCountries(list);
-          // Do NOT auto-select — user must click a country to load designs
+          // Do NOT auto-select ï¿½ user must click a country to load designs
         }
       } catch (e) { console.error(e); }
       finally { setLibCountriesLoading(false); }
@@ -144,7 +147,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
     }
 
     if (hasFlag && flagCount === 2 && flag && flag2) {
-      // Emissive = pure white mask only — no actual flag colors
+      // Emissive = pure white mask only ï¿½ no actual flag colors
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, BOX_Y, BOX_W, BOX_H);
       ctx.fillRect(BOX_W + DIVIDER_W, BOX_Y, BOX_W, BOX_H);
@@ -158,7 +161,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
       // Top black padding
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 120, canvas.width, 20);
-      // Border only for single flag/logo — not for 2-flag split (would cut edges)
+      // Border only for single flag/logo ï¿½ not for 2-flag split (would cut edges)
       // if (hasLogo) {
       ctx.strokeStyle = "#000000";
       ctx.lineWidth = 40;
@@ -192,7 +195,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
       ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
     }
 
-    // type === "" means text-only mode — skip flag/logo drawing
+    // type === "" means text-only mode ï¿½ skip flag/logo drawing
     if (type !== "") {
       try {
         const flagDrawn = await drawFlags(ctx, flag, flag2);
@@ -460,7 +463,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
       prevPressureOptionsRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
 
-      // Increment render counter — stale async callbacks will be ignored
+      // Increment render counter ï¿½ stale async callbacks will be ignored
       const currentRender = (renderCounterRef.current[area] || 0) + 1;
       renderCounterRef.current[area] = currentRender;
 
@@ -495,13 +498,19 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
   const handleBackDesignUpdate = (update) => {
     if (update.canvasBase64) {
-      const { diffuse, opacity, emissive } = update.canvasBase64;
+      const raw = update.canvasBase64.rawData;
+      const diffuseB64 = raw?.diffuse || "";
+      const opacityB64 = raw?.opacity || "";
+      const color = libDesignColorRef.current; // always latest, no stale closure
       ["preview-iframe", "preview-iframe2"].forEach((id) => {
         const iframe = document.getElementById(id);
         if (iframe?.contentWindow) {
-          if (diffuse) iframe.contentWindow.postMessage(diffuse, "*");
-          if (opacity) iframe.contentWindow.postMessage(opacity, "*");
-          if (emissive) iframe.contentWindow.postMessage(emissive, "*");
+          if (color === 'white') {
+            if (diffuseB64) iframe.contentWindow.postMessage("T-Shirt:back_black_diffuse: " + diffuseB64, "*");
+            if (opacityB64) iframe.contentWindow.postMessage("T-Shirt:back_black_opacity: " + opacityB64, "*");
+          } else if (color === 'black') {
+            if (opacityB64) iframe.contentWindow.postMessage("T-Shirt:back_white_opacity: " + opacityB64, "*");
+          }
         }
       });
     }
@@ -531,9 +540,9 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
   const sizes = ["S", "M", "L", "XL", "2XL", "3XL"];
 
   return (
-    <div className="max-w-md mx-auto bg-gray-50 flex flex-col" style={{ minHeight: 'calc(100vh - 200px)' }}>
+    <div className="max-w-md mx-auto flex flex-col">
       {activeTab === "size" ? (
-        <div className="flex flex-col flex-1 relative px-4 pb-36">
+        <div className="flex flex-col flex-1 relative p-2 ">
           <h1 className="text-lg font-bold mb-3 text-gray-900">T-shirt</h1>
           <div className="mb-4">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
@@ -580,10 +589,36 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
               <Globe className="w-3.5 h-3.5" /> Back Design Library
             </h2>
 
+            {/* Garment Color tabs */}
+            <div className="mb-3">
+              <p className="text-xs font-semibold text-gray-700 mb-2">Garment Color</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { key: 'white',  label: 'White',  sub: 'Black print' },
+                  { key: 'black',  label: 'Black',  sub: 'White print' },
+                  // { key: 'normal', label: 'Normal', sub: 'Original print' },
+                ].map(tab => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => { setLibDesignColorSafe(tab.key); setLibSelectedDesign(null); }}
+                    className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border-2 transition-all bg-white ${
+                      libDesignColor === tab.key
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <span className={`text-xs font-bold ${libDesignColor === tab.key ? 'text-gray-900' : 'text-gray-600'}`}>{tab.label}</span>
+                    <span className="text-[10px] text-gray-400 mt-0.5 leading-tight text-center">{tab.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Country dropdown */}
             {libCountriesLoading ? (
               <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Indlæser lande...
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading countries...
               </div>
             ) : (
               <div className="mb-3">
@@ -621,47 +656,60 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
               <div className="flex items-center justify-center py-6">
                 <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
               </div>
-            ) : libDesigns.length === 0 ? (
-              <p className="text-xs text-gray-400 py-3 text-center">No designs for this country</p>
-            ) : (
-              <div className="grid grid-cols-3 gap-2 pt-4">
-                {libDesigns.map(design => {
-                  const rawPath = (design.file_path || design.image_path || design.thumbnail || "").replace(/\\/g, "/"); const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
-                  const isSelected = libSelectedDesign?.id === design.id;
-                  return (
-                    <button
-                      key={design.id}
-                      onClick={() => {
-                        setLibSelectedDesign(design);
-                        onUpdate({
-                          pressureOptions: {
-                            ...pressureOptions,
-                            backDesign: {
-                              src,
-                              designId: design.id,
-                              pos: { x: 200, y: 200 },
-                              size: { w: 300, h: 300 },
-                              angle: 0,
-                              locked: true,
+            ) : (() => {
+              const filtered = libDesigns.filter(d => {
+                const dc = d.designColor;
+                if (libDesignColor === 'normal') return !dc || dc === 'normal';
+                return dc === libDesignColor;
+              });
+              if (!libSelectedCountry) return <p className="text-xs text-gray-400 py-3 text-center">Select a country above</p>;
+              return filtered.length === 0 ? (
+                <p className="text-xs text-gray-400 py-3 text-center">
+                  {libDesigns.length === 0 ? 'No designs for this country' : `No ${libDesignColor} designs for this country`}
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 pt-4">
+                  {filtered.map(design => {
+                    const rawPath = (design.file_path || design.image_path || design.thumbnail || "").replace(/\\/g, "/"); const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
+                    const isSelected = libSelectedDesign?.id === design.id;
+                    const previewBg = design.designColor === 'black' ? '#1f2937' : '#ffffff';
+                    return (
+                      <button
+                        key={design.id}
+                        onClick={() => {
+                          setLibSelectedDesign(design);
+                          onUpdate({
+                            pressureOptions: {
+                              ...pressureOptions,
+                              backDesign: {
+                                src,
+                                designId: design.id,
+                                designColor: design.designColor || libDesignColor,
+                                pos: { x: 200, y: 200 },
+                                size: { w: 300, h: 300 },
+                                angle: 0,
+                                locked: true,
+                              }
                             }
-                          }
-                        });
-                        postToPreview(`tshirt backDesign`);
-                      }}
-                      className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all bg-white ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'
-                        }`}
-                    >
-                      <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
-                      {isSelected && (
-                        <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                          <CheckCircle className="w-3.5 h-3.5 text-white" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                          });
+                          postToPreview(`tshirt backDesign`);
+                        }}
+                        className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}
+                        style={{ background: previewBg }}
+                      >
+                        <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
+                        {isSelected && (
+                          <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                            <CheckCircle className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+            
           </div>
 
           {/* Upload own design + Add classmates names */}
@@ -687,7 +735,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
           </div>
         </div>
       ) : (
-        <div className="flex flex-col flex-1 relative px-4 pb-10">
+        <div className="flex flex-col flex-1 relative p-2">
           <h1 className="text-lg font-bold mb-4 text-gray-900">Design Options</h1>
 
           <div className="mb-6">
@@ -922,7 +970,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                         </div>
                       </div>
 
-                      {/* Flag 2 — only if count = 2 */}
+                      {/* Flag 2 ï¿½ only if count = 2 */}
                       {(Number(pressureOptions[`${area}FlagCount`] || 1) === 2) && (
                         <div>
                           <label className="text-xs text-gray-500 mb-1 block">{t("Flag 2 (50% size)")}</label>
@@ -953,7 +1001,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
             ))}
           </div>
 
-          {/* Back — absolute bottom */}
+          {/* Back ï¿½ absolute bottom */}
           {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
               <button
                 onClick={() => setActiveTab("size")}
@@ -969,7 +1017,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
       )}
 
       {/* Test Component - always mounted for back design broadcast */}
-      <div className={activeTab === "pressure" ? "mt-10 px-4" : ""} style={activeTab !== "pressure" ? { visibility: 'hidden', position: 'absolute', pointerEvents: 'none', height: 0, overflow: 'hidden' } : {}}>
+      <div style={activeTab !== "pressure" ? { visibility: 'hidden', position: 'absolute', pointerEvents: 'none', height: 0, overflow: 'hidden' } : {}}>
         <Test
           postEx="T-Shirt:"
           pressureOptions={pressureOptions}
