@@ -272,10 +272,70 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
     let opacityBase64 = "";
 
     try {
-      diffuseBase64 = canvas.toDataURL("image/png");
-      opacityBase64 = opacityCanvas.toDataURL("image/png");
+      // High-res export: scale up 3x for quality
+      const EXPORT_SCALE = 3;
+
+      // --- DIFFUSE: no background (transparent) — only the design ---
+      const exportCanvas = document.createElement("canvas");
+      exportCanvas.width = CANVAS_WIDTH * EXPORT_SCALE;
+      exportCanvas.height = CANVAS_HEIGHT * EXPORT_SCALE;
+      const ectx = exportCanvas.getContext("2d");
+      ectx.imageSmoothingEnabled = true;
+      ectx.imageSmoothingQuality = "high";
+      // No background fill — transparent canvas
+      objects.forEach(obj => {
+        ectx.save();
+        ectx.translate(obj.pos.x * EXPORT_SCALE, obj.pos.y * EXPORT_SCALE);
+        ectx.rotate((obj.angle * Math.PI) / 180);
+        if (obj.type === 'image') {
+          ectx.drawImage(
+            obj.srcObj,
+            -(obj.size.w * EXPORT_SCALE) / 2,
+            -(obj.size.h * EXPORT_SCALE) / 2,
+            obj.size.w * EXPORT_SCALE,
+            obj.size.h * EXPORT_SCALE
+          );
+        }
+        ectx.restore();
+      });
+      diffuseBase64 = exportCanvas.toDataURL("image/png", 1.0);
+
+      // --- OPACITY: white background + design → convert to B&W mask ---
+      const exportOpacity = document.createElement("canvas");
+      exportOpacity.width = CANVAS_WIDTH * EXPORT_SCALE;
+      exportOpacity.height = CANVAS_HEIGHT * EXPORT_SCALE;
+      const eoctx = exportOpacity.getContext("2d");
+      eoctx.imageSmoothingEnabled = true;
+      eoctx.imageSmoothingQuality = "high";
+      // White background so brightness threshold works correctly
+      eoctx.fillStyle = "#ffffff";
+      eoctx.fillRect(0, 0, exportOpacity.width, exportOpacity.height);
+      objects.forEach(obj => {
+        eoctx.save();
+        eoctx.translate(obj.pos.x * EXPORT_SCALE, obj.pos.y * EXPORT_SCALE);
+        eoctx.rotate((obj.angle * Math.PI) / 180);
+        if (obj.type === 'image') {
+          eoctx.drawImage(
+            obj.srcObj,
+            -(obj.size.w * EXPORT_SCALE) / 2,
+            -(obj.size.h * EXPORT_SCALE) / 2,
+            obj.size.w * EXPORT_SCALE,
+            obj.size.h * EXPORT_SCALE
+          );
+        }
+        eoctx.restore();
+      });
+      const eImgData = eoctx.getImageData(0, 0, exportOpacity.width, exportOpacity.height);
+      for (let i = 0; i < eImgData.data.length; i += 4) {
+        const brightness = 0.299 * eImgData.data[i] + 0.587 * eImgData.data[i + 1] + 0.114 * eImgData.data[i + 2];
+        const bw = brightness > 128 ? 0 : 255;
+        eImgData.data[i] = eImgData.data[i + 1] = eImgData.data[i + 2] = bw;
+        eImgData.data[i + 3] = 255;
+      }
+      eoctx.putImageData(eImgData, 0, 0);
+      opacityBase64 = exportOpacity.toDataURL("image/png", 1.0);
     } catch (err) {
-      console.warn("Canvas blocked due to CORS:", err);
+      console.warn("Canvas export error:", err);
     }
 
     if (onUpdate && postEx && diffuseBase64 && opacityBase64) {

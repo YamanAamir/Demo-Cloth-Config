@@ -691,8 +691,8 @@ if (flag && flagImages[flag]) {
               <p className="text-xs font-semibold text-gray-700 mb-2">Garment Color</p>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { key: 'white',  label: 'White',  sub: 'Black print' },
-                  { key: 'black',  label: 'Black',  sub: 'White print' },
+                  { key: 'white',  label: 'Light Garment',  sub: 'Black print' },
+                  { key: 'black',  label: 'Dark Garment',  sub: 'White print' },
                   // { key: 'normal', label: 'Normal', sub: 'Original print' },
                 ].map(tab => (
                   <button
@@ -837,7 +837,7 @@ if (flag && flagImages[flag]) {
               const opacityB64 = raw?.opacity || "";
               const color = libDesignColorRef.current;
 
-              // Plain white canvas for back_white_opacity
+              // Plain white canvas for back_white_opacity (Dark Garment)
               const whiteCanvas = document.createElement("canvas");
               whiteCanvas.width = 400; whiteCanvas.height = 400;
               const wctx = whiteCanvas.getContext("2d");
@@ -849,10 +849,13 @@ if (flag && flagImages[flag]) {
                 const iframe = document.getElementById(id);
                 if (iframe?.contentWindow) {
                   if (color === 'white') {
+                    // Light Garment → black print
                     if (diffuseB64) iframe.contentWindow.postMessage("ZipperHoodie:back_black_diffuse: " + diffuseB64, "*");
                     if (opacityB64) iframe.contentWindow.postMessage("ZipperHoodie:back_black_opacity: " + opacityB64, "*");
                   } else if (color === 'black') {
-                    iframe.contentWindow.postMessage("ZipperHoodie:back_white_opacity: " + opacityW64, "*");
+                    // Dark Garment → white print
+                    // iframe.contentWindow.postMessage("ZipperHoodie:back_white_opacity: " + opacityW64, "*");
+                    iframe.contentWindow.postMessage("ZipperHoodie:back_white_diffuse: " + opacityB64, "*");
                   }
                 }
               });

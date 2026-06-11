@@ -6,8 +6,8 @@ import { BASE_URL } from '../utils/const';
 
 // Color tab definitions (English labels)
 const COLOR_TABS = [
-    { key: 'white',  label: 'White',  sub: 'Black print' },
-    { key: 'black',  label: 'Black',  sub: 'White print' },
+    { key: 'white',  label: 'Light Garment',  sub: 'Black print' },
+    { key: 'black',  label: 'Dark Garment',  sub: 'White print' },
     // { key: 'normal', label: 'Normal', sub: 'Original print' },
 ];
 
@@ -137,26 +137,24 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
             ['preview-iframe', 'preview-iframe2'].forEach((id) => {
                 const iframe = document.getElementById(id);
                 if (!iframe?.contentWindow) return;
+
+                // Plain white canvas for Dark Garment opacity
+                const whiteCanvas = document.createElement("canvas");
+                whiteCanvas.width = 400; whiteCanvas.height = 400;
+                const wctx = whiteCanvas.getContext("2d");
+                wctx.fillStyle = "#ffffff";
+                wctx.fillRect(0, 0, 400, 400);
+                const opacityW64 = whiteCanvas.toDataURL("image/png");
+
                 Object.values(prefixMap).forEach(prefix => {
                     if (designColorTab === 'white') {
-                        // White garment → black print
+                        // Light Garment → black print
                         if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_black_diffuse: ' + rawDiffuse, '*');
                         if (rawOpacity) iframe.contentWindow.postMessage(prefix + 'back_black_opacity: ' + rawOpacity, '*');
                     } else if (designColorTab === 'black') {
-                        // Black garment → white print
-                        // Plain white opacity for full white print area
-                        const whiteCanvas = document.createElement("canvas");
-                        whiteCanvas.width = 400; whiteCanvas.height = 400;
-                        const wctx = whiteCanvas.getContext("2d");
-                        wctx.fillStyle = "#ffffff";
-                        wctx.fillRect(0, 0, 400, 400);
-                        const opacityW64 = whiteCanvas.toDataURL("image/png");
-                        if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_white_diffuse: ' + "", '*');
+                        // Dark Garment → white print
                         iframe.contentWindow.postMessage(prefix + 'back_white_opacity: ' + opacityW64, '*');
-                    } else {
-                        // Normal → original (disabled)
-                        // if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_normal_diffuse: ' + rawDiffuse, '*');
-                        // if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_diffuse: ' + rawOpacity, '*');
+                        if (rawOpacity) iframe.contentWindow.postMessage(prefix + 'back_white_diffuse: ' + rawOpacity, '*');
                     }
                 });
             });

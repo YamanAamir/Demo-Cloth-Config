@@ -604,8 +604,8 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
               <p className="text-xs font-semibold text-gray-700 mb-2">Garment Color</p>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { key: 'white',  label: 'White',  sub: 'Black print' },
-                  { key: 'black',  label: 'Black',  sub: 'White print' },
+                  { key: 'white',  label: 'Light Garment',  sub: 'Black print' },
+                  { key: 'black',  label: 'Dark Garment',  sub: 'White print' },
                   // { key: 'normal', label: 'Normal', sub: 'Original print' },
                 ].map(tab => (
                   <button
