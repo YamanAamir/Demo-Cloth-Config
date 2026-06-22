@@ -752,7 +752,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
                     return (
                       <button key={design.id} onClick={() => {
                         setLibSelectedDesign(design);
-                        postToPreview(`hoodie backDesign`); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, designColor: design.designColor || libDesignColor, pos: { x: 200, y: 200 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } });
+                        postToPreview(`hoodie backDesign`); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, designColor: design.designColor || libDesignColor, pos: { x: 240, y: 175 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } });
                       }}
                         className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}
                         style={{ background: previewBg }}>

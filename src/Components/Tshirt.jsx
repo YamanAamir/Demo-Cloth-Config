@@ -505,7 +505,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
       // Plain white canvas for back_white_opacity
       const whiteCanvas = document.createElement("canvas");
-      whiteCanvas.width = 400; whiteCanvas.height = 400;
+      whiteCanvas.width = 400; whiteCanvas.height = 600;
       const wctx = whiteCanvas.getContext("2d");
       wctx.fillStyle = "#ffffff";
       wctx.fillRect(0, 0, 400, 400);
@@ -715,7 +715,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                                 src,
                                 designId: design.id,
                                 designColor: design.designColor || libDesignColor,
-                                pos: { x: 200, y: 200 },
+                                pos: { x: 240, y: 175 },
                                 size: { w: 300, h: 300 },
                                 angle: 0,
                                 locked: true,

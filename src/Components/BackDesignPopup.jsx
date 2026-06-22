@@ -188,7 +188,7 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
             src,
             designId: design.id,
             designColor: design.designColor || designColorTab, // use design's own color or active tab
-            pos: { x: 200, y: 200 },
+            pos: { x: 240, y: 175 },
             size: { w: 300, h: 300 },
             angle: 0,
             locked: true,

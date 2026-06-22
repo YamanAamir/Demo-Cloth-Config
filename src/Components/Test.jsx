@@ -31,8 +31,8 @@ const rotateIcon = new Image();
 rotateIcon.src = rotateIconImg;
 
 const HANDLE_SIZE = 28;
-const CANVAS_WIDTH = 400;
-const CANVAS_HEIGHT = 400;
+const CANVAS_WIDTH = 480;
+const CANVAS_HEIGHT = 350;
 
 // const logos = [
 //   { name: 'Design 1', url: design1 },
@@ -130,7 +130,7 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
     loadImageSafe(url, async (img) => {
       const scale = Math.min(
         (CANVAS_WIDTH * 0.75) / img.width,
-        (CANVAS_HEIGHT * 0.65) / img.height
+        (CANVAS_HEIGHT * 0.80) / img.height
       );
       const w = img.width * scale;
       const h = img.height * scale;
@@ -169,7 +169,7 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
       loadImageSafe(img, async (imgObj) => {
         const scale = Math.min(
           (CANVAS_WIDTH * 0.75) / imgObj.width,
-          (CANVAS_HEIGHT * 0.65) / imgObj.height
+          (CANVAS_HEIGHT * 0.80) / imgObj.height
         );
         const w = imgObj.width * scale;
         const h = imgObj.height * scale;
@@ -428,9 +428,10 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
     reader.onload = (ev) => {
       const img = new Image();
       img.onload = () => {
+        // imgObj → img (yahan bhi bug tha!)
         const scale = Math.min(
           (CANVAS_WIDTH * 0.75) / img.width,
-          (CANVAS_HEIGHT * 0.65) / img.height
+          (CANVAS_HEIGHT * 0.80) / img.height
         );
         const w = img.width * scale;
         const h = img.height * scale;
