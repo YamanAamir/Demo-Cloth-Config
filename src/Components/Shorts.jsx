@@ -344,6 +344,38 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
 
   const prevRef = React.useRef({});
   const renderCounterRef = React.useRef({});
+  // useEffect(() => {
+  //   ["rightLeg", "leftLeg"].forEach(area => {
+  //     const text = pressureOptions[`${area}Text`]?.trim() || "";
+  //     const flag = pressureOptions[`${area}Flag`] || "";
+  //     const flag2 = pressureOptions[`${area}Flag2`] || "";
+  //     const flagCount = pressureOptions[`${area}FlagCount`] || 1;
+  //     const logoPre = pressureOptions[`${area}LogoPredefined`] || "";
+  //     const logoCustom = pressureOptions[`${area}LogoCustom`] || "";
+  //     const type = pressureOptions[`${area}Type`] || "";
+  //     const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
+
+
+  //     const prev = prevRef.current[area] || {};
+  //     if (prev.text === text && prev.flag === flag && prev.flag2 === flag2 && prev.flagCount === flagCount && prev.logoPre === logoPre && prev.logoCustom === logoCustom && prev.type === type && prev.textColor === textColor) return;
+  //     prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
+  //     const currentRender = (renderCounterRef.current[area] || 0) + 1;
+  //     renderCounterRef.current[area] = currentRender;
+  //     const hasFlag = !!flag && type === "flag";
+  //     const hasLogo = !!(logoPre || logoCustom) && type === "logo";
+  //     const opacity = getEmissiveBase64(text, hasFlag, hasLogo, flagCount);
+  //     ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Short:${area}_opacity: ${opacity}`, "*"); });
+  //     getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuse, logoOpacityBase) => {
+  //       if (renderCounterRef.current[area] !== currentRender) return;
+  //       ["preview-iframe", "preview-iframe2"].forEach(id => {
+  //         const f = document.getElementById(id); if (f?.contentWindow) {
+  //           f.contentWindow.postMessage(`Short:${area}_diffuse: ${diffuse}`, "*");
+  //           if (logoOpacityBase) f.contentWindow.postMessage(`Short:${area}_opacity: ${logoOpacityBase}`, "*");
+  //         }
+  //       });
+  //     }, flag2, flagCount, textColor);
+  //   });
+  // }, [isAppReady, pressureOptions]);
   useEffect(() => {
     ["rightLeg", "leftLeg"].forEach(area => {
       const text = pressureOptions[`${area}Text`]?.trim() || "";
@@ -355,20 +387,89 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       const type = pressureOptions[`${area}Type`] || "";
       const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
 
-
       const prev = prevRef.current[area] || {};
-      if (prev.text === text && prev.flag === flag && prev.flag2 === flag2 && prev.flagCount === flagCount && prev.logoPre === logoPre && prev.logoCustom === logoCustom && prev.type === type && prev.textColor === textColor) return;
+      if (
+        prev.text === text && prev.flag === flag && prev.flag2 === flag2 &&
+        prev.flagCount === flagCount && prev.logoPre === logoPre &&
+        prev.logoCustom === logoCustom && prev.type === type && prev.textColor === textColor
+      ) return;
       prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
+
       const currentRender = (renderCounterRef.current[area] || 0) + 1;
       renderCounterRef.current[area] = currentRender;
+
       const hasFlag = !!flag && type === "flag";
       const hasLogo = !!(logoPre || logoCustom) && type === "logo";
-      const opacity = getEmissiveBase64(text, hasFlag, hasLogo, flagCount);
-      ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Short:${area}_opacity: ${opacity}`, "*"); });
-      getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuse, logoOpacityBase) => {
+
+      // ── 1. Text texture — always send separately ──────────────────────────
+      if (text) {
+        const textCanvas = document.createElement("canvas");
+        textCanvas.width = 320;
+        textCanvas.height = 120;
+        const tctx = textCanvas.getContext("2d");
+
+        let fontSize = 48;
+        tctx.font = `bold ${fontSize}px Arial`;
+        tctx.fillStyle = textColor;
+        tctx.textAlign = "center";
+        tctx.textBaseline = "middle";
+        while (tctx.measureText(text).width > 240 && fontSize > 28) {
+          fontSize -= 2;
+          tctx.font = `bold ${fontSize}px Arial`;
+        }
+        tctx.fillText(text, 160, 60);
+
+        const textDiffuse = textCanvas.toDataURL("image/png");
+
+        // Opacity (black/white mask)
+        const imgData = tctx.getImageData(0, 0, 320, 120);
+const d = imgData.data;
+
+for (let i = 0; i < d.length; i += 4) {
+  const alpha = d[i + 3];
+
+  // sirf alpha use karo (text visibility yahin hoti hai)
+  const bw = alpha > 10 ? 255 : 0;
+
+  d[i] = d[i + 1] = d[i + 2] = bw;
+  d[i + 3] = 255;
+}
+        tctx.putImageData(imgData, 0, 0);
+        const textOpacity = textCanvas.toDataURL("image/png");
+
+        ["preview-iframe", "preview-iframe2"].forEach(id => {
+          const f = document.getElementById(id);
+          if (f?.contentWindow) {
+            f.contentWindow.postMessage(`Short:${area}_Text_diffuse: ${textDiffuse}`, "*");
+            f.contentWindow.postMessage(`Short:${area}_Text_opacity: ${textOpacity}`, "*");
+          }
+        });
+      } else {
+        // Text cleared — send blank texture
+        const blankCanvas = document.createElement("canvas");
+        blankCanvas.width = 320; blankCanvas.height = 120;
+        const blank = blankCanvas.toDataURL("image/png");
+        ["preview-iframe", "preview-iframe2"].forEach(id => {
+          const f = document.getElementById(id);
+          if (f?.contentWindow) {
+            f.contentWindow.postMessage(`Short:${area}_Text_diffuse: ${blank}`, "*");
+            f.contentWindow.postMessage(`Short:${area}_Text_opacity: ${blank}`, "*");
+          }
+        });
+      }
+
+      // ── 2. Flag / Logo texture — send separately ──────────────────────────
+      const opacity = getEmissiveBase64("", hasFlag, hasLogo, flagCount);
+      ["preview-iframe", "preview-iframe2"].forEach(id => {
+        const f = document.getElementById(id);
+        if (f?.contentWindow) f.contentWindow.postMessage(`Short:${area}_opacity: ${opacity}`, "*");
+      });
+
+      getDiffuseBase64(flag, logoPre, logoCustom, "", (diffuse, logoOpacityBase) => {
         if (renderCounterRef.current[area] !== currentRender) return;
         ["preview-iframe", "preview-iframe2"].forEach(id => {
-          const f = document.getElementById(id); if (f?.contentWindow) {
+          const f = document.getElementById(id);
+          if (f?.contentWindow) {
             f.contentWindow.postMessage(`Short:${area}_diffuse: ${diffuse}`, "*");
             if (logoOpacityBase) f.contentWindow.postMessage(`Short:${area}_opacity: ${logoOpacityBase}`, "*");
           }
@@ -387,88 +488,194 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
 
   const renderArea = (area) => {
     return (
+      // <div key={area} className="bg-white rounded-lg p-4 mb-4">
+      //   <h3 className="font-semibold text-gray-900 mb-3">
+      //     {area === "rightLeg" ? "Right Leg:" : "Left Leg:"}
+      //   </h3>
+      //   <div className="space-y-3">
+      //     <div className="flex rounded-lg overflow-hidden border border-gray-200">
+      //       {["text", "flag", "logo"].map(tab => (
+      //         <button key={tab} type="button"
+      //           onClick={() => {
+      //             if (tab === "text") {
+      //               onUpdate({
+      //                 pressureOptions: {
+      //                   ...pressureOptions,
+      //                   [`${area}Type`]: "",
+      //                   [`${area}Flag`]: "",
+      //                   [`${area}LogoPredefined`]: "",
+      //                   [`${area}LogoCustom`]: ""
+      //                 }
+      //               });
+      //             } else {
+      //               handleTypeChange(area, tab);
+      //             }
+      //           }}
+      //           className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`]?.trim() === tab || (tab === "text" && (!pressureOptions[`${area}Type`] || pressureOptions[`${area}Type`]?.trim() === "")) ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+      //         >
+      //           {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
+      //           {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ?" : ""}
+      //         </button>
+      //       ))}
+      //     </div>
+      //     {(!pressureOptions[`${area}Type`] || pressureOptions[`${area}Type`]?.trim() === "") && (
+      //       <div className="space-y-2">
+      //         <div className="flex flex-wrap gap-2">
+      //           <input type="text" value={pressureOptions[`${area}Text`]}
+      //             onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
+      //             placeholder="Enter text" maxLength={maxCharsText}
+      //             className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
+      //           />
+      //           {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
+      //         </div>
+      //         {pressureOptions[`${area}Text`] && (
+      //           <div className="flex items-center gap-2">
+      //             <span className="text-xs text-gray-500 font-medium">Text color:</span>
+      //             {[{ val: "#ffffff", label: "White" }, { val: "#000000", label: "Black" }].map(({ val, label }) => (
+      //               <button key={val} type="button"
+      //                 onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: val } })}
+      //                 title={label}
+      //                 className="w-7 h-7 rounded-full border-2 transition-all"
+      //                 style={{
+      //                   backgroundColor: val,
+      //                   borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "#16a34a" : val === "#ffffff" ? "#d1d5db" : "#374151",
+      //                   boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "0 0 0 2px #16a34a" : "none",
+      //                 }}
+      //               />
+      //             ))}
+      //             <span className="text-xs text-gray-400">
+      //               {(pressureOptions[`${area}TextColor`] || "#ffffff") === "#ffffff" ? "White" : "Black"}
+      //             </span>
+      //           </div>
+      //         )}
+      //       </div>
+      //     )}
+      //     {pressureOptions[`${area}Type`]?.trim() === "flag" && (
+      //       <div className="flex flex-wrap gap-2">
+      //         <input type="text" value={getFlagDisplay(pressureOptions[`${area}Flag`])} readOnly placeholder="Select flag"
+      //           className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
+      //           onClick={() => handleFlagSelect(`${area}Flag`)}
+      //         />
+      //         <button onClick={() => handleFlagSelect(`${area}Flag`)} className="px-4 py-2 bg-green-900 text-white rounded-lg hover:bg-green-800 text-sm font-medium">Select</button>
+      //         {pressureOptions[`${area}Flag`] && <button onClick={() => clearField(`${area}Flag`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
+      //       </div>
+      //     )}
+      //     {pressureOptions[`${area}Type`]?.trim() === "logo" && (
+      //       <div className="flex flex-wrap gap-2">
+      //         <input type="text" value={getLogoDisplay(pressureOptions[`${area}LogoPredefined`])} readOnly placeholder="Select logo"
+      //           className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
+      //           onClick={() => handleFlagSelect(`${area}LogoPredefined`)}
+      //         />
+      //         <button onClick={() => handleFlagSelect(`${area}LogoPredefined`)} className="px-4 py-2 bg-green-900 text-white rounded-lg hover:bg-green-800 text-sm font-medium">Select</button>
+      //         {pressureOptions[`${area}LogoPredefined`] && <button onClick={() => clearField(`${area}LogoPredefined`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
+      //       </div>
+      //     )}
+      //   </div>
+      // </div>
       <div key={area} className="bg-white rounded-lg p-4 mb-4">
         <h3 className="font-semibold text-gray-900 mb-3">
           {area === "rightLeg" ? "Right Leg:" : "Left Leg:"}
         </h3>
         <div className="space-y-3">
-          <div className="flex rounded-lg overflow-hidden border border-gray-200">
-            {["text", "flag", "logo"].map(tab => (
-              <button key={tab} type="button"
-                onClick={() => {
-                  if (tab === "text") {
-                    onUpdate({
-                      pressureOptions: {
-                        ...pressureOptions,
-                        [`${area}Type`]: "",
-                        [`${area}Flag`]: "",
-                        [`${area}LogoPredefined`]: "",
-                        [`${area}LogoCustom`]: ""
-                      }
-                    });
-                  } else {
-                    handleTypeChange(area, tab);
-                  }
-                }}
-                className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`]?.trim() === tab || (tab === "text" && (!pressureOptions[`${area}Type`] || pressureOptions[`${area}Type`]?.trim() === "")) ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
-              >
-                {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
-                {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ?" : ""}
-              </button>
-            ))}
-          </div>
-          {(!pressureOptions[`${area}Type`] || pressureOptions[`${area}Type`]?.trim() === "") && (
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2">
-                <input type="text" value={pressureOptions[`${area}Text`]}
-                  onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
-                  placeholder="Enter text" maxLength={maxCharsText}
-                  className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
-                />
-                {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
-              </div>
+
+          {/* ── Text (always visible) ── */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Text</label>
+            <div className="flex flex-wrap gap-2">
+              <input
+                type="text"
+                value={pressureOptions[`${area}Text`] || ""}
+                onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
+                placeholder="Enter text"
+                maxLength={maxCharsText}
+                className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
+              />
               {pressureOptions[`${area}Text`] && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 font-medium">Text color:</span>
-                  {[{ val: "#ffffff", label: "White" }, { val: "#000000", label: "Black" }].map(({ val, label }) => (
-                    <button key={val} type="button"
-                      onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: val } })}
-                      title={label}
-                      className="w-7 h-7 rounded-full border-2 transition-all"
-                      style={{
-                        backgroundColor: val,
-                        borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "#16a34a" : val === "#ffffff" ? "#d1d5db" : "#374151",
-                        boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "0 0 0 2px #16a34a" : "none",
-                      }}
-                    />
-                  ))}
-                  <span className="text-xs text-gray-400">
-                    {(pressureOptions[`${area}TextColor`] || "#ffffff") === "#ffffff" ? "White" : "Black"}
-                  </span>
-                </div>
+                <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100">
+                  <Trash2 className="w-4 h-4" />
+                </button>
               )}
             </div>
-          )}
-          {pressureOptions[`${area}Type`]?.trim() === "flag" && (
-            <div className="flex flex-wrap gap-2">
-              <input type="text" value={getFlagDisplay(pressureOptions[`${area}Flag`])} readOnly placeholder="Select flag"
-                className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
-                onClick={() => handleFlagSelect(`${area}Flag`)}
-              />
-              <button onClick={() => handleFlagSelect(`${area}Flag`)} className="px-4 py-2 bg-green-900 text-white rounded-lg hover:bg-green-800 text-sm font-medium">Select</button>
-              {pressureOptions[`${area}Flag`] && <button onClick={() => clearField(`${area}Flag`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
+            {pressureOptions[`${area}Text`] && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 font-medium">Text color:</span>
+                {[{ val: "#ffffff", label: "White" }, { val: "#000000", label: "Black" }].map(({ val, label }) => (
+                  <button key={val} type="button"
+                    onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: val } })}
+                    title={label}
+                    className="w-7 h-7 rounded-full border-2 transition-all"
+                    style={{
+                      backgroundColor: val,
+                      borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "#16a34a" : val === "#ffffff" ? "#d1d5db" : "#374151",
+                      boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "0 0 0 2px #16a34a" : "none",
+                    }}
+                  />
+                ))}
+                <span className="text-xs text-gray-400">
+                  {(pressureOptions[`${area}TextColor`] || "#ffffff") === "#ffffff" ? "White" : "Black"}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* ── Flag / Logo toggle ── */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Flag / Logo</label>
+            <div className="flex rounded-lg overflow-hidden border border-gray-200">
+              {["flag", "logo"].map(tab => (
+                <button key={tab} type="button"
+                  onClick={() => onUpdate({
+                    pressureOptions: {
+                      ...pressureOptions,
+                      [`${area}Type`]: pressureOptions[`${area}Type`]?.trim() === tab ? "" : tab,
+                      ...(tab !== "flag" ? { [`${area}Flag`]: "" } : {}),
+                      ...(tab !== "logo" ? { [`${area}LogoPredefined`]: "", [`${area}LogoCustom`]: "" } : {}),
+                    }
+                  })}
+                  className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`]?.trim() === tab
+                    ? "bg-green-700 text-white"
+                    : "bg-white text-gray-500 hover:bg-gray-50"
+                    }`}
+                >
+                  {tab === "flag" ? t("Flag") : t("Logo")}
+                  {(tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
+                </button>
+              ))}
             </div>
-          )}
-          {pressureOptions[`${area}Type`]?.trim() === "logo" && (
-            <div className="flex flex-wrap gap-2">
-              <input type="text" value={getLogoDisplay(pressureOptions[`${area}LogoPredefined`])} readOnly placeholder="Select logo"
-                className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
-                onClick={() => handleFlagSelect(`${area}LogoPredefined`)}
-              />
-              <button onClick={() => handleFlagSelect(`${area}LogoPredefined`)} className="px-4 py-2 bg-green-900 text-white rounded-lg hover:bg-green-800 text-sm font-medium">Select</button>
-              {pressureOptions[`${area}LogoPredefined`] && <button onClick={() => clearField(`${area}LogoPredefined`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
-            </div>
-          )}
+
+            {/* Flag picker */}
+            {pressureOptions[`${area}Type`]?.trim() === "flag" && (
+              <div className="flex flex-wrap gap-2">
+                <input type="text" value={getFlagDisplay(pressureOptions[`${area}Flag`])} readOnly placeholder="Select flag"
+                  className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
+                  onClick={() => handleFlagSelect(`${area}Flag`)}
+                />
+                <button onClick={() => handleFlagSelect(`${area}Flag`)} className="px-4 py-2 bg-green-900 text-white rounded-lg hover:bg-green-800 text-sm font-medium">Select</button>
+                {pressureOptions[`${area}Flag`] && (
+                  <button onClick={() => clearField(`${area}Flag`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Logo picker */}
+            {pressureOptions[`${area}Type`]?.trim() === "logo" && (
+              <div className="flex flex-wrap gap-2">
+                <input type="text" value={getLogoDisplay(pressureOptions[`${area}LogoPredefined`])} readOnly placeholder="Select logo"
+                  className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
+                  onClick={() => handleFlagSelect(`${area}LogoPredefined`)}
+                />
+                <button onClick={() => handleFlagSelect(`${area}LogoPredefined`)} className="px-4 py-2 bg-green-900 text-white rounded-lg hover:bg-green-800 text-sm font-medium">Select</button>
+                {pressureOptions[`${area}LogoPredefined`] && (
+                  <button onClick={() => clearField(`${area}LogoPredefined`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
     );
@@ -537,7 +744,7 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
         </div>
       )}
 
-      <div  style={activeTab !== "pressure" ? { visibility: "hidden", position: "absolute", pointerEvents: "none", height: 0, overflow: "hidden" } : {}}>
+      <div style={activeTab !== "pressure" ? { visibility: "hidden", position: "absolute", pointerEvents: "none", height: 0, overflow: "hidden" } : {}}>
         <Test1 postEx="Short:" pressureOptions={pressureOptions} isAppReady={isAppReady}
           onUpdate={update => {
             if (update.canvasBase64) {

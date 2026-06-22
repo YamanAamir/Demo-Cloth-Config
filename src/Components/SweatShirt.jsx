@@ -525,18 +525,31 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     });
   }, [isAppReady, pressureOptions]);
 
-  const colors = [
-    { name: "Red", value: "#E61709", border: "#E61709" },
-    { name: "Black", value: "#120F14", border: "#120F14" },
+  const lightColors = [
     { name: "White", value: "#FFFFFF", border: "#D1D5DB" },
-    { name: "Natural", value: "#FFFAD9", border: "#FFFAD9" },
+    { name: "Natural", value: "#FFFAD9", border: "#D4C87A" },
     { name: "Heather Grey", value: "#D4D9DC", border: "#D4D9DC" },
-    { name: "Navy", value: "#051734", border: "#051734" },
     { name: "Light Pink", value: "#F0A5C7", border: "#F0A5C7" },
-    { name: "Olive Green", value: "#63673F", border: "#63673F" },
-    { name: "Blue", value: "#0000FF", border: "#0000FF" },
-    { name: "Purple", value: "#431279", border: "#431279" },
   ];
+
+  const darkColors = [
+    { name: "Red", value: "#E61709", border: "#E61709" },
+    { name: "Olive Green", value: "#63673F", border: "#63673F" },
+    { name: "Purple", value: "#431279", border: "#431279" },
+    { name: "Blue", value: "#0000FF", border: "#0000FF" },
+    { name: "Black", value: "#120F14", border: "#120F14" },
+    { name: "Navy", value: "#051734", border: "#051734" },
+  ];
+
+  const colors = libDesignColor === 'black' ? darkColors : lightColors;
+
+  useEffect(() => {
+    const currentPalette = libDesignColor === 'black' ? darkColors : lightColors;
+    const isValid = currentPalette.some(c => c.name === selectedColor);
+    if (!isValid) {
+      onUpdate({ selectedColor: currentPalette[0].name });
+    }
+  }, [libDesignColor]);
 
   const sizes = ["S", "M", "L", "XL", "2XL", "3XL"];
 
@@ -546,7 +559,35 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       {activeTab === "size" ? (
         <div className="flex flex-col flex-1 relative p-2">
           <h1 className="text-lg font-bold mb-4 text-gray-900">SweatShirt</h1>
-
+          {/* Garment Color tabs */}
+          <div className="mb-3">
+            <p className="text-xs font-semibold text-gray-700 mb-2">Garment Color</p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { key: 'white', label: 'Light Garment', sub: 'Black print' },
+                { key: 'black', label: 'Dark Garment', sub: 'White print' },
+                // { key: 'normal', label: 'Normal', sub: 'Original print' },
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  // onClick={() => { setLibDesignColorSafe(tab.key); setLibSelectedDesign(null); }}
+                  onClick={() => {
+                    setLibDesignColorSafe(tab.key);
+                    setLibSelectedDesign(null);
+                    // Tab ke hisaab se default color set karo
+                    const newPalette = tab.key === 'black' ? darkColors : lightColors;
+                    onUpdate({ selectedColor: newPalette[0].name });
+                  }}
+                  className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border-2 transition-all bg-white ${libDesignColor === tab.key ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                >
+                  <span className={`text-xs font-bold ${libDesignColor === tab.key ? 'text-gray-900' : 'text-gray-600'}`}>{tab.label}</span>
+                  <span className="text-[10px] text-gray-400 mt-0.5 leading-tight text-center">{tab.sub}</span>
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="mb-5">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
             <div className="grid grid-flow-col grid-rows-1 gap-2 w-fit">
@@ -596,29 +637,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5" /> Back Design Library
             </h2>
-            {/* Garment Color tabs */}
-            <div className="mb-3">
-              <p className="text-xs font-semibold text-gray-700 mb-2">Garment Color</p>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { key: 'white',  label: 'Light Garment',  sub: 'Black print' },
-                  { key: 'black',  label: 'Dark Garment',  sub: 'White print' },
-                  // { key: 'normal', label: 'Normal', sub: 'Original print' },
-                ].map(tab => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => { setLibDesignColorSafe(tab.key); setLibSelectedDesign(null); }}
-                    className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border-2 transition-all bg-white ${
-                      libDesignColor === tab.key ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <span className={`text-xs font-bold ${libDesignColor === tab.key ? 'text-gray-900' : 'text-gray-600'}`}>{tab.label}</span>
-                    <span className="text-[10px] text-gray-400 mt-0.5 leading-tight text-center">{tab.sub}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+
             {libCountriesLoading ? (
               <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading countries...
@@ -951,7 +970,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
         </div>
       )}
 
-      <div  style={activeTab !== "pressure" ? { visibility: 'hidden', position: 'absolute', pointerEvents: 'none', height: 0, overflow: 'hidden' } : {}}>
+      <div style={activeTab !== "pressure" ? { visibility: 'hidden', position: 'absolute', pointerEvents: 'none', height: 0, overflow: 'hidden' } : {}}>
         <Test
           key={`sweatshirt-test-${JSON.stringify(pressureOptions?.backDesign)}`}
           postEx="SweatShirt:"
