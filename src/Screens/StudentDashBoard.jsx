@@ -33,6 +33,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     const DEFAULT_SELECTIONS = {
         'T-SHIRT': {
             selectedColor: 'Red',
+            activetab: 'white',
             selectedSize: '',
             pressureOptions: {
                 rightChestText: '', rightChestFlag: '', rightChestLogoPredefined: '', rightChestLogoCustom: '', rightChestType: '', rightChestTextColor: '#ffffff',
@@ -44,6 +45,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         },
         'SWEATSHIRT': {
             selectedColor: 'Red',
+            activetab: 'white',
             selectedSize: '',
             pressureOptions: {
                 rightChestText: '', rightChestFlag: '', rightChestLogoPredefined: '', rightChestLogoCustom: '', rightChestType: '', rightChestTextColor: '#ffffff',
@@ -55,6 +57,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         },
         'HOODIE': {
             selectedColor: 'Red',
+            activetab: 'white',
             selectedSize: '',
             pressureOptions: {
                 rightChestText: '', rightChestFlag: '', rightChestLogoPredefined: '', rightChestLogoCustom: '', rightChestType: '', rightChestTextColor: '#ffffff',
@@ -67,6 +70,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         },
         'ZIPPERHOODIE': {
             selectedColor: 'Red',
+            activetab: 'white',
             selectedSize: '',
             pressureOptions: {
                 rightChestText: '', rightChestFlag: '', rightChestLogoPredefined: '', rightChestLogoCustom: '', rightChestType: '', rightChestTextColor: '#ffffff',

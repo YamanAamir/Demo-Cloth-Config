@@ -45,7 +45,7 @@ const CANVAS_HEIGHT = 350;
 //   { name: 'Design 8', url: design8 },
 // ];
 
-export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, designColor, backDesigns: propBackDesigns }) {
+export default function Test({ pressureOptions, color, onUpdate, postEx, isAppReady, designColor, backDesigns: propBackDesigns }) {
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
   const [objects, setObjects] = useState([]);
@@ -308,7 +308,7 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
       eoctx.imageSmoothingEnabled = true;
       eoctx.imageSmoothingQuality = "high";
       // White background so brightness threshold works correctly
-      eoctx.fillStyle = "#ffffff";
+      eoctx.fillStyle = color;
       eoctx.fillRect(0, 0, exportOpacity.width, exportOpacity.height);
       objects.forEach(obj => {
         eoctx.save();
@@ -338,7 +338,7 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
       console.warn("Canvas export error:", err);
     }
 
-    if (onUpdate && postEx && diffuseBase64 && opacityBase64) {
+    if (onUpdate && postEx && diffuseBase64 && opacityBase64 && objects.length > 0) {
       onUpdate({
         canvasBase64: {
           diffuse: postEx + "back_diffuse: " + diffuseBase64,
@@ -380,7 +380,10 @@ export default function Test({ pressureOptions, onUpdate, postEx, isAppReady, de
     }
   };
 
-  useEffect(() => draw(), [objects, selectedId, isAppReady]);
+  useEffect(() => {
+    if (objects.length === 0) return; // kuch nahi draw karo
+    draw();
+  }, [objects, selectedId, isAppReady]);
 
   // const selectPredefinedDesign = (url) => {
   //   const img = new Image();

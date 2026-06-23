@@ -395,7 +395,182 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
     });
   }, [isAppReady, pressureOptions]);
 
-  // const colors = [{ name: "Red", value: "#E61709", border: "#E61709" }, { name: "Black", value: "#120F14", border: "#120F14" }, { name: "White", value: "#FFFFFF", border: "#D1D5DB" }, { name: "Natural", value: "#FFFAD9", border: "#FFFAD9" }, { name: "Heather Grey", value: "#D4D9DC", border: "#D4D9DC" }, { name: "Navy", value: "#051734", border: "#051734" }, { name: "Light Pink", value: "#F0A5C7", border: "#F0A5C7" }, { name: "Olive Green", value: "#63673F", border: "#63673F" }, { name: "Blue", value: "#0000FF", border: "#0000FF" }, { name: "Purple", value: "#431279", border: "#431279" }];
+
+  const pressureOptionsRef = useRef(pressureOptions);
+  const prevPressureOptionsRef = React.useRef({});
+  // const renderCounterRef = React.useRef({});
+
+  useEffect(() => {
+    pressureOptionsRef.current = pressureOptions;
+  }, [pressureOptions]);
+
+  useEffect(() => {
+    const areas = ["rightChest", "leftChest", "rightSleeve", "leftSleeve"];
+
+    areas.forEach((area) => {
+      const text = pressureOptions[`${area}Text`]?.trim() || "";
+      const flag = pressureOptions[`${area}Flag`] || "";
+      const flag2 = pressureOptions[`${area}Flag2`] || "";
+      const flagCount = pressureOptions[`${area}FlagCount`] || 1;
+      const logoPre = pressureOptions[`${area}LogoPredefined`] || "";
+      const logoCustom = pressureOptions[`${area}LogoCustom`] || "";
+      const type = pressureOptions[`${area}Type`] || "";
+      const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
+
+      const prev = prevPressureOptionsRef.current[area] || {};
+      const hasChanged =
+        prev.text !== text ||
+        prev.flag !== flag ||
+        prev.flag2 !== flag2 ||
+        prev.flagCount !== flagCount ||
+        prev.logoPre !== logoPre ||
+        prev.logoCustom !== logoCustom ||
+        prev.type !== type ||
+        prev.textColor !== textColor;
+
+      if (!hasChanged) return;
+
+      prevPressureOptionsRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
+      const currentRender = (renderCounterRef.current[area] || 0) + 1;
+      renderCounterRef.current[area] = currentRender;
+
+      const hasText = text.length > 0;
+      const hasFlag = !!flag && type === "flag";
+      const hasLogo = !!(logoPre || logoCustom) && type === "logo";
+      const hasSecondAsset = !!flag2;
+      const opacity = getEmissiveBase64(text, hasFlag, hasLogo, hasSecondAsset);
+      ["preview-iframe", "preview-iframe2"].forEach((id) => {
+        const iframe = document.getElementById(id);
+        if (iframe?.contentWindow) {
+          const msg = `Hoodie:${area}_opacity: ${opacity}`;
+          iframe.contentWindow.postMessage(msg, "*");
+        }
+      });
+
+      getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase, logoOpacityBase) => {
+        if (renderCounterRef.current[area] !== currentRender) return;
+        ["preview-iframe", "preview-iframe2"].forEach((id) => {
+          const iframe = document.getElementById(id);
+          if (iframe?.contentWindow) {
+            const msg = `Hoodie:${area}_diffuse: ${diffuseBase}`;
+            iframe.contentWindow.postMessage(msg, "*");
+            if (logoOpacityBase) iframe.contentWindow.postMessage(`Hoodie:${area}_opacity: ${logoOpacityBase}`, "*");
+          }
+        });
+      }, flag2, flagCount, textColor);
+    });
+  }, [isAppReady, pressureOptions]);
+
+  const handleBackDesignUpdate = (update) => {
+    const current = pressureOptionsRef.current;
+    if (!current?.backDesign) return;
+    if (update.canvasBase64) {
+      const raw = update.canvasBase64.rawData;
+      const diffuseB64 = raw?.diffuse || "";
+      const opacityB64 = raw?.opacity || "";
+      const color = libDesignColorRef.current;
+
+      if (color === 'black' && opacityB64) {
+        // Pehle invert karo, phir dono iframes ko bhejo
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          for (let i = 0; i < imgData.data.length; i += 4) {
+            imgData.data[i] = 255 - imgData.data[i];
+            imgData.data[i + 1] = 255 - imgData.data[i + 1];
+            imgData.data[i + 2] = 255 - imgData.data[i + 2];
+          }
+          ctx.putImageData(imgData, 0, 0);
+          const invertedB64 = canvas.toDataURL("image/png");
+
+          ["preview-iframe", "preview-iframe2"].forEach((id) => {
+            const iframe = document.getElementById(id);
+            if (iframe?.contentWindow) {
+              if (diffuseB64) iframe.contentWindow.postMessage("Hoodie:back_white_diffuse: " + diffuseB64, "*");
+              iframe.contentWindow.postMessage("Hoodie:back_white_opacity: " + invertedB64, "*");
+            }
+          });
+        };
+        img.src = opacityB64;
+      } else {
+        ["preview-iframe", "preview-iframe2"].forEach((id) => {
+          const iframe = document.getElementById(id);
+          if (iframe?.contentWindow) {
+            if (color === 'white') {
+              if (diffuseB64) iframe.contentWindow.postMessage("Hoodie:back_black_diffuse: " + diffuseB64, "*");
+              if (opacityB64) iframe.contentWindow.postMessage("Hoodie:back_black_opacity: " + opacityB64, "*");
+            }
+          }
+        });
+      }
+    }
+
+    if (update.backDesign !== undefined) {
+      onUpdate({
+        pressureOptions: {
+          ...pressureOptionsRef.current,
+          backDesign: update.backDesign,
+        },
+      });
+    }
+  };
+  useEffect(() => {
+    if (!libSelectedCountry) return;
+    if (!libDesigns.length) return;
+
+    const filtered = libDesigns.filter(d => {
+      if (libDesignColor === 'white') {
+        return d.designColor === 'white' || d.designColor === 'normal' || !d.designColor;
+      }
+
+      if (libDesignColor === 'black') {
+        return d.designColor === 'black' || d.designColor_2 === 'black';
+      }
+
+      return true;
+    });
+
+    if (filtered.length === 0) return;
+
+    // ✅ IMPORTANT: preserve selection
+    const activeDesign = libSelectedDesign || filtered[0];
+    console.log("activeDesign", libSelectedDesign);
+
+    const selectedPath =
+      libDesignColor === 'black'
+        ? (activeDesign.file_path_2 || activeDesign.file_path)
+        : activeDesign.file_path;
+
+    const src = selectedPath?.startsWith("http")
+      ? selectedPath
+      : `${BASE_URL}${selectedPath?.replace(/\\/g, "/")}`;
+
+    setLibSelectedDesign(activeDesign);
+
+    onUpdate({
+      pressureOptions: {
+        ...pressureOptions,
+        backDesign: {
+          ...(pressureOptionsRef.current?.backDesign || {}),
+          src,
+          designId: activeDesign.id,
+          file_path: activeDesign.file_path,
+          file_path_2: activeDesign.file_path_2,
+          designColor: libDesignColor,
+          pos: { x: 240, y: 175 },
+          size: { w: 300, h: 300 },
+          angle: 0,
+          locked: true,
+        }
+      }
+    });
+
+  }, [libDesignColor, libSelectedCountry, libSelectedDesign]);
 
   const lightColors = [
     { name: "White", value: "#FFFFFF", border: "#D1D5DB" },
@@ -657,7 +832,13 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
                     setLibSelectedDesign(null);
                     // Tab ke hisaab se default color set karo
                     const newPalette = tab.key === 'black' ? darkColors : lightColors;
-                    onUpdate({ selectedColor: newPalette[0].name });
+                    onUpdate({
+                      selectedColor: newPalette[0].name,
+                      pressureOptions: {        // ← ye add karo
+                        ...pressureOptions,
+                        backDesign: null,       // ← back design clear karo
+                      }
+                    });
                   }}
                   className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border-2 transition-all bg-white ${libDesignColor === tab.key ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
                     }`}
@@ -734,9 +915,14 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
               <div className="flex items-center justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
             ) : (() => {
               const filtered = libDesigns.filter(d => {
-                const dc = d.designColor;
-                if (libDesignColor === 'normal') return !dc || dc === 'normal';
-                return dc === libDesignColor;
+                if (libDesignColor === 'white') {
+                  return d.designColor === 'white' || d.designColor === 'normal' || !d.designColor;
+                }
+                if (libDesignColor === 'black') {
+                  // Ya toh direct black hai, ya designColor_2 black hai
+                  return d.designColor === 'black' || d.designColor_2 === 'black';
+                }
+                return !d.designColor || d.designColor === 'normal';
               });
               if (!libSelectedCountry) return <p className="text-xs text-gray-400 py-3 text-center">Select a country above</p>;
               return filtered.length === 0 ? (
@@ -744,20 +930,51 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
                   {libDesigns.length === 0 ? 'No designs for this country' : `No ${libDesignColor} designs for this country`}
                 </p>
               ) : (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2 pt-4">
                   {filtered.map(design => {
-                    const rawPath = (design.file_path || design.image_path || design.thumbnail || "").replace(/\\/g, "/"); const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
+                    const previewBg = libDesignColor === 'black' ? '#1f2937' : '#ffffff';
+                    const rawPath = (() => {
+                      if (libDesignColor === 'black') {
+                        if (design.designColor_2 === 'black' && design.file_path_2) {
+                          return design.file_path_2.replace(/\\/g, "/");
+                        }
+                        return (design.file_path || "").replace(/\\/g, "/");
+                      }
+                      return (design.file_path || "").replace(/\\/g, "/");
+                    })();
+
                     const isSelected = libSelectedDesign?.id === design.id;
-                    const previewBg = design.designColor === 'black' ? '#1f2937' : '#ffffff';
+                    const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
                     return (
-                      <button key={design.id} onClick={() => {
-                        setLibSelectedDesign(design);
-                        postToPreview(`hoodie backDesign`); onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, designColor: design.designColor || libDesignColor, pos: { x: 240, y: 175 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } });
-                      }}
+                      <button
+                        key={design.id}
+                        onClick={() => {
+                          setLibSelectedDesign(design);
+                          onUpdate({
+                            pressureOptions: {
+                              ...pressureOptions,
+                              backDesign: {
+                                src,
+                                designId: design.id,
+                                designColor: design.designColor || libDesignColor,
+                                pos: { x: 240, y: 175 },
+                                size: { w: 300, h: 300 },
+                                angle: 0,
+                                locked: true,
+                              }
+                            }
+                          });
+                          postToPreview(`tshirt backDesign`);
+                        }}
                         className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}
-                        style={{ background: previewBg }}>
+                        style={{ background: previewBg }}
+                      >
                         <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
-                        {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><CheckCircle className="w-3.5 h-3.5 text-white" /></div>}
+                        {isSelected && (
+                          <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                            <CheckCircle className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
                       </button>
                     );
                   })}
@@ -809,38 +1026,8 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
         </div>
       )}
       <div style={activeTab !== "pressure" ? { visibility: "hidden", position: "absolute", pointerEvents: "none", height: 0, overflow: "hidden" } : {}}>
-        <Test postEx="Hoodie:" pressureOptions={pressureOptions} isAppReady={isAppReady} onUpdate={u => {
-          if (u.canvasBase64) {
-            const raw = u.canvasBase64.rawData;
-            const diffuseB64 = raw?.diffuse || "";
-            const opacityB64 = raw?.opacity || "";
-            const color = libDesignColorRef.current;
-
-            // Plain white canvas for back_white_opacity (Dark Garment)
-            const whiteCanvas = document.createElement("canvas");
-            whiteCanvas.width = 400; whiteCanvas.height = 400;
-            const wctx = whiteCanvas.getContext("2d");
-            wctx.fillStyle = "#ffffff";
-            wctx.fillRect(0, 0, 400, 400);
-            const opacityW64 = whiteCanvas.toDataURL("image/png");
-
-            ["preview-iframe", "preview-iframe2"].forEach(id => {
-              const f = document.getElementById(id);
-              if (f?.contentWindow) {
-                if (color === 'white') {
-                  // Light Garment → black print
-                  if (diffuseB64) f.contentWindow.postMessage("Hoodie:back_black_diffuse: " + diffuseB64, "*");
-                  if (opacityB64) f.contentWindow.postMessage("Hoodie:back_black_opacity: " + opacityB64, "*");
-                } else if (color === 'black') {
-                  // Dark Garment → white print
-                  // f.contentWindow.postMessage("Hoodie:back_white_opacity: " + opacityW64, "*");
-                  f.contentWindow.postMessage("Hoodie:back_white_diffuse: " + opacityB64, "*");
-                }
-              }
-            });
-          }
-          if (u.backDesign !== undefined) onUpdate({ pressureOptions: { ...pressureOptions, backDesign: u.backDesign } });
-        }} />
+        <Test postEx="Hoodie:"  color={libDesignColorRef.current} pressureOptions={pressureOptions} isAppReady={isAppReady}
+          onUpdate={handleBackDesignUpdate} />
       </div>
       <Modal />
       <UploadRequestModal

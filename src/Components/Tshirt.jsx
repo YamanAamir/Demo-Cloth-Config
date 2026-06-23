@@ -496,44 +496,124 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
     });
   }, [isAppReady, pressureOptions]);
 
+  const pressureOptionsRef = useRef(pressureOptions);
+  useEffect(() => {
+    pressureOptionsRef.current = pressureOptions;
+  }, [pressureOptions]);
+
   const handleBackDesignUpdate = (update) => {
+    if (!pressureOptionsRef.current.backDesign) return;
     if (update.canvasBase64) {
       const raw = update.canvasBase64.rawData;
       const diffuseB64 = raw?.diffuse || "";
       const opacityB64 = raw?.opacity || "";
       const color = libDesignColorRef.current;
 
-      // Plain white canvas for back_white_opacity
-      const whiteCanvas = document.createElement("canvas");
-      whiteCanvas.width = 400; whiteCanvas.height = 600;
-      const wctx = whiteCanvas.getContext("2d");
-      wctx.fillStyle = "#ffffff";
-      wctx.fillRect(0, 0, 400, 400);
-      const opacityW64 = whiteCanvas.toDataURL("image/png");
-
-      ["preview-iframe", "preview-iframe2"].forEach((id) => {
-        const iframe = document.getElementById(id);
-        if (iframe?.contentWindow) {
-          if (color === 'white') {
-            if (diffuseB64) iframe.contentWindow.postMessage("T-Shirt:back_black_diffuse: " + diffuseB64, "*");
-            if (opacityB64) iframe.contentWindow.postMessage("T-Shirt:back_black_opacity: " + opacityB64, "*");
-          } else if (color === 'black') {
-            iframe.contentWindow.postMessage("T-Shirt:back_white_opacity: " + opacityB64, "*");
-            iframe.contentWindow.postMessage("T-Shirt:back_white_diffuse: " + opacityW64, "*");
+      if (color === 'black' && opacityB64) {
+        // Pehle invert karo, phir dono iframes ko bhejo
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          for (let i = 0; i < imgData.data.length; i += 4) {
+            imgData.data[i] = 255 - imgData.data[i];
+            imgData.data[i + 1] = 255 - imgData.data[i + 1];
+            imgData.data[i + 2] = 255 - imgData.data[i + 2];
           }
-        }
-      });
+          ctx.putImageData(imgData, 0, 0);
+          const invertedB64 = canvas.toDataURL("image/png");
+
+          ["preview-iframe", "preview-iframe2"].forEach((id) => {
+            const iframe = document.getElementById(id);
+            if (iframe?.contentWindow) {
+              if (diffuseB64) iframe.contentWindow.postMessage("T-Shirt:back_white_diffuse: " + diffuseB64, "*");
+              iframe.contentWindow.postMessage("T-Shirt:back_white_opacity: " + invertedB64, "*");
+            }
+          });
+        };
+        img.src = opacityB64;
+      } else {
+        ["preview-iframe", "preview-iframe2"].forEach((id) => {
+          const iframe = document.getElementById(id);
+          if (iframe?.contentWindow) {
+            if (color === 'white') {
+              if (diffuseB64) iframe.contentWindow.postMessage("T-Shirt:back_black_diffuse: " + diffuseB64, "*");
+              if (opacityB64) iframe.contentWindow.postMessage("T-Shirt:back_black_opacity: " + opacityB64, "*");
+            }
+          }
+        });
+      }
     }
+
     if (update.backDesign !== undefined) {
       onUpdate({
         pressureOptions: {
-          ...pressureOptions,
+          ...pressureOptionsRef.current,
           backDesign: update.backDesign,
         },
       });
     }
   };
 
+  useEffect(() => {
+    if (!libSelectedCountry) return;
+    if (!libDesigns.length) return;
+
+    const filtered = libDesigns.filter(d => {
+      if (libDesignColor === 'white') {
+        return d.designColor === 'white' || d.designColor === 'normal' || !d.designColor;
+      }
+
+      if (libDesignColor === 'black') {
+        return d.designColor === 'black' || d.designColor_2 === 'black';
+      }
+
+      return true;
+    });
+
+    if (filtered.length === 0) return;
+
+    // ✅ IMPORTANT: preserve selection
+    const activeDesign =
+      libSelectedDesign &&
+        filtered.find(d => d.id === libSelectedDesign.id)
+        ? libSelectedDesign
+        : filtered[0];
+    console.log("activeDesign", libSelectedDesign);
+
+    const selectedPath =
+      libDesignColor === 'black'
+        ? (activeDesign.file_path_2 || activeDesign.file_path)
+        : activeDesign.file_path;
+
+    const src = selectedPath?.startsWith("http")
+      ? selectedPath
+      : `${BASE_URL}${selectedPath?.replace(/\\/g, "/")}`;
+
+    setLibSelectedDesign(activeDesign);
+
+    onUpdate({
+      pressureOptions: {
+        ...pressureOptions,
+        backDesign: {
+          src,
+          designId: activeDesign.id,
+          file_path: activeDesign.file_path,
+          file_path_2: activeDesign.file_path_2,
+          designColor: libDesignColor,
+          pos: { x: 240, y: 175 },
+          size: { w: 300, h: 300 },
+          angle: 0,
+          locked: true,
+        }
+      }
+    });
+
+  }, [libDesignColor, libDesigns, libSelectedCountry]);
   const lightColors = [
     { name: "White", value: "#FFFFFF", border: "#D1D5DB" },
     { name: "Natural", value: "#FFFAD9", border: "#D4C87A" },
@@ -583,9 +663,14 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                   onClick={() => {
                     setLibDesignColorSafe(tab.key);
                     setLibSelectedDesign(null);
-                    // Tab ke hisaab se default color set karo
                     const newPalette = tab.key === 'black' ? darkColors : lightColors;
-                    onUpdate({ selectedColor: newPalette[0].name });
+                    onUpdate({
+                      selectedColor: newPalette[0].name,
+                      pressureOptions: {        // ← ye add karo
+                        ...pressureOptions,
+                        backDesign: null,       // ← back design clear karo
+                      }
+                    });
                   }}
                   className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border-2 transition-all bg-white ${libDesignColor === tab.key
                     ? 'border-green-500 bg-green-50'
@@ -688,9 +773,14 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
               </div>
             ) : (() => {
               const filtered = libDesigns.filter(d => {
-                const dc = d.designColor;
-                if (libDesignColor === 'normal') return !dc || dc === 'normal';
-                return dc === libDesignColor;
+                if (libDesignColor === 'white') {
+                  return d.designColor === 'white' || d.designColor === 'normal' || !d.designColor;
+                }
+                if (libDesignColor === 'black') {
+                  // Ya toh direct black hai, ya designColor_2 black hai
+                  return d.designColor === 'black' || d.designColor_2 === 'black';
+                }
+                return !d.designColor || d.designColor === 'normal';
               });
               if (!libSelectedCountry) return <p className="text-xs text-gray-400 py-3 text-center">Select a country above</p>;
               return filtered.length === 0 ? (
@@ -700,9 +790,19 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
               ) : (
                 <div className="grid grid-cols-3 gap-2 pt-4">
                   {filtered.map(design => {
-                    const rawPath = (design.file_path || design.image_path || design.thumbnail || "").replace(/\\/g, "/"); const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
+                    const previewBg = libDesignColor === 'black' ? '#1f2937' : '#ffffff';
+                    const rawPath = (() => {
+                      if (libDesignColor === 'black') {
+                        if (design.designColor_2 === 'black' && design.file_path_2) {
+                          return design.file_path_2.replace(/\\/g, "/");
+                        }
+                        return (design.file_path || "").replace(/\\/g, "/");
+                      }
+                      return (design.file_path || "").replace(/\\/g, "/");
+                    })();
+
                     const isSelected = libSelectedDesign?.id === design.id;
-                    const previewBg = design.designColor === 'black' ? '#1f2937' : '#ffffff';
+                    const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
                     return (
                       <button
                         key={design.id}
@@ -1050,6 +1150,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
       <div style={activeTab !== "pressure" ? { visibility: 'hidden', position: 'absolute', pointerEvents: 'none', height: 0, overflow: 'hidden' } : {}}>
         <Test
           postEx="T-Shirt:"
+          color={libDesignColorRef.current}
           pressureOptions={pressureOptions}
           isAppReady={isAppReady}
           onUpdate={handleBackDesignUpdate}

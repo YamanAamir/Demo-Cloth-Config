@@ -64,7 +64,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
 
   const selectedColor = data?.selectedColor || "Red";
   const selectedSize = data?.selectedSize || "";
-
   const pressureOptions = data?.pressureOptions || {
     rightChestText: "",
     rightChestFlag: "",
@@ -465,8 +464,13 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     });
   }, [selectedSize, isAppReady]);
 
+  const pressureOptionsRef = useRef(pressureOptions);
   const prevPressureOptionsRef = React.useRef({});
   const renderCounterRef = React.useRef({});
+
+  useEffect(() => {
+    pressureOptionsRef.current = pressureOptions;
+  }, [pressureOptions]);
 
   useEffect(() => {
     const areas = ["rightChest", "leftChest", "rightSleeve", "leftSleeve"];
@@ -525,6 +529,117 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     });
   }, [isAppReady, pressureOptions]);
 
+  const handleBackDesignUpdate = (update) => {
+    const current = pressureOptionsRef.current;
+    if (!current?.backDesign) return;
+    if (update.canvasBase64) {
+      const raw = update.canvasBase64.rawData;
+      const diffuseB64 = raw?.diffuse || "";
+      const opacityB64 = raw?.opacity || "";
+      const color = libDesignColorRef.current;
+
+      if (color === 'black' && opacityB64) {
+        // Pehle invert karo, phir dono iframes ko bhejo
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          for (let i = 0; i < imgData.data.length; i += 4) {
+            imgData.data[i] = 255 - imgData.data[i];
+            imgData.data[i + 1] = 255 - imgData.data[i + 1];
+            imgData.data[i + 2] = 255 - imgData.data[i + 2];
+          }
+          ctx.putImageData(imgData, 0, 0);
+          const invertedB64 = canvas.toDataURL("image/png");
+
+          ["preview-iframe", "preview-iframe2"].forEach((id) => {
+            const iframe = document.getElementById(id);
+            if (iframe?.contentWindow) {
+              if (diffuseB64) iframe.contentWindow.postMessage("SweatShirt:back_white_diffuse: " + diffuseB64, "*");
+              iframe.contentWindow.postMessage("SweatShirt:back_white_opacity: " + invertedB64, "*");
+            }
+          });
+        };
+        img.src = opacityB64;
+      } else {
+        ["preview-iframe", "preview-iframe2"].forEach((id) => {
+          const iframe = document.getElementById(id);
+          if (iframe?.contentWindow) {
+            if (color === 'white') {
+              if (diffuseB64) iframe.contentWindow.postMessage("SweatShirt:back_black_diffuse: " + diffuseB64, "*");
+              if (opacityB64) iframe.contentWindow.postMessage("SweatShirt:back_black_opacity: " + opacityB64, "*");
+            }
+          }
+        });
+      }
+    }
+
+    if (update.backDesign !== undefined) {
+      onUpdate({
+        pressureOptions: {
+          ...pressureOptionsRef.current,
+          backDesign: update.backDesign,
+        },
+      });
+    }
+  };
+  useEffect(() => {
+    if (!libSelectedCountry) return;
+    if (!libDesigns.length) return;
+
+    const filtered = libDesigns.filter(d => {
+      if (libDesignColor === 'white') {
+        return d.designColor === 'white' || d.designColor === 'normal' || !d.designColor;
+      }
+
+      if (libDesignColor === 'black') {
+        return d.designColor === 'black' || d.designColor_2 === 'black';
+      }
+
+      return true;
+    });
+
+    if (filtered.length === 0) return;
+
+    // ✅ IMPORTANT: preserve selection
+    const activeDesign = libSelectedDesign || filtered[0];
+    console.log("activeDesign", libSelectedDesign);
+
+    const selectedPath =
+      libDesignColor === 'black'
+        ? (activeDesign.file_path_2 || activeDesign.file_path)
+        : activeDesign.file_path;
+
+    const src = selectedPath?.startsWith("http")
+      ? selectedPath
+      : `${BASE_URL}${selectedPath?.replace(/\\/g, "/")}`;
+
+    setLibSelectedDesign(activeDesign);
+
+    onUpdate({
+      pressureOptions: {
+        ...pressureOptions,
+        backDesign: {
+          ...(pressureOptionsRef.current?.backDesign || {}),
+          src,
+          designId: activeDesign.id,
+          file_path: activeDesign.file_path,
+          file_path_2: activeDesign.file_path_2,
+          designColor: libDesignColor,
+          pos: { x: 240, y: 175 },
+          size: { w: 300, h: 300 },
+          angle: 0,
+          locked: true,
+        }
+      }
+    });
+
+  }, [libDesignColor, libSelectedCountry, libSelectedDesign]);
+
   const lightColors = [
     { name: "White", value: "#FFFFFF", border: "#D1D5DB" },
     { name: "Natural", value: "#FFFAD9", border: "#D4C87A" },
@@ -577,7 +692,13 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                     setLibSelectedDesign(null);
                     // Tab ke hisaab se default color set karo
                     const newPalette = tab.key === 'black' ? darkColors : lightColors;
-                    onUpdate({ selectedColor: newPalette[0].name });
+                    onUpdate({
+                      selectedColor: newPalette[0].name,
+                      pressureOptions: {        // ← ye add karo
+                        ...pressureOptions,
+                        backDesign: null,       // ← back design clear karo
+                      }
+                    });
                   }}
                   className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border-2 transition-all bg-white ${libDesignColor === tab.key ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
                     }`}
@@ -676,9 +797,14 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
               <div className="flex items-center justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
             ) : (() => {
               const filtered = libDesigns.filter(d => {
-                const dc = d.designColor;
-                if (libDesignColor === 'normal') return !dc || dc === 'normal';
-                return dc === libDesignColor;
+                if (libDesignColor === 'white') {
+                  return d.designColor === 'white' || d.designColor === 'normal' || !d.designColor;
+                }
+                if (libDesignColor === 'black') {
+                  // Ya toh direct black hai, ya designColor_2 black hai
+                  return d.designColor === 'black' || d.designColor_2 === 'black';
+                }
+                return !d.designColor || d.designColor === 'normal';
               });
               if (!libSelectedCountry) return <p className="text-xs text-gray-400 py-3 text-center">Select a country above</p>;
               return filtered.length === 0 ? (
@@ -686,28 +812,60 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                   {libDesigns.length === 0 ? 'No designs for this country' : `No ${libDesignColor} designs for this country`}
                 </p>
               ) : (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2 pt-4">
                   {filtered.map(design => {
-                    const rawPath = (design.file_path || design.image_path || design.thumbnail || "").replace(/\\/g, "/"); const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
+                    const previewBg = libDesignColor === 'black' ? '#1f2937' : '#ffffff';
+                    const rawPath = (() => {
+                      if (libDesignColor === 'black') {
+                        if (design.designColor_2 === 'black' && design.file_path_2) {
+                          return design.file_path_2.replace(/\\/g, "/");
+                        }
+                        return (design.file_path || "").replace(/\\/g, "/");
+                      }
+                      return (design.file_path || "").replace(/\\/g, "/");
+                    })();
+
                     const isSelected = libSelectedDesign?.id === design.id;
-                    const previewBg = design.designColor === 'black' ? '#1f2937' : '#ffffff';
+                    const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
                     return (
-                      <button key={design.id} onClick={() => {
-                        setLibSelectedDesign(design);
-                        onUpdate({ pressureOptions: { ...pressureOptions, backDesign: { src, designId: design.id, designColor: design.designColor || libDesignColor, pos: { x: 240, y: 175 }, size: { w: 300, h: 300 }, angle: 0, locked: true } } });
-                        postToPreview(`sshirt backDesign`);
-                      }}
+                      <button
+                        key={design.id}
+                        onClick={() => {
+                          setLibSelectedDesign(design);
+                          onUpdate({
+                            pressureOptions: {
+                              ...pressureOptions,
+                              backDesign: {
+                                src,
+                                designId: design.id,
+                                designColor: design.designColor || libDesignColor,
+                                pos: { x: 240, y: 175 },
+                                size: { w: 300, h: 300 },
+                                angle: 0,
+                                locked: true,
+                              }
+                            }
+                          });
+                          postToPreview(`tshirt backDesign`);
+                        }}
                         className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}
-                        style={{ background: previewBg }}>
+                        style={{ background: previewBg }}
+                      >
                         <img src={src} alt={design.name} className="w-full h-full object-contain p-1.5" onError={e => { e.target.style.display = 'none'; }} />
-                        {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><CheckCircle className="w-3.5 h-3.5 text-white" /></div>}
+                        {isSelected && (
+                          <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                            <CheckCircle className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
                       </button>
                     );
                   })}
                 </div>
               );
             })()}
+
           </div>
+
 
           <div className="mb-4 flex flex-col gap-2">
             <button
@@ -968,166 +1126,133 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
             ))}
           </div>
         </div>
-      )}
+      )
+      }
 
       <div style={activeTab !== "pressure" ? { visibility: 'hidden', position: 'absolute', pointerEvents: 'none', height: 0, overflow: 'hidden' } : {}}>
         <Test
           key={`sweatshirt-test-${JSON.stringify(pressureOptions?.backDesign)}`}
           postEx="SweatShirt:"
+          color={libDesignColorRef.current}
           pressureOptions={pressureOptions}
           isAppReady={isAppReady}
-          onUpdate={(update) => {
-            if (update.canvasBase64) {
-              const raw = update.canvasBase64.rawData;
-              const diffuseB64 = raw?.diffuse || "";
-              const opacityB64 = raw?.opacity || "";
-              const color = libDesignColorRef.current;
-
-              // Plain white canvas for back_white_opacity (Dark Garment)
-              const whiteCanvas = document.createElement("canvas");
-              whiteCanvas.width = 400; whiteCanvas.height = 400;
-              const wctx = whiteCanvas.getContext("2d");
-              wctx.fillStyle = "#ffffff";
-              wctx.fillRect(0, 0, 400, 400);
-              const opacityW64 = whiteCanvas.toDataURL("image/png");
-
-              ["preview-iframe", "preview-iframe2"].forEach((id) => {
-                const iframe = document.getElementById(id);
-                if (iframe?.contentWindow) {
-                  if (color === 'white') {
-                    // Light Garment → black print
-                    if (diffuseB64) iframe.contentWindow.postMessage("SweatShirt:back_black_diffuse: " + diffuseB64, "*");
-                    if (opacityB64) iframe.contentWindow.postMessage("SweatShirt:back_black_opacity: " + opacityB64, "*");
-                  } else if (color === 'black') {
-                    // Dark Garment → white print
-                    // iframe.contentWindow.postMessage("SweatShirt:back_white_opacity: " + opacityW64, "*");
-                    iframe.contentWindow.postMessage("SweatShirt:back_white_diffuse: " + opacityB64, "*");
-                  }
-                }
-              });
-            }
-            if (update.backDesign !== undefined) {
-              onUpdate({
-                pressureOptions: {
-                  ...pressureOptions,
-                  backDesign: update.backDesign,
-                },
-              });
-            }
-          }}
+          
+          onUpdate={handleBackDesignUpdate}
         />
       </div>
 
-      {showFlagModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300"
-            onClick={() => setShowFlagModal(false)}
-          />
+      {
+        showFlagModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300"
+              onClick={() => setShowFlagModal(false)}
+            />
 
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
-            <div className="flex items-center justify-between px-8 py-7 border-b border-slate-50 bg-white/50 sticky top-0 z-10">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-50 rounded-2xl">
-                  {currentField.includes("Logo") ? (
-                    <ImageIcon className="w-6 h-6 text-green-600" />
-                  ) : (
-                    <Flag className="w-6 h-6 text-green-600" />
-                  )}
+            <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+              <div className="flex items-center justify-between px-8 py-7 border-b border-slate-50 bg-white/50 sticky top-0 z-10">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-green-50 rounded-2xl">
+                    {currentField.includes("Logo") ? (
+                      <ImageIcon className="w-6 h-6 text-green-600" />
+                    ) : (
+                      <Flag className="w-6 h-6 text-green-600" />
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900 leading-none">
+                      {currentField.includes("Logo") ? t("Select a Logo") : t("Choose a Flag")}
+                    </h2>
+                    <p className="text-slate-500 text-sm mt-1.5 font-medium">
+                      {currentField.includes("Logo") ? t("Pick a symbol for your design") : t("Represent your country")}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900 leading-none">
-                    {currentField.includes("Logo") ? t("Select a Logo") : t("Choose a Flag")}
-                  </h2>
-                  <p className="text-slate-500 text-sm mt-1.5 font-medium">
-                    {currentField.includes("Logo") ? t("Pick a symbol for your design") : t("Represent your country")}
-                  </p>
-                </div>
+                <button
+                  onClick={() => setShowFlagModal(false)}
+                  className="p-3 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all duration-200 group"
+                >
+                  <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+                </button>
               </div>
-              <button
-                onClick={() => setShowFlagModal(false)}
-                className="p-3 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all duration-200 group"
-              >
-                <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
-              </button>
-            </div>
 
-            <div className="p-8 overflow-y-auto custom-scrollbar-premium bg-slate-50/30">
-              {currentField.includes("Logo") ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-                  {logos && logos.map((logo) => (
-                    <button
-                      key={logo.id}
-                      onClick={() => selectLogo(logo.name, logo.id)}
-                      className="group relative flex flex-col items-center p-2 rounded-3xl transition-all duration-300 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50"
-                    >
-                      <div className="w-full aspect-square mb-4 flex items-center justify-center bg-white rounded-2xl border border-slate-100 shadow-sm group-hover:border-green-200 group-hover:-translate-y-2 transition-all duration-500 p-5 overflow-hidden">
-                        <img
-                          src={`${BASE_URL}${logo.file_path}`.replace(/\\/g, '/')}
-                          alt={logo.name}
-                          className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-green-600/0 group-hover:bg-green-600/5 transition-colors duration-300" />
-                      </div>
-                      <span className="text-xs font-bold text-slate-500 group-hover:text-green-700 truncate w-full px-2 text-center uppercase tracking-wider transition-colors">
-                        {logo.name}
-                      </span>
-                      <div className="absolute top-4 right-4 bg-green-600 rounded-full p-1 opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all duration-300 shadow-lg">
-                        <X className="w-3 h-3 text-white rotate-45" />
-                      </div>
-                    </button>
-                  ))}
+              <div className="p-8 overflow-y-auto custom-scrollbar-premium bg-slate-50/30">
+                {currentField.includes("Logo") ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                    {logos && logos.map((logo) => (
+                      <button
+                        key={logo.id}
+                        onClick={() => selectLogo(logo.name, logo.id)}
+                        className="group relative flex flex-col items-center p-2 rounded-3xl transition-all duration-300 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50"
+                      >
+                        <div className="w-full aspect-square mb-4 flex items-center justify-center bg-white rounded-2xl border border-slate-100 shadow-sm group-hover:border-green-200 group-hover:-translate-y-2 transition-all duration-500 p-5 overflow-hidden">
+                          <img
+                            src={`${BASE_URL}${logo.file_path}`.replace(/\\/g, '/')}
+                            alt={logo.name}
+                            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-green-600/0 group-hover:bg-green-600/5 transition-colors duration-300" />
+                        </div>
+                        <span className="text-xs font-bold text-slate-500 group-hover:text-green-700 truncate w-full px-2 text-center uppercase tracking-wider transition-colors">
+                          {logo.name}
+                        </span>
+                        <div className="absolute top-4 right-4 bg-green-600 rounded-full p-1 opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all duration-300 shadow-lg">
+                          <X className="w-3 h-3 text-white rotate-45" />
+                        </div>
+                      </button>
+                    ))}
 
-                  {(!logos || logos.length === 0) && (
-                    <div className="col-span-full py-20 text-center">
-                      <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <ImageIcon className="w-8 h-8 text-slate-400" />
+                    {(!logos || logos.length === 0) && (
+                      <div className="col-span-full py-20 text-center">
+                        <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <ImageIcon className="w-8 h-8 text-slate-400" />
+                        </div>
+                        <p className="text-slate-400 font-bold text-lg">{t("No logos found")}</p>
+                        <p className="text-slate-400/60 text-sm">Logos assigned to your class will appear here.</p>
                       </div>
-                      <p className="text-slate-400 font-bold text-lg">{t("No logos found")}</p>
-                      <p className="text-slate-400/60 text-sm">Logos assigned to your class will appear here.</p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {countries.map((country) => (
-                    <button
-                      key={country.name}
-                      onClick={() => selectFlag(country.name)}
-                      className="group flex flex-col items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 hover:border-green-300 hover:shadow-lg hover:shadow-green-900/5 hover:-translate-y-1 transition-all duration-300"
-                    >
-                      <div className="relative w-16 h-12 rounded-lg overflow-hidden shadow-sm bg-slate-100 group-hover:ring-4 group-hover:ring-green-50 transition-all duration-300">
-                        <img
-                          src={country.flag}
-                          alt={country.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-900 leading-tight uppercase tracking-wider text-center">
-                        {country.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {countries.map((country) => (
+                      <button
+                        key={country.name}
+                        onClick={() => selectFlag(country.name)}
+                        className="group flex flex-col items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 hover:border-green-300 hover:shadow-lg hover:shadow-green-900/5 hover:-translate-y-1 transition-all duration-300"
+                      >
+                        <div className="relative w-16 h-12 rounded-lg overflow-hidden shadow-sm bg-slate-100 group-hover:ring-4 group-hover:ring-green-50 transition-all duration-300">
+                          <img
+                            src={country.flag}
+                            alt={country.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-900 leading-tight uppercase tracking-wider text-center">
+                          {country.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            {/* Quick Helper Footer */}
-            <div className="px-8 py-5 border-t border-slate-50 bg-white flex justify-center items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
-                {t("Choose an asset to customize your placement")}
-              </p>
+              {/* Quick Helper Footer */}
+              <div className="px-8 py-5 border-t border-slate-50 bg-white flex justify-center items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                  {t("Choose an asset to customize your placement")}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
       <UploadRequestModal
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         onSendRequest={() => onOpenInquiry?.()}
       />
-    </div>
+    </div >
   );
 };
 
