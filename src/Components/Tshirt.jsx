@@ -682,14 +682,9 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                   // onClick={() => { setLibDesignColorSafe(tab.key); setLibSelectedDesign(null); }}
                   onClick={() => {
                     setLibDesignColorSafe(tab.key);
-                    setLibSelectedDesign(null);
                     const newPalette = tab.key === 'black' ? darkColors : lightColors;
                     onUpdate({
                       selectedColor: newPalette[0].name,
-                      pressureOptions: {        // ← ye add karo
-                        ...pressureOptions,
-                        backDesign: null,       // ← back design clear karo
-                      }
                     });
                   }}
                   className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border-2 transition-all bg-white ${libDesignColor === tab.key

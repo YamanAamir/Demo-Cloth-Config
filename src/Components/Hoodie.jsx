@@ -852,15 +852,10 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
                   // onClick={() => { setLibDesignColorSafe(tab.key); setLibSelectedDesign(null); }}
                   onClick={() => {
                     setLibDesignColorSafe(tab.key);
-                    setLibSelectedDesign(null);
                     // Tab ke hisaab se default color set karo
                     const newPalette = tab.key === 'black' ? darkColors : lightColors;
                     onUpdate({
                       selectedColor: newPalette[0].name,
-                      pressureOptions: {        // ← ye add karo
-                        ...pressureOptions,
-                        backDesign: null,       // ← back design clear karo
-                      }
                     });
                   }}
                   className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border-2 transition-all bg-white ${libDesignColor === tab.key ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
