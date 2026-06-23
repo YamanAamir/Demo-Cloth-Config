@@ -12,7 +12,7 @@ import { postToPreview } from "../utils/postMessage";
 
 const t = (key) => TRANSLATE_MAP[key] || key;
 
-const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange, maxCharsText = 25 }) => {
+const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange, maxCharsText = 25, libDesignColor: libDesignColorProp, setLibDesignColor }) => {
   const [internalTab, setInternalTab] = useState("size");
   const activeTab = externalTab ?? internalTab;
   const setActiveTab = (tab) => { setInternalTab(tab); onTabChange?.(tab); };
@@ -26,9 +26,21 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
   const [libCountriesLoading, setLibCountriesLoading] = useState(false);
   const [libDesignsLoading, setLibDesignsLoading] = useState(false);
   const [libSelectedDesign, setLibSelectedDesign] = useState(null);
-  const [libDesignColor, setLibDesignColor] = useState('white'); // 'white' | 'black'
+  const [localLibDesignColor, setLocalLibDesignColor] = useState('white');
+  const libDesignColor = setLibDesignColor ? libDesignColorProp : localLibDesignColor;
   const libDesignColorRef = useRef('white');
-  const setLibDesignColorSafe = (val) => { libDesignColorRef.current = val; setLibDesignColor(val); };
+  const setLibDesignColorSafe = (val) => {
+    libDesignColorRef.current = val;
+    if (setLibDesignColor) {
+      setLibDesignColor(val);
+    } else {
+      setLocalLibDesignColor(val);
+    }
+  };
+
+  useEffect(() => {
+    libDesignColorRef.current = libDesignColor;
+  }, [libDesignColor]);
 
   // Upload own design state
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -40,7 +52,17 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
       setLibCountriesLoading(true);
       try {
         const res = await getCountries();
-        if (res.data?.success) { const list = res.data.data || []; setLibCountries(list); }
+        if (res.data?.success) {
+          const list = res.data.data || [];
+          setLibCountries(list);
+          const existingCountryId = data?.pressureOptions?.backDesign?.country_id;
+          if (existingCountryId) {
+            const countryToSelect = list.find(c => c.id === existingCountryId);
+            if (countryToSelect) {
+              setLibSelectedCountry(countryToSelect);
+            }
+          }
+        }
       } catch (e) { console.error(e); } finally { setLibCountriesLoading(false); }
     };
     fetchLibCountries();
@@ -607,6 +629,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
           ...(pressureOptionsRef.current?.backDesign || {}),
           src,
           designId: activeDesign.id,
+          country_id: libSelectedCountry?.id,
           file_path: activeDesign.file_path,
           file_path_2: activeDesign.file_path_2,
           designColor: libDesignColor,
@@ -989,6 +1012,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
                               backDesign: {
                                 src,
                                 designId: design.id,
+                                country_id: libSelectedCountry?.id,
                                 designColor: design.designColor || libDesignColor,
                                 pos: { x: 240, y: 175 },
                                 size: { w: 300, h: 300 },
