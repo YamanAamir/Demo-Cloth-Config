@@ -653,8 +653,8 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
           file_path: activeDesign.file_path,
           file_path_2: activeDesign.file_path_2,
           designColor: libDesignColor,
-          pos: { x: 240, y: 175 },
-          size: { w: 300, h: 300 },
+          pos: null,
+          size: null,
           angle: 0,
           locked: true,
         }
@@ -858,8 +858,8 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                                 designId: design.id,
                                 country_id: libSelectedCountry?.id,
                                 designColor: design.designColor || libDesignColor,
-                                pos: { x: 240, y: 175 },
-                                size: { w: 300, h: 300 },
+                                pos: null,
+                                size: null,
                                 angle: 0,
                                 locked: true,
                               }

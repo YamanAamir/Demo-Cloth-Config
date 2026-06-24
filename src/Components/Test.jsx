@@ -31,8 +31,40 @@ const rotateIcon = new Image();
 rotateIcon.src = rotateIconImg;
 
 const HANDLE_SIZE = 28;
-const CANVAS_WIDTH = 480;
-const CANVAS_HEIGHT = 350;
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = 580;
+
+const getAspectFitSize = (img, maxW, maxH) => {
+  const imgRatio = img.width / img.height;
+  const boxRatio = maxW / maxH;
+
+  if (imgRatio > boxRatio) {
+    return {
+      w: maxW,
+      h: maxW / imgRatio,
+    };
+  } else {
+    return {
+      w: maxH * imgRatio,
+      h: maxH,
+    };
+  }
+};
+
+const getCenteredImageSize = (img) => {
+  const widthRatio = (CANVAS_WIDTH - 40) / img.width;
+  const heightRatio = (CANVAS_HEIGHT - 58) / img.height;
+
+  const scale = Math.min(widthRatio, heightRatio, 1);
+
+  return {
+    w: img.width * scale,
+    h: img.height * scale,
+  };
+};
+
+
+
 
 // const logos = [
 //   { name: 'Design 1', url: design1 },
@@ -108,17 +140,38 @@ export default function Test({ pressureOptions, color, onUpdate, postEx, isAppRe
   useEffect(() => {
     if (pressureOptions?.backDesign) {
       const config = pressureOptions.backDesign;
+
       loadImageSafe(config.src, (img) => {
         if (!img) return;
+
+        const fallbackSize = getCenteredImageSize(img);
+        const imgRatio = img.width / img.height;
+
+        let finalSize = fallbackSize;
+
+        if (config.size?.w && config.size?.h) {
+          // width keep karo, height original image ratio se nikalo
+          finalSize = {
+            w: config.size.w,
+            h: config.size.w / imgRatio,
+          };
+
+          // agar height canvas se bahar jaye to fit kar do
+          if (finalSize.h > CANVAS_HEIGHT || finalSize.w > CANVAS_WIDTH) {
+            finalSize = getAspectFitSize(img, config.size.w, config.size.h);
+          }
+        }
+
         setObjects([{
           id: 'uploadedImage',
           type: 'image',
           srcObj: img,
-          pos: config.pos,
-          size: config.size,
-          angle: config.angle,
-          locked: config.locked,
+          pos: config.pos || { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 },
+          size: finalSize,
+          angle: config.angle ?? 0,
+          locked: config.locked ?? false,
         }]);
+
         setSelectedId('uploadedImage');
       });
     } else {
@@ -128,12 +181,9 @@ export default function Test({ pressureOptions, color, onUpdate, postEx, isAppRe
   }, [pressureOptions]);
   const selectPredefinedDesign = async (url, design) => {
     loadImageSafe(url, async (img) => {
-      const scale = Math.min(
-        (CANVAS_WIDTH * 0.75) / img.width,
-        (CANVAS_HEIGHT * 0.80) / img.height
-      );
-      const w = img.width * scale;
-      const h = img.height * scale;
+      if (!img) return;
+
+      const { w, h } = getCenteredImageSize(img);
 
       const newImageObj = {
         id: 'uploadedImage',
@@ -167,12 +217,9 @@ export default function Test({ pressureOptions, color, onUpdate, postEx, isAppRe
       const img = `${BASE_URL}${design.file_path.replace(/\\/g, "/")}`;
 
       loadImageSafe(img, async (imgObj) => {
-        const scale = Math.min(
-          (CANVAS_WIDTH * 0.75) / imgObj.width,
-          (CANVAS_HEIGHT * 0.80) / imgObj.height
-        );
-        const w = imgObj.width * scale;
-        const h = imgObj.height * scale;
+        if (!imgObj) return;
+
+        const { w, h } = getCenteredImageSize(imgObj);
 
         const newImageObj = {
           id: 'uploadedImage',
@@ -431,13 +478,7 @@ export default function Test({ pressureOptions, color, onUpdate, postEx, isAppRe
     reader.onload = (ev) => {
       const img = new Image();
       img.onload = () => {
-        // imgObj → img (yahan bhi bug tha!)
-        const scale = Math.min(
-          (CANVAS_WIDTH * 0.75) / img.width,
-          (CANVAS_HEIGHT * 0.80) / img.height
-        );
-        const w = img.width * scale;
-        const h = img.height * scale;
+        const { w, h } = getCenteredImageSize(img);
 
         const newImageObj = {
           id: 'uploadedImage',
@@ -581,8 +622,10 @@ export default function Test({ pressureOptions, color, onUpdate, postEx, isAppRe
       if (lx < 0 || ly < 0) return;
 
       const scale = Math.hypot(lx, ly) / offset.dist;
+      const imgRatio = selected.srcObj.width / selected.srcObj.height;
+
       let newW = initialSize.w * scale;
-      let newH = initialSize.h * scale;
+      let newH = newW / imgRatio;
 
       const maxR = Math.min(selected.pos.x, CANVAS_WIDTH - selected.pos.x, selected.pos.y, CANVAS_HEIGHT - selected.pos.y);
       const propR = Math.hypot(newW / 2, newH / 2);
@@ -592,7 +635,7 @@ export default function Test({ pressureOptions, color, onUpdate, postEx, isAppRe
       }
 
       newW = Math.max(30, newW);
-      newH = Math.max(30, newH);
+      newH = newW / imgRatio;
 
       setObjects(objs => objs.map(o => o.id === selectedId ? { ...o, size: { w: newW, h: newH } } : o));
     }

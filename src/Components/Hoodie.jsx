@@ -585,8 +585,8 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
           file_path: activeDesign.file_path,
           file_path_2: activeDesign.file_path_2,
           designColor: libDesignColor,
-          pos: { x: 240, y: 175 },
-          size: { w: 300, h: 300 },
+          pos: null,
+          size: null,
           angle: 0,
           locked: true,
         }
@@ -976,8 +976,8 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
                                 designId: design.id,
                                 country_id: libSelectedCountry?.id,
                                 designColor: design.designColor || libDesignColor,
-                                pos: { x: 240, y: 175 },
-                                size: { w: 300, h: 300 },
+                                pos: null,
+                                size: null,
                                 angle: 0,
                                 locked: true,
                               }
