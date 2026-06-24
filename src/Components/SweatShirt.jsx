@@ -330,32 +330,116 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       loadImage(logoSrc)
         .then((img) => {
           const ratio = Math.min(CANVAS_WIDTH / img.width, FLAG_HEIGHT / img.height);
-          const w = img.width * ratio * 0.9;
-          const h = img.height * ratio * 0.9;
-          const x = (CANVAS_WIDTH - w) / 2;
-          const y = TEXT_HEIGHT + (FLAG_HEIGHT - h) / 2;
-          ctx.fillStyle = "#fff";
-          ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
-          ctx.drawImage(img, x, y, w, h);
 
-          // Brightness-inverted opacity (same as back design)
-          const opacityCanvas = document.createElement("canvas");
-          opacityCanvas.width = CANVAS_WIDTH; opacityCanvas.height = CANVAS_HEIGHT;
-          const octx = opacityCanvas.getContext("2d");
-          octx.fillStyle = "#fff"; octx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
-          octx.drawImage(img, x, y, w, h);
-          const imgData = octx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-          for (let i = 0; i < imgData.data.length; i += 4) {
-            const br = 0.299 * imgData.data[i] + 0.587 * imgData.data[i + 1] + 0.114 * imgData.data[i + 2];
-            const bw = (imgData.data[i + 3] < 10 || br > 128) ? 0 : 255;
-            imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = bw; imgData.data[i + 3] = 255;
+          // Normal path dimensions
+          const LOGO_W_SCALE = 0.8;
+          const LOGO_H_SCALE = 0.9;
+          const w = img.width * ratio * LOGO_W_SCALE;
+          const h = img.height * ratio * LOGO_H_SCALE;
+          const x = (CANVAS_WIDTH - w) / 2;
+          const y = TEXT_HEIGHT + (FLAG_HEIGHT - h) / 20;
+
+          // Two-tone path dimensions
+          const TWOTONE_W_SCALE = 0.8;
+          const TWOTONE_H_SCALE = 1.1;
+          const wTT = img.width * ratio * TWOTONE_W_SCALE;
+          const hTT = img.height * ratio * TWOTONE_H_SCALE;
+          const xTT = (CANVAS_WIDTH - wTT) / 2;
+          const yTT = TEXT_HEIGHT + (FLAG_HEIGHT - hTT) / 2;
+
+          // ── native pixels analysis ──
+          const tmpC = document.createElement("canvas");
+          tmpC.width = img.width; tmpC.height = img.height;
+          const tmpCtx2 = tmpC.getContext("2d");
+          tmpCtx2.drawImage(img, 0, 0);
+          const tmpD = tmpCtx2.getImageData(0, 0, img.width, img.height);
+
+          let imgHasAlpha = false;
+          for (let i = 3; i < tmpD.data.length; i += 4) {
+            if (tmpD.data[i] < 254) { imgHasAlpha = true; break; }
           }
-          octx.putImageData(imgData, 0, 0);
+
+          // two-tone check
+          let nBlack = 0, nWhite = 0, nOpaque = 0;
+          for (let i = 0; i < tmpD.data.length; i += 4) {
+            if (tmpD.data[i + 3] < 20) continue;
+            nOpaque++;
+            const lum = 0.299 * tmpD.data[i] + 0.587 * tmpD.data[i + 1] + 0.114 * tmpD.data[i + 2];
+            if (lum < 50) nBlack++;
+            else if (lum > 205) nWhite++;
+          }
+          const twoToneRatio = nOpaque ? (nBlack + nWhite) / nOpaque : 0;
+          const isTwoTone = twoToneRatio > 0.9 && nBlack > 0 && nWhite > 0;
+
+          // background tone from corners
+          const cLum = [[0, 0], [img.width - 1, 0], [0, img.height - 1], [img.width - 1, img.height - 1]]
+            .map(([px, py]) => { const k = (py * img.width + px) * 4; return 0.299 * tmpD.data[k] + 0.587 * tmpD.data[k + 1] + 0.114 * tmpD.data[k + 2]; });
+          const bgIsWhite = (cLum.reduce((s, v) => s + v, 0) / 4) > 127;
+
+          const W = CANVAS_WIDTH, H = CANVAS_HEIGHT;
+          const opacityCanvas = document.createElement("canvas");
+          opacityCanvas.width = W; opacityCanvas.height = H;
+          const octx = opacityCanvas.getContext("2d");
+
+          if (isTwoTone) {
+            const workC = document.createElement("canvas");
+            workC.width = W; workC.height = H;
+            const wctx = workC.getContext("2d");
+            wctx.drawImage(img, xTT, yTT, wTT, hTT);
+            const wd = wctx.getImageData(0, 0, W, H);
+            const sc = bgIsWhite ? 0 : 255;
+            const od = octx.createImageData(W, H);
+            for (let p = 0, i = 0; p < W * H; p++, i += 4) {
+              const a = wd.data[i + 3];
+              let fg = false;
+              if (a >= 20) {
+                const lum = 0.299 * wd.data[i] + 0.587 * wd.data[i + 1] + 0.114 * wd.data[i + 2];
+                fg = bgIsWhite ? (lum < 128) : (lum > 128);
+              }
+              if (fg) {
+                wd.data[i] = wd.data[i + 1] = wd.data[i + 2] = sc; wd.data[i + 3] = 255;
+                od.data[i] = od.data[i + 1] = od.data[i + 2] = 255;
+              } else {
+                wd.data[i + 3] = 0;
+                od.data[i] = od.data[i + 1] = od.data[i + 2] = 0;
+              }
+              od.data[i + 3] = 255;
+            }
+            ctx.putImageData(wd, 0, 0);
+            octx.putImageData(od, 0, 0);
+          } else if (imgHasAlpha) {
+            ctx.drawImage(img, x, y, w, h);
+            octx.drawImage(img, x, y, w, h);
+            const d = octx.getImageData(0, 0, W, H);
+            for (let i = 0; i < d.data.length; i += 4) {
+              const bw = d.data[i + 3] > 127 ? 255 : 0;
+              d.data[i] = d.data[i + 1] = d.data[i + 2] = bw; d.data[i + 3] = 255;
+            }
+            octx.putImageData(d, 0, 0);
+          } else {
+            ctx.drawImage(img, x, y, w, h);
+            const gC = (px, py) => { const idx = (py * img.width + px) * 4; return [tmpD.data[idx], tmpD.data[idx+1], tmpD.data[idx+2]]; };
+            const corners = [gC(0,0), gC(img.width-1,0), gC(0,img.height-1), gC(img.width-1,img.height-1)];
+            const bgR = corners.reduce((s,c)=>s+c[0],0)/4;
+            const bgG = corners.reduce((s,c)=>s+c[1],0)/4;
+            const bgB = corners.reduce((s,c)=>s+c[2],0)/4;
+            const thr = 90;
+            octx.drawImage(img, x, y, w, h);
+            const d = octx.getImageData(0, 0, W, H);
+            for (let i = 0; i < d.data.length; i += 4) {
+              const a = d.data[i + 3]; let bw;
+              if (a < 10) { bw = 0; }
+              else { const diff = Math.abs(d.data[i]-bgR)+Math.abs(d.data[i+1]-bgG)+Math.abs(d.data[i+2]-bgB); bw = diff > thr ? 255 : 0; }
+              d.data[i] = d.data[i+1] = d.data[i+2] = bw; d.data[i+3] = 255;
+            }
+            octx.putImageData(d, 0, 0);
+          }
+
           finalize(opacityCanvas.toDataURL("image/png"));
         })
         .catch(finalize);
 
-      return; // ? important
+      return; // ⚠️ important
     }
 
 

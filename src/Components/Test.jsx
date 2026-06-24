@@ -51,18 +51,38 @@ const getAspectFitSize = (img, maxW, maxH) => {
   }
 };
 
+// const getCenteredImageSize = (img) => {
+//   const widthRatio = (CANVAS_WIDTH - 40) / img.width;
+//   const heightRatio = (CANVAS_HEIGHT - 40) / img.height;
+
+//   const scale = Math.min(widthRatio, heightRatio, 1);
+
+//   return {
+//     w: img.width * scale,
+//     h: img.height * scale,
+//   };
+// };
+
+
 const getCenteredImageSize = (img) => {
-  const widthRatio = (CANVAS_WIDTH - 40) / img.width;
-  const heightRatio = (CANVAS_HEIGHT - 58) / img.height;
+  // Safe print area — design ko edges se breathing space milega
+  const PRINT_AREA = 0.85; // canvas ka 85% area (chota karna ho to 0.78, bara to 0.9)
 
-  const scale = Math.min(widthRatio, heightRatio, 1);
+  const maxW = CANVAS_WIDTH * PRINT_AREA;
+  const maxH = CANVAS_HEIGHT * PRINT_AREA;
 
-  return {
-    w: img.width * scale,
-    h: img.height * scale,
-  };
+  // Aspect ratio maintain, kabhi upscale nahi
+  const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+
+  const w = img.width * scale;
+  const h = img.height * scale;
+
+  // Dono axes pe perfectly center
+  const x = (CANVAS_WIDTH - w) / 2;
+  const y = (CANVAS_HEIGHT - h) / 2;
+
+  return { w, h, x, y };
 };
-
 
 
 
