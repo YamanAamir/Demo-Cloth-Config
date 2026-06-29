@@ -406,6 +406,13 @@ export default function Test({ pressureOptions, color, onUpdate, postEx, isAppRe
     }
 
     if (onUpdate && postEx && diffuseBase64 && opacityBase64 && objects.length > 0) {
+      console.log('🎨 Test.jsx onUpdate:', {
+        postEx,
+        diffuseLength: diffuseBase64.length,
+        opacityLength: opacityBase64.length,
+        diffuseStart: diffuseBase64.substring(0, 50),
+        hasObjects: objects.length
+      });
       onUpdate({
         canvasBase64: {
           diffuse: postEx + "back_diffuse: " + diffuseBase64,

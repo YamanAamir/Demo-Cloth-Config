@@ -124,39 +124,33 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
 
     const handleUpdate = (update) => {
         if (update.canvasBase64) {
-            const raw = update.canvasBase64.rawData;
-            const rawDiffuse = raw?.diffuse || "";
-            const rawOpacity = raw?.opacity || "";
-            // Garment prefix map: postEx → PlayCanvas prefix
-            const prefixMap = {
-                'T-Shirt:':       'T-Shirt:',
-                'SweatShirt:':    'SweatShirt:',
-                'Hoodie:':        'Hoodie:',
-                'ZipperHoodie:':  'ZipperHoodie:',
-            };
+            const { diffuse, opacity, emissive } = update.canvasBase64;
+            const { diffuse: rawDiffuse, opacity: rawOpacity, emissive: rawEmissive } = update.canvasBase64.rawData || {};
+
+            console.log('📤 Sending to PlayCanvas:', {
+                diffuse: diffuse ? `${diffuse.substring(0, 50)}...` : 'empty',
+                opacity: opacity ? `${opacity.substring(0, 50)}...` : 'empty',
+                currentTab: currentTab.postEx
+            });
+
+            const allPrefixes = ['T-Shirt:', 'SweatShirt:', 'Hoodie:', 'ZipperHoodie:'];
             ['preview-iframe', 'preview-iframe2'].forEach((id) => {
                 const iframe = document.getElementById(id);
-                if (!iframe?.contentWindow) return;
+                if (iframe?.contentWindow) {
+                    // Send full messages (already has prefix from postEx)
+                    if (diffuse) iframe.contentWindow.postMessage(diffuse, '*');
+                    if (opacity) iframe.contentWindow.postMessage(opacity, '*');
+                    if (emissive) iframe.contentWindow.postMessage(emissive, '*');
 
-                // Plain white canvas for Dark Garment opacity
-                const whiteCanvas = document.createElement("canvas");
-                whiteCanvas.width = 400; whiteCanvas.height = 400;
-                const wctx = whiteCanvas.getContext("2d");
-                wctx.fillStyle = "#ffffff";
-                wctx.fillRect(0, 0, 400, 400);
-                const opacityW64 = whiteCanvas.toDataURL("image/png");
-
-                Object.values(prefixMap).forEach(prefix => {
-                    if (designColorTab === 'white') {
-                        // Light Garment → black print
-                        if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_black_diffuse: ' + rawDiffuse, '*');
-                        if (rawOpacity) iframe.contentWindow.postMessage(prefix + 'back_black_opacity: ' + rawOpacity, '*');
-                    } else if (designColorTab === 'black') {
-                        // Dark Garment → white print
-                        iframe.contentWindow.postMessage(prefix + 'back_white_opacity: ' + opacityW64, '*');
-                        if (rawOpacity) iframe.contentWindow.postMessage(prefix + 'back_white_diffuse: ' + rawOpacity, '*');
-                    }
-                });
+                    // Also send raw data for all OTHER prefixes (not current tab)
+                    allPrefixes.forEach(prefix => {
+                        if (prefix !== currentTab.postEx) {
+                            if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_diffuse: ' + rawDiffuse, '*');
+                            if (rawOpacity) iframe.contentWindow.postMessage(prefix + 'back_opacity: ' + rawOpacity, '*');
+                            if (rawEmissive) iframe.contentWindow.postMessage(prefix + 'back_emissive: ' + rawEmissive, '*');
+                        }
+                    });
+                }
             });
         }
         if (update.backDesign !== undefined) {
@@ -427,6 +421,7 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
                                     onUpdate={handleUpdate}
                                     backDesigns={backDesigns}
                                     designColor={designColorTab}
+                                    color={designColorTab}
                                 />
                             </div>
                         </div>

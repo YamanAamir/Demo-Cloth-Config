@@ -313,11 +313,11 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
     if (logoSrc) {
       loadImage(logoSrc)
         .then((img) => {
-          const ratio = Math.min(CANVAS_WIDTH / img.width, FLAG_HEIGHT / img.height);
+          const ratio = Math.min(CANVAS_WIDTH / img.width, FLAG_HEIGHT / img.height * 0.8);
 
           // Normal path dimensions
           const LOGO_W_SCALE = 0.8;
-          const LOGO_H_SCALE = 0.9;
+          const LOGO_H_SCALE = 1;
           const w = img.width * ratio * LOGO_W_SCALE;
           const h = img.height * ratio * LOGO_H_SCALE;
           const x = (CANVAS_WIDTH - w) / 2;
@@ -642,10 +642,18 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
           ctx.putImageData(imgData, 0, 0);
           const invertedB64 = canvas.toDataURL("image/png");
 
+          const whiteCanvas = document.createElement("canvas");
+          whiteCanvas.width = 128;
+          whiteCanvas.height = 128;
+          const wctx = whiteCanvas.getContext("2d");
+          wctx.fillStyle = "#ffffff";
+          wctx.fillRect(0, 0, 128, 128);
+          const whiteDiffuse = whiteCanvas.toDataURL("image/png");
+
           ["preview-iframe", "preview-iframe2"].forEach((id) => {
             const iframe = document.getElementById(id);
             if (iframe?.contentWindow) {
-              if (diffuseB64) iframe.contentWindow.postMessage("ZipperHoodie:back_white_diffuse: " + diffuseB64, "*");
+              iframe.contentWindow.postMessage("ZipperHoodie:back_white_diffuse: " + whiteDiffuse, "*");
               iframe.contentWindow.postMessage("ZipperHoodie:back_white_opacity: " + invertedB64, "*");
             }
           });

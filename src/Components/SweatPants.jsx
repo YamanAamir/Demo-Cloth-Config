@@ -1,7 +1,9 @@
+// is me karna hay 
+
 import React, { useState, useEffect } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
-import Test1 from "./Test1";
+// import Test1 from "./Test1";
 import { BASE_URL } from "../utils/const";
 import { ALL_FLAGS } from "../utils/flags";
 import { X, Image as ImageIcon, Trash2, Flag } from "lucide-react";
@@ -34,21 +36,6 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
   const FLAG_HEIGHT = 240;
   const CANVAS_HEIGHT = TEXT_HEIGHT + FLAG_HEIGHT;
 
-  // const getEmissiveBase64 = (text, hasFlag = false, hasLogo = false) => {
-  //   const canvas = document.createElement("canvas");
-  //   canvas.width = CANVAS_WIDTH; canvas.height = CANVAS_HEIGHT;
-  //   const ctx = canvas.getContext("2d");
-  //   if (text?.trim()) {
-  //     let fontSize = 48;
-  //     ctx.font = `bold ${fontSize}px Arial`; ctx.fillStyle = "#ffffff";
-  //     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  //     while (ctx.measureText(text).width > CANVAS_WIDTH - 80 && fontSize > 28) { fontSize -= 2; ctx.font = `bold ${fontSize}px Arial`; }
-  //     ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT / 2);
-  //   }
-  //   if (hasFlag || hasLogo) { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT); }
-  //   if (hasFlag || hasLogo) { ctx.strokeStyle = "#000000"; ctx.lineWidth = 40; ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10); }
-  //   return canvas.toDataURL("image/png");
-  // };
   const getEmissiveBase64 = (text, hasFlag = false, hasLogo = false) => {
     const canvas = document.createElement("canvas");
     canvas.width = CANVAS_WIDTH;
@@ -100,6 +87,7 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
 
     return canvas.toDataURL("image/png");
   };
+
   const getDiffuseBase64 = (flag, logoPre, logoCustom, text, callback, flag2 = "", flagCount = 1, textColor = "#ffffff") => {
     const canvas = document.createElement("canvas");
     canvas.width = CANVAS_WIDTH; canvas.height = CANVAS_HEIGHT;
@@ -116,21 +104,8 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       const img = new Image(); img.crossOrigin = "anonymous";
       img.onload = () => resolve(img); img.onerror = () => reject(); img.src = src;
     });
-    // if (flag && flagImages[flag]) {
-    //   if (flag2 && flagImages[flag2]) {
-    //     Promise.all([loadImage(flagImages[flag]), loadImage(flagImages[flag2])])
-    //       .then(([img1, img2]) => {
-    //         const gap = 10; const flagH = FLAG_HEIGHT / 2;
-    //         const flagW = (CANVAS_WIDTH - gap) / 2; const startX = (CANVAS_WIDTH - flagW) / 2;
-    //         ctx.drawImage(img1, startX, TEXT_HEIGHT, flagW, flagH);
-    //         ctx.drawImage(img2, startX, TEXT_HEIGHT + flagH + gap, flagW, flagH - gap);
-    //         finalize();
-    //       }).catch(finalize);
-    //   } else {
-    //     loadImage(flagImages[flag]).then(img => { ctx.drawImage(img, 0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT); finalize(); }).catch(finalize);
-    //   }
-    //   return;
-    // }
+
+    // ---------- FLAG (unchanged) ----------
     if (flag && flagImages[flag]) {
 
       const drawFrame = () => {
@@ -195,6 +170,8 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
 
       return;
     }
+
+    // ---------- LOGO (PORTED FROM FIRST / WORKING CODE) ----------
     let logoSrc = logoCustom;
     if (!logoSrc && logoPre) {
       const found = logos.find(l => l.name === logoPre);
@@ -202,28 +179,150 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     }
     if (logoSrc) {
       loadImage(logoSrc).then(img => {
-        const ratio = Math.min(CANVAS_WIDTH / img.width, FLAG_HEIGHT / img.height);
-        const w = img.width * ratio * 0.9; const h = img.height * ratio * 0.9;
-        const x = (CANVAS_WIDTH - w) / 2; const y = TEXT_HEIGHT + (FLAG_HEIGHT - h) / 2;
-        ctx.fillStyle = "#fff"; ctx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
+
+        // ── Logo size ──
+        const LOGO_W_SCALE = 0.8;
+        const LOGO_H_SCALE = 1.1;
+        const ratio = Math.min(CANVAS_WIDTH / img.width, FLAG_HEIGHT / img.height * 0.8);
+
+        // Normal path dimensions
+        const w = img.width * ratio * LOGO_W_SCALE;
+        const h = img.height * ratio * LOGO_H_SCALE;
+        const x = (CANVAS_WIDTH - w) / 2;
+        const y = TEXT_HEIGHT + (FLAG_HEIGHT - h) / 20;
+
+        // Two-tone path dimensions
+        const TWOTONE_W_SCALE = 0.8;
+        const TWOTONE_H_SCALE = 1.1; // 👈 yahan apni marzi ki value do
+        const wTT = img.width * ratio * TWOTONE_W_SCALE;
+        const hTT = img.height * ratio * TWOTONE_H_SCALE;
+        const xTT = (CANVAS_WIDTH - wTT) / 2;
+        const yTT = TEXT_HEIGHT + (FLAG_HEIGHT - hTT) / 20;
+
+        const W = CANVAS_WIDTH, H = CANVAS_HEIGHT;
+
+        // native pixels — alpha & two-tone detection
+        const tmpC = document.createElement("canvas");
+        tmpC.width = img.width; tmpC.height = img.height;
+        const tmpCtx2 = tmpC.getContext("2d");
+        tmpCtx2.drawImage(img, 0, 0);
+        const tmpD = tmpCtx2.getImageData(0, 0, img.width, img.height);
+
+        let imgHasAlpha = false;
+        for (let i = 3; i < tmpD.data.length; i += 4) {
+          if (tmpD.data[i] < 254) { imgHasAlpha = true; break; }
+        }
+
+        // near-black / near-white count (opaque pixels) — two-tone check
+        let nBlack = 0, nWhite = 0, nOpaque = 0;
+        for (let i = 0; i < tmpD.data.length; i += 4) {
+          if (tmpD.data[i + 3] < 20) continue;
+          nOpaque++;
+          const lum = 0.299 * tmpD.data[i] + 0.587 * tmpD.data[i + 1] + 0.114 * tmpD.data[i + 2];
+          if (lum < 50) nBlack++;
+          else if (lum > 205) nWhite++;
+        }
+        const twoToneRatio = nOpaque ? (nBlack + nWhite) / nOpaque : 0;
+        const isTwoTone = twoToneRatio > 0.9 && nBlack > 0 && nWhite > 0; // sirf B/W logos
+
+        // background tone (corners average)
+        const cLum = [[0, 0], [img.width - 1, 0], [0, img.height - 1], [img.width - 1, img.height - 1]]
+          .map(([px, py]) => { const k = (py * img.width + px) * 4; return 0.299 * tmpD.data[k] + 0.587 * tmpD.data[k + 1] + 0.114 * tmpD.data[k + 2]; });
+        const bgIsWhite = (cLum.reduce((s, v) => s + v, 0) / 4) > 127;
+
+        if (isTwoTone) {
+          // ── CLEAN PATH: white-bg+black-shape ya black-bg+white-shape ──
+          const workC = document.createElement("canvas");
+          workC.width = W; workC.height = H;
+          const wctx = workC.getContext("2d");
+          wctx.drawImage(img, xTT, yTT, wTT, hTT); // 👈 TT dimensions
+          const wd = wctx.getImageData(0, 0, W, H);
+
+          const shapeWhite = !bgIsWhite;      // bg black -> shape white
+          const sc = shapeWhite ? 255 : 0;    // print color (solid)
+
+          const opacityCanvas = document.createElement("canvas");
+          opacityCanvas.width = W; opacityCanvas.height = H;
+          const octx = opacityCanvas.getContext("2d");
+          const od = octx.createImageData(W, H);
+
+          for (let p = 0, i = 0; p < W * H; p++, i += 4) {
+            const a = wd.data[i + 3];
+            let fg;
+            if (a < 20) fg = false;
+            else {
+              const lum = 0.299 * wd.data[i] + 0.587 * wd.data[i + 1] + 0.114 * wd.data[i + 2];
+              fg = bgIsWhite ? (lum < 128) : (lum > 128); // crisp boundary = no outline
+            }
+            if (fg) {
+              wd.data[i] = wd.data[i + 1] = wd.data[i + 2] = sc;
+              wd.data[i + 3] = 255;
+              od.data[i] = od.data[i + 1] = od.data[i + 2] = 255;
+            } else {
+              wd.data[i + 3] = 0;
+              od.data[i] = od.data[i + 1] = od.data[i + 2] = 0;
+            }
+            od.data[i + 3] = 255;
+          }
+          wctx.putImageData(wd, 0, 0);   // offscreen canvas pe likho — safe
+          octx.putImageData(od, 0, 0);
+
+          // composite onto main ctx (background/text wipe nahi hoga)
+          ctx.drawImage(workC, 0, 0);
+
+          if (text?.trim()) {
+            let fs = 48;
+            ctx.font = `bold ${fs}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            while (ctx.measureText(text).width > CANVAS_WIDTH - 80 && fs > 28) { fs -= 2; ctx.font = `bold ${fs}px Arial`; }
+            ctx.fillStyle = textColor;
+            ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT + FLAG_HEIGHT / 2);
+
+            let fs2 = 48; octx.fillStyle = "#ffffff";
+            octx.font = `bold ${fs2}px Arial`; octx.textAlign = "center"; octx.textBaseline = "middle";
+            while (octx.measureText(text).width > CANVAS_WIDTH - 80 && fs2 > 28) { fs2 -= 2; octx.font = `bold ${fs2}px Arial`; }
+            octx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT + FLAG_HEIGHT / 2);
+          }
+
+          finalize(opacityCanvas.toDataURL("image/png"));
+          return;
+        }
+
+        // ── GENERAL PATH (colored/normal logos — no white fill, no halo) ──
         ctx.drawImage(img, x, y, w, h);
-        // Brightness-inverted opacity
+
         const opacityCanvas = document.createElement("canvas");
         opacityCanvas.width = CANVAS_WIDTH; opacityCanvas.height = CANVAS_HEIGHT;
         const octx = opacityCanvas.getContext("2d");
-        octx.fillStyle = "#fff"; octx.fillRect(0, TEXT_HEIGHT, CANVAS_WIDTH, FLAG_HEIGHT);
-        octx.drawImage(img, x, y, w, h);
-        const imgData = octx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        for (let i = 0; i < imgData.data.length; i += 4) {
-          const br = 0.299 * imgData.data[i] + 0.587 * imgData.data[i + 1] + 0.114 * imgData.data[i + 2];
-          const bw = (imgData.data[i + 3] < 10 || br > 128) ? 0 : 255;
-          imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = bw; imgData.data[i + 3] = 255;
+        if (imgHasAlpha) {
+          octx.drawImage(img, x, y, w, h);
+          const d = octx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          for (let i = 0; i < d.data.length; i += 4) {
+            const bw = d.data[i + 3] > 127 ? 255 : 0;
+            d.data[i] = d.data[i + 1] = d.data[i + 2] = bw; d.data[i + 3] = 255;
+          }
+          octx.putImageData(d, 0, 0);
+        } else {
+          const gC = (px, py) => { const idx = (py * img.width + px) * 4; return [tmpD.data[idx], tmpD.data[idx + 1], tmpD.data[idx + 2]]; };
+          const corners = [gC(0, 0), gC(img.width - 1, 0), gC(0, img.height - 1), gC(img.width - 1, img.height - 1)];
+          const bgR = corners.reduce((s, c) => s + c[0], 0) / 4;
+          const bgG = corners.reduce((s, c) => s + c[1], 0) / 4;
+          const bgB = corners.reduce((s, c) => s + c[2], 0) / 4;
+          const thr = 90;
+          octx.drawImage(img, x, y, w, h);
+          const d = octx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          for (let i = 0; i < d.data.length; i += 4) {
+            const a = d.data[i + 3]; let bw;
+            if (a < 10) { bw = 0; }
+            else { const diff = Math.abs(d.data[i] - bgR) + Math.abs(d.data[i + 1] - bgG) + Math.abs(d.data[i + 2] - bgB); bw = diff > thr ? 255 : 0; }
+            d.data[i] = d.data[i + 1] = d.data[i + 2] = bw; d.data[i + 3] = 255;
+          }
+          octx.putImageData(d, 0, 0);
         }
-        octx.putImageData(imgData, 0, 0);
         finalize(opacityCanvas.toDataURL("image/png"));
       }).catch(finalize);
       return;
     }
+
     finalize();
   };
 
@@ -463,7 +562,7 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
         </div>
       )}
 
-      <div style={activeTab !== "pressure" ? { visibility: "hidden", position: "absolute", pointerEvents: "none", height: 0, overflow: "hidden" } : {}}>
+      {/* <div style={activeTab !== "pressure" ? { visibility: "hidden", position: "absolute", pointerEvents: "none", height: 0, overflow: "hidden" } : {}}>
         <Test1 postEx="SweatPant:" pressureOptions={pressureOptions} isAppReady={isAppReady}
           onUpdate={update => {
             if (update.canvasBase64) {
@@ -476,7 +575,7 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
             if (update.backDesign !== undefined) onUpdate({ pressureOptions: { ...pressureOptions, backDesign: update.backDesign } });
           }}
         />
-      </div>
+      </div> */}
 
       {showFlagModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">

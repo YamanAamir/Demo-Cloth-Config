@@ -1,7 +1,9 @@
-﻿import React, { useState, useEffect } from "react";
+﻿// isme karna hay 
+
+import React, { useState, useEffect } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
-import Test1 from "./Test1";
+// import Test1 from "./Test1";
 import { BASE_URL } from "../utils/const";
 import { ALL_FLAGS } from "../utils/flags";
 import { X, Image as ImageIcon, Trash2, Flag } from "lucide-react";
@@ -49,36 +51,6 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
     return DIMENSION_MAP[flagCount] || DIMENSION_MAP[1];
   };
 
-  // const getEmissiveBase64 = (text, hasFlag = false, hasLogo = false, flagCount = 1) => {
-  //   const canvas = document.createElement("canvas");
-
-  //   // ?? Dynamic canvas dimensions based on flag count
-  //   const dimensions = getEffectiveDimensions(flagCount);
-  //   canvas.width = dimensions.width;
-  //   canvas.height = TEXT_HEIGHT + dimensions.flagHeight;
-
-  //   const ctx = canvas.getContext("2d");
-  //   if (text?.trim()) {
-  //     let fontSize = 48;
-  //     ctx.font = `bold ${fontSize}px Arial`; ctx.fillStyle = "#ffffff";
-  //     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  //     while (ctx.measureText(text).width > dimensions.width - 80 && fontSize > 28) { fontSize -= 2; ctx.font = `bold ${fontSize}px Arial`; }
-  //     ctx.fillText(text, dimensions.width / 2, TEXT_HEIGHT / 2);
-  //   }
-  //   if (hasFlag || hasLogo) { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, TEXT_HEIGHT, dimensions.width, dimensions.flagHeight); }
-  //   if (hasFlag || hasLogo) { ctx.strokeStyle = "#000000"; ctx.lineWidth = 40; ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10); }
-
-  //   try {
-  //     return canvas.toDataURL("image/png");
-  //   } catch (error) {
-  //     console.error("? Shorts getEmissiveBase64 tainted:", error);
-  //     const fallbackCanvas = document.createElement("canvas");
-  //     fallbackCanvas.width = dimensions.width; fallbackCanvas.height = TEXT_HEIGHT + dimensions.flagHeight;
-  //     const fallbackCtx = fallbackCanvas.getContext("2d");
-  //     fallbackCtx.fillStyle = "#f8f9fa"; fallbackCtx.fillRect(0, 0, fallbackCanvas.width, fallbackCanvas.height);
-  //     return fallbackCanvas.toDataURL("image/png");
-  //   }
-  // };
   const getEmissiveBase64 = (text, hasFlag = false, hasLogo = false) => {
     const canvas = document.createElement("canvas");
     canvas.width = CANVAS_WIDTH;
@@ -251,6 +223,8 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
 
       return;
     }
+
+    // ---------- LOGO (PORTED FROM FIRST / WORKING CODE) ----------
     let logoSrc = logoCustom;
     if (!logoSrc && logoPre) {
       const found = logos.find(l => l.name === logoPre);
@@ -258,24 +232,155 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
     }
     if (logoSrc) {
       loadImage(logoSrc).then(img => {
-        const ratio = Math.min(dimensions.width / img.width, dimensions.flagHeight / img.height);
-        const w = img.width * ratio * 0.9; const h = img.height * ratio * 0.9;
-        const x = (dimensions.width - w) / 2; const y = TEXT_HEIGHT + (dimensions.flagHeight - h) / 2;
-        ctx.fillStyle = "#fff"; ctx.fillRect(0, TEXT_HEIGHT, dimensions.width, dimensions.flagHeight);
-        ctx.drawImage(img, x, y, w, h);
-        // Brightness-inverted opacity
-        const opacityCanvas = document.createElement("canvas");
-        opacityCanvas.width = dimensions.width; opacityCanvas.height = TEXT_HEIGHT + dimensions.flagHeight;
-        const octx = opacityCanvas.getContext("2d");
-        octx.fillStyle = "#fff"; octx.fillRect(0, TEXT_HEIGHT, dimensions.width, dimensions.flagHeight);
-        octx.drawImage(img, x, y, w, h);
-        const imgData = octx.getImageData(0, 0, dimensions.width, TEXT_HEIGHT + dimensions.flagHeight);
-        for (let i = 0; i < imgData.data.length; i += 4) {
-          const br = 0.299 * imgData.data[i] + 0.587 * imgData.data[i + 1] + 0.114 * imgData.data[i + 2];
-          const bw = (imgData.data[i + 3] < 10 || br > 128) ? 0 : 255;
-          imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = bw; imgData.data[i + 3] = 255;
+
+        // ── Logo size ──
+        const LOGO_W_SCALE = 0.8;
+        const LOGO_H_SCALE = 1;
+        const ratio = Math.min(CANVAS_WIDTH / img.width, FLAG_HEIGHT / img.height * 0.8);
+
+        // Normal path dimensions
+        const w = img.width * ratio * LOGO_W_SCALE;
+        const h = img.height * ratio * LOGO_H_SCALE;
+        const x = (CANVAS_WIDTH - w) / 2;
+        const y = TEXT_HEIGHT + (FLAG_HEIGHT - h) / 20;
+
+        // Two-tone path dimensions
+        const TWOTONE_W_SCALE = 0.8;
+        const TWOTONE_H_SCALE = 1.1; // 👈 yahan apni marzi ki value do
+        const wTT = img.width * ratio * TWOTONE_W_SCALE;
+        const hTT = img.height * ratio * TWOTONE_H_SCALE;
+        const xTT = (CANVAS_WIDTH - wTT) / 2;
+        const yTT = TEXT_HEIGHT + (FLAG_HEIGHT - hTT) / 20;
+
+        const W = CANVAS_WIDTH, H = CANVAS_HEIGHT;
+
+        // native pixels — alpha & two-tone detection
+        const tmpC = document.createElement("canvas");
+        tmpC.width = img.width; tmpC.height = img.height;
+        const tmpCtx2 = tmpC.getContext("2d");
+        tmpCtx2.drawImage(img, 0, 0);
+        const tmpD = tmpCtx2.getImageData(0, 0, img.width, img.height);
+
+        let imgHasAlpha = false;
+        for (let i = 3; i < tmpD.data.length; i += 4) {
+          if (tmpD.data[i] < 254) { imgHasAlpha = true; break; }
         }
-        octx.putImageData(imgData, 0, 0);
+
+        // near-black / near-white count (opaque pixels) — two-tone check
+        let nBlack = 0, nWhite = 0, nOpaque = 0;
+        for (let i = 0; i < tmpD.data.length; i += 4) {
+          if (tmpD.data[i + 3] < 20) continue;
+          nOpaque++;
+          const lum = 0.299 * tmpD.data[i] + 0.587 * tmpD.data[i + 1] + 0.114 * tmpD.data[i + 2];
+          if (lum < 50) nBlack++;
+          else if (lum > 205) nWhite++;
+        }
+        const twoToneRatio = nOpaque ? (nBlack + nWhite) / nOpaque : 0;
+        const isTwoTone = twoToneRatio > 0.9 && nBlack > 0 && nWhite > 0; // sirf B/W logos
+
+        // background tone (corners average)
+        const cLum = [[0, 0], [img.width - 1, 0], [0, img.height - 1], [img.width - 1, img.height - 1]]
+          .map(([px, py]) => { const k = (py * img.width + px) * 4; return 0.299 * tmpD.data[k] + 0.587 * tmpD.data[k + 1] + 0.114 * tmpD.data[k + 2]; });
+        const bgIsWhite = (cLum.reduce((s, v) => s + v, 0) / 4) > 127;
+
+        if (isTwoTone) {
+          // ── CLEAN PATH: white-bg+black-shape ya black-bg+white-shape ──
+          const workC = document.createElement("canvas");
+          workC.width = W; workC.height = H;
+          const wctx = workC.getContext("2d");
+          wctx.drawImage(img, xTT, yTT, wTT, hTT); // 👈 TT dimensions
+          const wd = wctx.getImageData(0, 0, W, H);
+
+          const shapeWhite = !bgIsWhite;      // bg black -> shape white
+          const sc = shapeWhite ? 255 : 0;    // print color (solid)
+
+          const opacityCanvas = document.createElement("canvas");
+          opacityCanvas.width = W; opacityCanvas.height = H;
+          const octx = opacityCanvas.getContext("2d");
+          const od = octx.createImageData(W, H);
+
+          for (let p = 0, i = 0; p < W * H; p++, i += 4) {
+            const a = wd.data[i + 3];
+            let fg;
+            if (a < 20) fg = false;
+            else {
+              const lum = 0.299 * wd.data[i] + 0.587 * wd.data[i + 1] + 0.114 * wd.data[i + 2];
+              fg = bgIsWhite ? (lum < 128) : (lum > 128); // crisp boundary = no outline
+            }
+            if (fg) {
+              wd.data[i] = wd.data[i + 1] = wd.data[i + 2] = sc;
+              wd.data[i + 3] = 255;
+              od.data[i] = od.data[i + 1] = od.data[i + 2] = 255;
+            } else {
+              wd.data[i + 3] = 0;
+              od.data[i] = od.data[i + 1] = od.data[i + 2] = 0;
+            }
+            od.data[i + 3] = 255;
+          }
+          ctx.putImageData(wd, 0, 0);
+          octx.putImageData(od, 0, 0);
+
+          if (text?.trim()) {
+            let fs = 48;
+            ctx.font = `bold ${fs}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            while (ctx.measureText(text).width > CANVAS_WIDTH - 80 && fs > 28) { fs -= 2; ctx.font = `bold ${fs}px Arial`; }
+            ctx.fillStyle = textColor;
+            ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT + FLAG_HEIGHT / 2);
+
+            let fs2 = 48; octx.fillStyle = "#ffffff";
+            octx.font = `bold ${fs2}px Arial`; octx.textAlign = "center"; octx.textBaseline = "middle";
+            while (octx.measureText(text).width > CANVAS_WIDTH - 80 && fs2 > 28) { fs2 -= 2; octx.font = `bold ${fs2}px Arial`; }
+            octx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT + FLAG_HEIGHT / 2);
+          }
+
+          finalize(opacityCanvas.toDataURL("image/png"));
+          return;
+        }
+
+        // ── GENERAL PATH (colored/normal logos — no white fill, no halo) ──
+        ctx.drawImage(img, x, y, w, h);
+
+        if (text?.trim()) {
+          let fontSize = 48;
+          ctx.font = `bold ${fontSize}px Arial`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          while (ctx.measureText(text).width > CANVAS_WIDTH - 80 && fontSize > 28) {
+            fontSize -= 2;
+            ctx.font = `bold ${fontSize}px Arial`;
+          }
+          ctx.fillStyle = textColor;
+          ctx.fillText(text, CANVAS_WIDTH / 2, TEXT_HEIGHT + FLAG_HEIGHT / 2);
+        }
+
+        const opacityCanvas = document.createElement("canvas");
+        opacityCanvas.width = CANVAS_WIDTH; opacityCanvas.height = CANVAS_HEIGHT;
+        const octx = opacityCanvas.getContext("2d");
+        if (imgHasAlpha) {
+          octx.drawImage(img, x, y, w, h);
+          const d = octx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          for (let i = 0; i < d.data.length; i += 4) {
+            const bw = d.data[i + 3] > 127 ? 255 : 0;
+            d.data[i] = d.data[i + 1] = d.data[i + 2] = bw; d.data[i + 3] = 255;
+          }
+          octx.putImageData(d, 0, 0);
+        } else {
+          const gC = (px, py) => { const idx = (py * img.width + px) * 4; return [tmpD.data[idx], tmpD.data[idx + 1], tmpD.data[idx + 2]]; };
+          const corners = [gC(0, 0), gC(img.width - 1, 0), gC(0, img.height - 1), gC(img.width - 1, img.height - 1)];
+          const bgR = corners.reduce((s, c) => s + c[0], 0) / 4;
+          const bgG = corners.reduce((s, c) => s + c[1], 0) / 4;
+          const bgB = corners.reduce((s, c) => s + c[2], 0) / 4;
+          const thr = 90;
+          octx.drawImage(img, x, y, w, h);
+          const d = octx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          for (let i = 0; i < d.data.length; i += 4) {
+            const a = d.data[i + 3]; let bw;
+            if (a < 10) { bw = 0; }
+            else { const diff = Math.abs(d.data[i] - bgR) + Math.abs(d.data[i + 1] - bgG) + Math.abs(d.data[i + 2] - bgB); bw = diff > thr ? 255 : 0; }
+            d.data[i] = d.data[i + 1] = d.data[i + 2] = bw; d.data[i + 3] = 255;
+          }
+          octx.putImageData(d, 0, 0);
+        }
         finalize(opacityCanvas.toDataURL("image/png"));
       }).catch((error) => {
         console.error("? Shorts logo failed:", logoSrc, error);
@@ -344,38 +449,6 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
 
   const prevRef = React.useRef({});
   const renderCounterRef = React.useRef({});
-  // useEffect(() => {
-  //   ["rightLeg", "leftLeg"].forEach(area => {
-  //     const text = pressureOptions[`${area}Text`]?.trim() || "";
-  //     const flag = pressureOptions[`${area}Flag`] || "";
-  //     const flag2 = pressureOptions[`${area}Flag2`] || "";
-  //     const flagCount = pressureOptions[`${area}FlagCount`] || 1;
-  //     const logoPre = pressureOptions[`${area}LogoPredefined`] || "";
-  //     const logoCustom = pressureOptions[`${area}LogoCustom`] || "";
-  //     const type = pressureOptions[`${area}Type`] || "";
-  //     const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
-
-
-  //     const prev = prevRef.current[area] || {};
-  //     if (prev.text === text && prev.flag === flag && prev.flag2 === flag2 && prev.flagCount === flagCount && prev.logoPre === logoPre && prev.logoCustom === logoCustom && prev.type === type && prev.textColor === textColor) return;
-  //     prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
-  //     const currentRender = (renderCounterRef.current[area] || 0) + 1;
-  //     renderCounterRef.current[area] = currentRender;
-  //     const hasFlag = !!flag && type === "flag";
-  //     const hasLogo = !!(logoPre || logoCustom) && type === "logo";
-  //     const opacity = getEmissiveBase64(text, hasFlag, hasLogo, flagCount);
-  //     ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Short:${area}_opacity: ${opacity}`, "*"); });
-  //     getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuse, logoOpacityBase) => {
-  //       if (renderCounterRef.current[area] !== currentRender) return;
-  //       ["preview-iframe", "preview-iframe2"].forEach(id => {
-  //         const f = document.getElementById(id); if (f?.contentWindow) {
-  //           f.contentWindow.postMessage(`Short:${area}_diffuse: ${diffuse}`, "*");
-  //           if (logoOpacityBase) f.contentWindow.postMessage(`Short:${area}_opacity: ${logoOpacityBase}`, "*");
-  //         }
-  //       });
-  //     }, flag2, flagCount, textColor);
-  //   });
-  // }, [isAppReady, pressureOptions]);
   useEffect(() => {
     ["rightLeg", "leftLeg"].forEach(area => {
       const text = pressureOptions[`${area}Text`]?.trim() || "";
@@ -423,17 +496,17 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
 
         // Opacity (black/white mask)
         const imgData = tctx.getImageData(0, 0, 320, 120);
-const d = imgData.data;
+        const d = imgData.data;
 
-for (let i = 0; i < d.length; i += 4) {
-  const alpha = d[i + 3];
+        for (let i = 0; i < d.length; i += 4) {
+          const alpha = d[i + 3];
 
-  // sirf alpha use karo (text visibility yahin hoti hai)
-  const bw = alpha > 10 ? 255 : 0;
+          // sirf alpha use karo (text visibility yahin hoti hai)
+          const bw = alpha > 10 ? 255 : 0;
 
-  d[i] = d[i + 1] = d[i + 2] = bw;
-  d[i + 3] = 255;
-}
+          d[i] = d[i + 1] = d[i + 2] = bw;
+          d[i + 3] = 255;
+        }
         tctx.putImageData(imgData, 0, 0);
         const textOpacity = textCanvas.toDataURL("image/png");
 
@@ -488,90 +561,6 @@ for (let i = 0; i < d.length; i += 4) {
 
   const renderArea = (area) => {
     return (
-      // <div key={area} className="bg-white rounded-lg p-4 mb-4">
-      //   <h3 className="font-semibold text-gray-900 mb-3">
-      //     {area === "rightLeg" ? "Right Leg:" : "Left Leg:"}
-      //   </h3>
-      //   <div className="space-y-3">
-      //     <div className="flex rounded-lg overflow-hidden border border-gray-200">
-      //       {["text", "flag", "logo"].map(tab => (
-      //         <button key={tab} type="button"
-      //           onClick={() => {
-      //             if (tab === "text") {
-      //               onUpdate({
-      //                 pressureOptions: {
-      //                   ...pressureOptions,
-      //                   [`${area}Type`]: "",
-      //                   [`${area}Flag`]: "",
-      //                   [`${area}LogoPredefined`]: "",
-      //                   [`${area}LogoCustom`]: ""
-      //                 }
-      //               });
-      //             } else {
-      //               handleTypeChange(area, tab);
-      //             }
-      //           }}
-      //           className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`]?.trim() === tab || (tab === "text" && (!pressureOptions[`${area}Type`] || pressureOptions[`${area}Type`]?.trim() === "")) ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
-      //         >
-      //           {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
-      //           {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ?" : ""}
-      //         </button>
-      //       ))}
-      //     </div>
-      //     {(!pressureOptions[`${area}Type`] || pressureOptions[`${area}Type`]?.trim() === "") && (
-      //       <div className="space-y-2">
-      //         <div className="flex flex-wrap gap-2">
-      //           <input type="text" value={pressureOptions[`${area}Text`]}
-      //             onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
-      //             placeholder="Enter text" maxLength={maxCharsText}
-      //             className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
-      //           />
-      //           {pressureOptions[`${area}Text`] && <button onClick={() => clearField(`${area}Text`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
-      //         </div>
-      //         {pressureOptions[`${area}Text`] && (
-      //           <div className="flex items-center gap-2">
-      //             <span className="text-xs text-gray-500 font-medium">Text color:</span>
-      //             {[{ val: "#ffffff", label: "White" }, { val: "#000000", label: "Black" }].map(({ val, label }) => (
-      //               <button key={val} type="button"
-      //                 onClick={() => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}TextColor`]: val } })}
-      //                 title={label}
-      //                 className="w-7 h-7 rounded-full border-2 transition-all"
-      //                 style={{
-      //                   backgroundColor: val,
-      //                   borderColor: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "#16a34a" : val === "#ffffff" ? "#d1d5db" : "#374151",
-      //                   boxShadow: (pressureOptions[`${area}TextColor`] || "#ffffff") === val ? "0 0 0 2px #16a34a" : "none",
-      //                 }}
-      //               />
-      //             ))}
-      //             <span className="text-xs text-gray-400">
-      //               {(pressureOptions[`${area}TextColor`] || "#ffffff") === "#ffffff" ? "White" : "Black"}
-      //             </span>
-      //           </div>
-      //         )}
-      //       </div>
-      //     )}
-      //     {pressureOptions[`${area}Type`]?.trim() === "flag" && (
-      //       <div className="flex flex-wrap gap-2">
-      //         <input type="text" value={getFlagDisplay(pressureOptions[`${area}Flag`])} readOnly placeholder="Select flag"
-      //           className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
-      //           onClick={() => handleFlagSelect(`${area}Flag`)}
-      //         />
-      //         <button onClick={() => handleFlagSelect(`${area}Flag`)} className="px-4 py-2 bg-green-900 text-white rounded-lg hover:bg-green-800 text-sm font-medium">Select</button>
-      //         {pressureOptions[`${area}Flag`] && <button onClick={() => clearField(`${area}Flag`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
-      //       </div>
-      //     )}
-      //     {pressureOptions[`${area}Type`]?.trim() === "logo" && (
-      //       <div className="flex flex-wrap gap-2">
-      //         <input type="text" value={getLogoDisplay(pressureOptions[`${area}LogoPredefined`])} readOnly placeholder="Select logo"
-      //           className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-pointer"
-      //           onClick={() => handleFlagSelect(`${area}LogoPredefined`)}
-      //         />
-      //         <button onClick={() => handleFlagSelect(`${area}LogoPredefined`)} className="px-4 py-2 bg-green-900 text-white rounded-lg hover:bg-green-800 text-sm font-medium">Select</button>
-      //         {pressureOptions[`${area}LogoPredefined`] && <button onClick={() => clearField(`${area}LogoPredefined`)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>}
-      //       </div>
-      //     )}
-      //   </div>
-      // </div>
       <div key={area} className="bg-white rounded-lg p-4 mb-4">
         <h3 className="font-semibold text-gray-900 mb-3">
           {area === "rightLeg" ? "Right Leg:" : "Left Leg:"}
@@ -721,12 +710,6 @@ for (let i = 0; i < d.length; i += 4) {
               ))}
             </div>
           </div>
-          {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
-            <button onClick={() => setActiveTab("pressure")} className="w-full py-2.5 bg-slate-600 text-white font-semibold rounded-xl hover:bg-slate-700 transition text-sm flex items-center justify-center gap-2">
-              Next � Design
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-            </button>
-          </div> */}
         </div>
       ) : (
         <div className="flex flex-col flex-1 relative p-2">
@@ -735,29 +718,8 @@ for (let i = 0; i < d.length; i += 4) {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Leg Area</h2>
             {["rightLeg", "leftLeg"].map(renderArea)}
           </div>
-          {/* <div className="absolute bottom-0 left-0 right-0 p-3 bg-gray-50 border-t border-gray-200">
-            <button onClick={() => setActiveTab("size")} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-              Back
-            </button>
-          </div> */}
         </div>
       )}
-
-      <div style={activeTab !== "pressure" ? { visibility: "hidden", position: "absolute", pointerEvents: "none", height: 0, overflow: "hidden" } : {}}>
-        <Test1 postEx="Short:" pressureOptions={pressureOptions} isAppReady={isAppReady}
-          onUpdate={update => {
-            if (update.canvasBase64) {
-              const { diffuse, opacity, emissive } = update.canvasBase64;
-              ["preview-iframe", "preview-iframe2"].forEach(id => {
-                const f = document.getElementById(id);
-                if (f?.contentWindow) { f.contentWindow.postMessage(diffuse, "*"); f.contentWindow.postMessage(opacity, "*"); if (emissive) f.contentWindow.postMessage(emissive, "*"); }
-              });
-            }
-            if (update.backDesign !== undefined) onUpdate({ pressureOptions: { ...pressureOptions, backDesign: update.backDesign } });
-          }}
-        />
-      </div>
 
       {showFlagModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
