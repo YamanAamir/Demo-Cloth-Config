@@ -267,16 +267,20 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
         }
 
         // near-black / near-white count (opaque pixels) — two-tone check
-        let nBlack = 0, nWhite = 0, nOpaque = 0;
+        let nBlack = 0, nWhite = 0, nOpaque = 0, nColored = 0;
         for (let i = 0; i < tmpD.data.length; i += 4) {
           if (tmpD.data[i + 3] < 20) continue;
           nOpaque++;
-          const lum = 0.299 * tmpD.data[i] + 0.587 * tmpD.data[i + 1] + 0.114 * tmpD.data[i + 2];
+          const r = tmpD.data[i], g = tmpD.data[i + 1], b = tmpD.data[i + 2];
+          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
           if (lum < 50) nBlack++;
           else if (lum > 205) nWhite++;
+          if (Math.max(r, g, b) - Math.min(r, g, b) > 40) nColored++; // saturated pixel = real color, not gray/black/white
         }
         const twoToneRatio = nOpaque ? (nBlack + nWhite) / nOpaque : 0;
-        const isTwoTone = twoToneRatio > 0.9 && nBlack > 0 && nWhite > 0; // sirf B/W logos
+        const coloredRatio = nOpaque ? nColored / nOpaque : 0;
+        // sirf genuine B/W logos — agar meaningful color content hai (jaise colored accents) to skip, warna colors lose ho jayenge
+        const isTwoTone = twoToneRatio > 0.9 && nBlack > 0 && nWhite > 0 && coloredRatio < 0.03;
 
         // background tone (corners average)
         const cLum = [[0, 0], [img.width - 1, 0], [0, img.height - 1], [img.width - 1, img.height - 1]]
@@ -461,21 +465,21 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
 
       const prev = prevRef.current[area] || {};
-      if (
-        prev.text === text && prev.flag === flag && prev.flag2 === flag2 &&
-        prev.flagCount === flagCount && prev.logoPre === logoPre &&
-        prev.logoCustom === logoCustom && prev.type === type && prev.textColor === textColor
-      ) return;
+      const textChanged = prev.text !== text || prev.textColor !== textColor;
+      const logoChanged = (
+        prev.flag !== flag || prev.flag2 !== flag2 || prev.flagCount !== flagCount ||
+        prev.logoPre !== logoPre || prev.logoCustom !== logoCustom || prev.type !== type
+      );
+      if (!textChanged && !logoChanged) return;
       prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
-
-      const currentRender = (renderCounterRef.current[area] || 0) + 1;
-      renderCounterRef.current[area] = currentRender;
 
       const hasFlag = !!flag && type === "flag";
       const hasLogo = !!(logoPre || logoCustom) && type === "logo";
 
-      // ── 1. Text texture — always send separately ──────────────────────────
-      if (text) {
+      // ── 1. Text texture — always send separately, only when text itself changed ──
+      if (!textChanged) {
+        // text unchanged — skip, avoids re-fetching/redrawing the logo below on every keystroke elsewhere
+      } else if (text) {
         const textCanvas = document.createElement("canvas");
         textCanvas.width = 320;
         textCanvas.height = 120;
@@ -531,7 +535,12 @@ const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
         });
       }
 
-      // ── 2. Flag / Logo texture — send separately ──────────────────────────
+      // ── 2. Flag / Logo texture — send separately, only when flag/logo itself changed ──
+      if (!logoChanged) return;
+
+      const currentRender = (renderCounterRef.current[area] || 0) + 1;
+      renderCounterRef.current[area] = currentRender;
+
       const opacity = getEmissiveBase64("", hasFlag, hasLogo, flagCount);
       ["preview-iframe", "preview-iframe2"].forEach(id => {
         const f = document.getElementById(id);

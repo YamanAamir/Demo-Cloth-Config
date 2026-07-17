@@ -344,16 +344,19 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
           }
 
           // two-tone check
-          let nBlack = 0, nWhite = 0, nOpaque = 0;
+          let nBlack = 0, nWhite = 0, nOpaque = 0, nColored = 0;
           for (let i = 0; i < tmpD.data.length; i += 4) {
             if (tmpD.data[i + 3] < 20) continue;
             nOpaque++;
-            const lum = 0.299 * tmpD.data[i] + 0.587 * tmpD.data[i + 1] + 0.114 * tmpD.data[i + 2];
+            const r = tmpD.data[i], g = tmpD.data[i + 1], b = tmpD.data[i + 2];
+            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
             if (lum < 50) nBlack++;
             else if (lum > 205) nWhite++;
+            if (Math.max(r, g, b) - Math.min(r, g, b) > 40) nColored++; // saturated pixel = real color, not gray/black/white
           }
           const twoToneRatio = nOpaque ? (nBlack + nWhite) / nOpaque : 0;
-          const isTwoTone = twoToneRatio > 0.9 && nBlack > 0 && nWhite > 0;
+          const coloredRatio = nOpaque ? nColored / nOpaque : 0;
+          const isTwoTone = twoToneRatio > 0.9 && nBlack > 0 && nWhite > 0 && coloredRatio < 0.03;
 
           // background tone from corners
           const cLum = [[0, 0], [img.width - 1, 0], [0, img.height - 1], [img.width - 1, img.height - 1]]
