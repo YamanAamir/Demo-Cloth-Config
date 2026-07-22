@@ -248,7 +248,7 @@ const InquiryModal = ({ isOpen, onClose }) => {
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-5 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-green-600 to-green-700 lg:px-6 px-3 lg:py-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
               <Send className="w-5 h-5 text-white" />
@@ -267,7 +267,7 @@ const InquiryModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Body */}
-        <div className="px-6 py-6 overflow-y-auto max-h-[70vh] custom-scrollbar-premium">
+        <div className="lg:px-6 px-3 lg:py-6 py-3 overflow-y-auto max-h-[70vh] custom-scrollbar-premium">
           {submitted ? (
             <div className="flex flex-col items-center justify-center py-10 text-center gap-4">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
@@ -431,7 +431,7 @@ const InquiryModal = ({ isOpen, onClose }) => {
               {isLoading ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Sender...</>
               ) : (
-                <><Send className="w-4 h-4" /> Send forespørgsel</>
+                <><Send className="w-4 h-4 lg:block hidden" /> Send forespørgsel</>
               )}
             </button>
           </div>

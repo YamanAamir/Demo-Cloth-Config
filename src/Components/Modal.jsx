@@ -842,7 +842,7 @@ const QuoteModal = ({
                       <p className="text-sm text-slate-500 font-medium">Custom Configuration</p>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
+                    <div className="hidden sm:flex flex-col items-end gap-2">
                     <div className={`px-4 py-1.5 text-xs font-bold rounded-full border uppercase tracking-widest ${
                       isSelected 
                         ? 'bg-green-50 text-green-700 border-green-100' 
@@ -1210,7 +1210,7 @@ const QuoteModal = ({
                         <div className="w-1.5 h-4 bg-green-500 rounded-full mr-2"></div>
                         {category.replace(/([A-Z])/g, ' $1').trim()}
                       </h4>
-                      <span className="text-lg font-bold text-green-600">
+                      <span className={`text-lg font-bold text-green-600 hidden sm:inline`}>
                         {GARMENT_PRICES[category]} DKK
                       </span>
                     </div>
@@ -1244,7 +1244,7 @@ const QuoteModal = ({
               </div>
             </div>
 
-            <div className="bg-slate-50/50 rounded-[1.5rem] p-6 border border-slate-100 space-y-4">
+            <div className="bg-slate-50/50 rounded-[1.5rem] p-6 border border-slate-100 space-y-4 hidden sm:block">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-bold text-slate-600">Subtotal</span>
                 <span className="text-lg font-bold text-slate-800">{subtotal} DKK</span>

@@ -12,7 +12,7 @@ import { X, Search, Image as ImageIcon, Trash2, Globe, Loader2, CheckCircle, Fla
 import { getCountries, getLibraryDesigns } from "../api/api";
 import UploadRequestModal from "./UploadRequestModal";
 import { TRANSLATE_MAP } from "../Default/translateMap";
-import { postToPreview } from "../utils/postMessage";
+import { postToPreview, postToActivePreview } from "../utils/postMessage";
 
 const t = (key) => TRANSLATE_MAP[key] || key;
 
@@ -554,28 +554,23 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     const message = colorMap[selectedColor.toLowerCase()];
     if (!message) return;
 
-    ["preview-iframe", "preview-iframe2"].forEach((id) => {
-      const iframe = document.getElementById(id);
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage(message, "*");
-      }
-    });
+    postToActivePreview(message);
   }, [selectedColor, isAppReady]);
 
   useEffect(() => {
     if (!selectedSize) return;
-    const message = `SweatShirt:size:${selectedSize}`;
-    ["preview-iframe", "preview-iframe2"].forEach((id) => {
-      const iframe = document.getElementById(id);
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage(message, "*");
-      }
-    });
+    postToActivePreview(`SweatShirt:size:${selectedSize}`);
   }, [selectedSize, isAppReady]);
 
   const pressureOptionsRef = useRef(pressureOptions);
   const prevPressureOptionsRef = React.useRef({});
   const renderCounterRef = React.useRef({});
+  const lastSentRef = React.useRef({});
+  const postIfChanged = (key, msg) => {
+    if (lastSentRef.current[key] === msg) return;
+    lastSentRef.current[key] = msg;
+    postToActivePreview(msg);
+  };
 
   useEffect(() => {
     pressureOptionsRef.current = pressureOptions;
@@ -616,24 +611,12 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       const hasLogo = !!(logoPre || logoCustom) && type === "logo";
       const hasSecondAsset = !!flag2;
       const opacity = getEmissiveBase64(text, hasFlag, hasLogo, hasSecondAsset);
-      ["preview-iframe", "preview-iframe2"].forEach((id) => {
-        const iframe = document.getElementById(id);
-        if (iframe?.contentWindow) {
-          const msg = `SweatShirt:${area}_opacity: ${opacity}`;
-          iframe.contentWindow.postMessage(msg, "*");
-        }
-      });
+      postIfChanged(`${area}_opacity`, `SweatShirt:${area}_opacity: ${opacity}`);
 
       getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase, logoOpacityBase) => {
         if (renderCounterRef.current[area] !== currentRender) return;
-        ["preview-iframe", "preview-iframe2"].forEach((id) => {
-          const iframe = document.getElementById(id);
-          if (iframe?.contentWindow) {
-            const msg = `SweatShirt:${area}_diffuse: ${diffuseBase}`;
-            iframe.contentWindow.postMessage(msg, "*");
-            if (logoOpacityBase) iframe.contentWindow.postMessage(`SweatShirt:${area}_opacity: ${logoOpacityBase}`, "*");
-          }
-        });
+        postIfChanged(`${area}_diffuse`, `SweatShirt:${area}_diffuse: ${diffuseBase}`);
+        if (logoOpacityBase) postIfChanged(`${area}_opacity`, `SweatShirt:${area}_opacity: ${logoOpacityBase}`);
       }, flag2, flagCount, textColor);
     });
   }, [isAppReady, pressureOptions]);
@@ -673,25 +656,13 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
           wctx.fillRect(0, 0, 128, 128);
           const whiteDiffuse = whiteCanvas.toDataURL("image/png");
 
-          ["preview-iframe", "preview-iframe2"].forEach((id) => {
-            const iframe = document.getElementById(id);
-            if (iframe?.contentWindow) {
-              iframe.contentWindow.postMessage("SweatShirt:back_white_diffuse: " + whiteDiffuse, "*");
-              iframe.contentWindow.postMessage("SweatShirt:back_white_opacity: " + invertedB64, "*");
-            }
-          });
+          postToActivePreview("SweatShirt:back_white_diffuse: " + whiteDiffuse);
+          postToActivePreview("SweatShirt:back_white_opacity: " + invertedB64);
         };
         img.src = opacityB64;
-      } else {
-        ["preview-iframe", "preview-iframe2"].forEach((id) => {
-          const iframe = document.getElementById(id);
-          if (iframe?.contentWindow) {
-            if (color === 'white') {
-              if (diffuseB64) iframe.contentWindow.postMessage("SweatShirt:back_black_diffuse: " + diffuseB64, "*");
-              if (opacityB64) iframe.contentWindow.postMessage("SweatShirt:back_black_opacity: " + opacityB64, "*");
-            }
-          }
-        });
+      } else if (color === 'white') {
+        if (diffuseB64) postToActivePreview("SweatShirt:back_black_diffuse: " + diffuseB64);
+        if (opacityB64) postToActivePreview("SweatShirt:back_black_opacity: " + opacityB64);
       }
     }
 
@@ -1264,7 +1235,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
             />
 
             <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
-              <div className="flex items-center justify-between px-8 py-7 border-b border-slate-50 bg-white/50 sticky top-0 z-10">
+              <div className="flex items-center justify-between lg:px-8 px-4 lg:py-7 py-3 border-b border-slate-50 bg-white/50 sticky top-0 z-10">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-green-50 rounded-2xl">
                     {currentField.includes("Logo") ? (
@@ -1290,9 +1261,9 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                 </button>
               </div>
 
-              <div className="p-8 overflow-y-auto custom-scrollbar-premium bg-slate-50/30">
+              <div className="lg:p-8 p-4 overflow-y-auto custom-scrollbar-premium bg-slate-50/30">
                 {currentField.includes("Logo") ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
                     {logos && logos.map((logo) => (
                       <button
                         key={logo.id}
@@ -1327,7 +1298,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                     )}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
                     {countries.map((country) => (
                       <button
                         key={country.name}

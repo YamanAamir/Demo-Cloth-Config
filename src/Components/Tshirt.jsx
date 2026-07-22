@@ -10,7 +10,7 @@ import { TRANSLATE_MAP } from "../Default/translateMap";
 
 const t = (key) => TRANSLATE_MAP[key] || key;
 import UploadRequestModal from "./UploadRequestModal";
-import { postToPreview } from "../utils/postMessage";
+import { postToPreview, postToActivePreview } from "../utils/postMessage";
 
 
 const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry, activeTab: externalTab, onTabChange, maxCharsText = 25, libDesignColor: libDesignColorProp, setLibDesignColor }) => {
@@ -513,27 +513,22 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
     const message = colorMap[selectedColor.toLowerCase()];
     if (!message) return;
 
-    ["preview-iframe", "preview-iframe2"].forEach((id) => {
-      const iframe = document.getElementById(id);
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage(message, "*");
-      }
-    });
+    postToActivePreview(message);
   }, [selectedColor, isAppReady]);
 
   useEffect(() => {
     if (!selectedSize) return;
-    const message = `T-Shirt:size:${selectedSize}`;
-    ["preview-iframe", "preview-iframe2"].forEach((id) => {
-      const iframe = document.getElementById(id);
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage(message, "*");
-      }
-    });
+    postToActivePreview(`T-Shirt:size:${selectedSize}`);
   }, [selectedSize, isAppReady]);
 
   const prevPressureOptionsRef = React.useRef({});
   const renderCounterRef = React.useRef({});
+  const lastSentRef = React.useRef({});
+  const postIfChanged = (key, msg) => {
+    if (lastSentRef.current[key] === msg) return;
+    lastSentRef.current[key] = msg;
+    postToActivePreview(msg);
+  };
 
   useEffect(() => {
     const areas = ["rightChest", "leftChest", "rightSleeve", "leftSleeve"];
@@ -573,25 +568,15 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
       const opacity = getEmissiveBase64(text, hasFlag, hasLogo, hasSecondAsset, flagCount, flag, flag2);
 
-      ["preview-iframe", "preview-iframe2"].forEach((id) => {
-        const iframe = document.getElementById(id);
-        if (iframe?.contentWindow) {
-          iframe.contentWindow.postMessage(`T-Shirt:${area}_opacity: ${opacity}`, "*");
-        }
-      });
+      postIfChanged(`${area}_opacity`, `T-Shirt:${area}_opacity: ${opacity}`);
 
       getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase, logoOpacityBase) => {
         // Ignore stale result if a newer render has started for this area
         if (renderCounterRef.current[area] !== currentRender) return;
-        ["preview-iframe", "preview-iframe2"].forEach((id) => {
-          const iframe = document.getElementById(id);
-          if (iframe?.contentWindow) {
-            iframe.contentWindow.postMessage(`T-Shirt:${area}_diffuse: ${diffuseBase}`, "*");
-            if (logoOpacityBase) {
-              iframe.contentWindow.postMessage(`T-Shirt:${area}_opacity: ${logoOpacityBase}`, "*");
-            }
-          }
-        });
+        postIfChanged(`${area}_diffuse`, `T-Shirt:${area}_diffuse: ${diffuseBase}`);
+        if (logoOpacityBase) {
+          postIfChanged(`${area}_opacity`, `T-Shirt:${area}_opacity: ${logoOpacityBase}`);
+        }
       }, flag2, textColor, type);
     });
   }, [isAppReady, pressureOptions]);
@@ -635,25 +620,13 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
           wctx.fillRect(0, 0, 128, 128);
           const whiteDiffuse = whiteCanvas.toDataURL("image/png");
 
-          ["preview-iframe", "preview-iframe2"].forEach((id) => {
-            const iframe = document.getElementById(id);
-            if (iframe?.contentWindow) {
-              iframe.contentWindow.postMessage("T-Shirt:back_white_diffuse: " + whiteDiffuse, "*");
-              iframe.contentWindow.postMessage("T-Shirt:back_white_opacity: " + invertedB64, "*");
-            }
-          });
+          postToActivePreview("T-Shirt:back_white_diffuse: " + whiteDiffuse);
+          postToActivePreview("T-Shirt:back_white_opacity: " + invertedB64);
         };
         img.src = opacityB64;
-      } else {
-        ["preview-iframe", "preview-iframe2"].forEach((id) => {
-          const iframe = document.getElementById(id);
-          if (iframe?.contentWindow) {
-            if (color === 'white') {
-              if (diffuseB64) iframe.contentWindow.postMessage("T-Shirt:back_black_diffuse: " + diffuseB64, "*");
-              if (opacityB64) iframe.contentWindow.postMessage("T-Shirt:back_black_opacity: " + opacityB64, "*");
-            }
-          }
-        });
+      } else if (color === 'white') {
+        if (diffuseB64) postToActivePreview("T-Shirt:back_black_diffuse: " + diffuseB64);
+        if (opacityB64) postToActivePreview("T-Shirt:back_black_opacity: " + opacityB64);
       }
     }
 
@@ -685,13 +658,11 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
     if (filtered.length === 0) return;
 
-    // ✅ IMPORTANT: preserve selection
-    const activeDesign =
-      libSelectedDesign &&
-        filtered.find(d => d.id === libSelectedDesign.id)
-        ? libSelectedDesign
-        : filtered[0];
-    console.log("activeDesign", libSelectedDesign);
+    // ✅ IMPORTANT: preserve selection — keep showing the same design across
+    // the Light/Dark garment toggle, just switch which of its two file paths
+    // is used (see selectedPath below). Only fall back to filtered[0] when
+    // nothing has been picked yet.
+    const activeDesign = libSelectedDesign || filtered[0];
 
     const selectedPath =
       libDesignColor === 'black'
@@ -1274,7 +1245,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
 
           <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
             {/* Header */}
-            <div className="flex items-center justify-between px-8 py-7 border-b border-slate-50 bg-white/50 sticky top-0 z-10">
+            <div className="flex items-center justify-between lg:px-8 px-4 lg:py-7 py-3 border-b border-slate-50 bg-white/50 sticky top-0 z-10">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-green-50 rounded-2xl">
                   {currentField.includes("Logo") ? (
@@ -1300,9 +1271,9 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
               </button>
             </div>
 
-            <div className="p-8 overflow-y-auto custom-scrollbar-premium bg-slate-50/30">
+            <div className="lg:p-8 p-4 overflow-y-auto custom-scrollbar-premium bg-slate-50/30">
               {currentField.includes("Logo") ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
                   {logos && logos.map((logo) => (
                     <button
                       key={logo.id}
@@ -1340,7 +1311,7 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
                   {countries.map((country) => (
                     <button
                       key={country.name}

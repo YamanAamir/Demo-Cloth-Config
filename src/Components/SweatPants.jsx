@@ -8,7 +8,7 @@ import { BASE_URL } from "../utils/const";
 import { ALL_FLAGS } from "../utils/flags";
 import { X, Image as ImageIcon, Trash2, Flag } from "lucide-react";
 import { TRANSLATE_MAP } from "../Default/translateMap";
-import { postToPreview } from "../utils/postMessage";
+import { postToPreview, postToActivePreview } from "../utils/postMessage";
 
 const t = (key) => TRANSLATE_MAP[key] || key;
 
@@ -376,17 +376,22 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     };
     const msg = colorMap[selectedColor.toLowerCase()];
     if (!msg) return;
-    ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(msg, "*"); });
+    postToActivePreview(msg);
   }, [selectedColor, isAppReady]);
 
   useEffect(() => {
     if (!selectedSize) return;
-    const msg = `SweatPant:size:${selectedSize}`;
-    ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(msg, "*"); });
+    postToActivePreview(`SweatPant:size:${selectedSize}`);
   }, [selectedSize, isAppReady]);
 
   const prevRef = React.useRef({});
   const renderCounterRef = React.useRef({});
+  const lastSentRef = React.useRef({});
+  const postIfChanged = (key, msg) => {
+    if (lastSentRef.current[key] === msg) return;
+    lastSentRef.current[key] = msg;
+    postToActivePreview(msg);
+  };
   useEffect(() => {
     ["rightLeg", "leftLeg"].forEach(area => {
       const text = pressureOptions[`${area}Text`]?.trim() || "";
@@ -405,15 +410,11 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       const hasFlag = !!flag && type === "flag";
       const hasLogo = !!(logoPre || logoCustom) && type === "logo";
       const opacity = getEmissiveBase64(text, hasFlag, hasLogo);
-      ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`SweatPant:${area}_opacity: ${opacity}`, "*"); });
+      postIfChanged(`${area}_opacity`, `SweatPant:${area}_opacity: ${opacity}`);
       getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuse, logoOpacityBase) => {
         if (renderCounterRef.current[area] !== currentRender) return;
-        ["preview-iframe", "preview-iframe2"].forEach(id => {
-          const f = document.getElementById(id); if (f?.contentWindow) {
-            f.contentWindow.postMessage(`SweatPant:${area}_diffuse: ${diffuse}`, "*");
-            if (logoOpacityBase) f.contentWindow.postMessage(`SweatPant:${area}_opacity: ${logoOpacityBase}`, "*");
-          }
-        });
+        postIfChanged(`${area}_diffuse`, `SweatPant:${area}_diffuse: ${diffuse}`);
+        if (logoOpacityBase) postIfChanged(`${area}_opacity`, `SweatPant:${area}_opacity: ${logoOpacityBase}`);
       }, flag2, flagCount, textColor);
     });
   }, [isAppReady, pressureOptions]);
@@ -584,7 +585,7 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowFlagModal(false)} />
           <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
-            <div className="flex items-center justify-between px-8 py-7 border-b border-slate-50 bg-white/50 sticky top-0 z-10">
+            <div className="flex items-center justify-between lg:px-8 px-4 lg:py-7 py-3 border-b border-slate-50 bg-white/50 sticky top-0 z-10">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-green-50 rounded-2xl">
                   {currentField.includes("Logo") ? <ImageIcon className="w-6 h-6 text-green-600" /> : <Flag className="w-6 h-6 text-green-600" />}
@@ -598,9 +599,9 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                 <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
               </button>
             </div>
-            <div className="p-8 overflow-y-auto bg-slate-50/30">
+            <div className="lg:p-8 p-4 overflow-y-auto bg-slate-50/30">
               {currentField.includes("Logo") ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
                   {logos && logos.map(logo => (
                     <button key={logo.id} onClick={() => selectLogo(logo.name, logo.id)}
                       className="group relative flex flex-col items-center p-2 rounded-3xl transition-all duration-300 hover:bg-white hover:shadow-xl"
@@ -619,7 +620,7 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
                   {countries.map(country => (
                     <button key={country.name} onClick={() => selectFlag(country.name)}
                       className="group flex flex-col items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 hover:border-green-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"

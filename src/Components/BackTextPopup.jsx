@@ -4,6 +4,7 @@ import img2 from '../assets/menuimages/2.png';
 import img3 from '../assets/menuimages/3.png';
 import img4 from '../assets/menuimages/4.png';
 import { X, Plus, Trash2, Type, MoveUp, MoveDown, Bold, Italic, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { getActivePreviewIframeId } from '../utils/postMessage';
 
 const CANVAS_WIDTH = 400;
 const CANVAS_HEIGHT = 400;
@@ -189,15 +190,13 @@ const BackTextPopup = ({ onFinish, customizations, setCustomizations, students, 
 
         // 3. Send to PlayCanvas iframes (fixed format to avoid CORS)
         if (diffuseBase64 && opacityBase64) {
-            ['preview-iframe', 'preview-iframe2'].forEach(id => {
-                const iframe = document.getElementById(id);
-                if (iframe?.contentWindow) {
-                    // We add a space after the colon to prevent browser protocol detection
-                    iframe.contentWindow.postMessage(postEx + 'back_diffuse: ' + diffuseBase64, '*');
-                    iframe.contentWindow.postMessage(postEx + 'back_opacity: ' + opacityBase64, '*');
-                    iframe.contentWindow.postMessage(postEx + 'back_emissive: ' + diffuseBase64, '*');
-                }
-            });
+            const iframe = document.getElementById(getActivePreviewIframeId());
+            if (iframe?.contentWindow) {
+                // We add a space after the colon to prevent browser protocol detection
+                iframe.contentWindow.postMessage(postEx + 'back_diffuse: ' + diffuseBase64, '*');
+                iframe.contentWindow.postMessage(postEx + 'back_opacity: ' + opacityBase64, '*');
+                iframe.contentWindow.postMessage(postEx + 'back_emissive: ' + diffuseBase64, '*');
+            }
         }
     }, [activeTab, textItems]);
 
@@ -272,12 +271,10 @@ const BackTextPopup = ({ onFinish, customizations, setCustomizations, students, 
     useEffect(() => {
         if (!isAppReady) return;
         const pageIndex = productTabs.findIndex(t => t.name === activeTab) + 1;
-        ['preview-iframe', 'preview-iframe2'].forEach(id => {
-            const iframe = document.getElementById(id);
-            if (iframe?.contentWindow) {
-                iframe.contentWindow.postMessage(`Page : ${pageIndex}`, '*');
-            }
-        });
+        const iframe = document.getElementById(getActivePreviewIframeId());
+        if (iframe?.contentWindow) {
+            iframe.contentWindow.postMessage(`Page : ${pageIndex}`, '*');
+        }
     }, [activeTab, isAppReady]);
 
     return (

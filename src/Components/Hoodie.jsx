@@ -8,7 +8,7 @@ import { X, Image as ImageIcon, Trash2, Globe, Loader2, CheckCircle, Flag } from
 import { getCountries, getLibraryDesigns } from "../api/api";
 import UploadRequestModal from "./UploadRequestModal";
 import { TRANSLATE_MAP } from "../Default/translateMap";
-import { postToPreview } from "../utils/postMessage";
+import { postToPreview, postToActivePreview } from "../utils/postMessage";
 
 const t = (key) => TRANSLATE_MAP[key] || key;
 
@@ -471,16 +471,22 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
   useEffect(() => {
     const m = { red: "Hoodie:red", black: "Hoodie:black", white: "Hoodie:white", natural: "Hoodie:natural", "heather grey": "Hoodie:heatherGrey", navy: "Hoodie:navy", "light pink": "Hoodie:lightPink", "olive green": "Hoodie:oliveGreen", blue: "Hoodie:blue", purple: "Hoodie:purple" };
     const msg = m[selectedColor.toLowerCase()]; if (!msg) return;
-    ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(msg, "*"); });
+    postToActivePreview(msg);
   }, [selectedColor, isAppReady]);
 
   useEffect(() => {
     if (!selectedSize) return;
-    ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Hoodie:size:${selectedSize}`, "*"); });
+    postToActivePreview(`Hoodie:size:${selectedSize}`);
   }, [selectedSize, isAppReady]);
 
   const prevRef = React.useRef({});
   const renderCounterRef = React.useRef({});
+  const lastSentRef = React.useRef({});
+  const postIfChanged = (key, msg) => {
+    if (lastSentRef.current[key] === msg) return;
+    lastSentRef.current[key] = msg;
+    postToActivePreview(msg);
+  };
   useEffect(() => {
     ["rightChest", "leftChest", "bottomChest", "rightSleeve", "leftSleeve"].forEach(area => {
       const text = pressureOptions[`${area}Text`]?.trim() || "", flag = pressureOptions[`${area}Flag`] || "", flag2 = pressureOptions[`${area}Flag2`] || "", flagCount = pressureOptions[`${area}FlagCount`] || 1, logoPre = pressureOptions[`${area}LogoPredefined`] || "", logoCustom = pressureOptions[`${area}LogoCustom`] || "", type = pressureOptions[`${area}Type`] || "";
@@ -494,84 +500,21 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
       const hasSecondAsset = !!flag2;
 
       const opacity = getEmissiveBase64(text, hasFlag, hasLogo, hasSecondAsset);
-      ["preview-iframe", "preview-iframe2"].forEach(id => { const f = document.getElementById(id); if (f?.contentWindow) f.contentWindow.postMessage(`Hoodie:${area}_opacity: ${opacity}`, "*"); });
+      postIfChanged(`${area}_opacity`, `Hoodie:${area}_opacity: ${opacity}`);
       getDiffuseBase64(flag, logoPre, logoCustom, text, (d, logoOpacityBase) => {
         if (renderCounterRef.current[area] !== currentRender) return;
-        ["preview-iframe", "preview-iframe2"].forEach(id => {
-          const f = document.getElementById(id); if (f?.contentWindow) {
-            f.contentWindow.postMessage(`Hoodie:${area}_diffuse: ${d}`, "*");
-            if (logoOpacityBase) f.contentWindow.postMessage(`Hoodie:${area}_opacity: ${logoOpacityBase}`, "*");
-          }
-        });
+        postIfChanged(`${area}_diffuse`, `Hoodie:${area}_diffuse: ${d}`);
+        if (logoOpacityBase) postIfChanged(`${area}_opacity`, `Hoodie:${area}_opacity: ${logoOpacityBase}`);
       }, flag2, flagCount, textColor);
     });
   }, [isAppReady, pressureOptions]);
 
 
   const pressureOptionsRef = useRef(pressureOptions);
-  const prevPressureOptionsRef = React.useRef({});
-  // const renderCounterRef = React.useRef({});
 
   useEffect(() => {
     pressureOptionsRef.current = pressureOptions;
   }, [pressureOptions]);
-
-  useEffect(() => {
-    const areas = ["rightChest", "leftChest", "rightSleeve", "leftSleeve"];
-
-    areas.forEach((area) => {
-      const text = pressureOptions[`${area}Text`]?.trim() || "";
-      const flag = pressureOptions[`${area}Flag`] || "";
-      const flag2 = pressureOptions[`${area}Flag2`] || "";
-      const flagCount = pressureOptions[`${area}FlagCount`] || 1;
-      const logoPre = pressureOptions[`${area}LogoPredefined`] || "";
-      const logoCustom = pressureOptions[`${area}LogoCustom`] || "";
-      const type = pressureOptions[`${area}Type`] || "";
-      const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
-
-      const prev = prevPressureOptionsRef.current[area] || {};
-      const hasChanged =
-        prev.text !== text ||
-        prev.flag !== flag ||
-        prev.flag2 !== flag2 ||
-        prev.flagCount !== flagCount ||
-        prev.logoPre !== logoPre ||
-        prev.logoCustom !== logoCustom ||
-        prev.type !== type ||
-        prev.textColor !== textColor;
-
-      if (!hasChanged) return;
-
-      prevPressureOptionsRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
-      const currentRender = (renderCounterRef.current[area] || 0) + 1;
-      renderCounterRef.current[area] = currentRender;
-
-      const hasText = text.length > 0;
-      const hasFlag = !!flag && type === "flag";
-      const hasLogo = !!(logoPre || logoCustom) && type === "logo";
-      const hasSecondAsset = !!flag2;
-      const opacity = getEmissiveBase64(text, hasFlag, hasLogo, hasSecondAsset);
-      ["preview-iframe", "preview-iframe2"].forEach((id) => {
-        const iframe = document.getElementById(id);
-        if (iframe?.contentWindow) {
-          const msg = `Hoodie:${area}_opacity: ${opacity}`;
-          iframe.contentWindow.postMessage(msg, "*");
-        }
-      });
-
-      getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase, logoOpacityBase) => {
-        if (renderCounterRef.current[area] !== currentRender) return;
-        ["preview-iframe", "preview-iframe2"].forEach((id) => {
-          const iframe = document.getElementById(id);
-          if (iframe?.contentWindow) {
-            const msg = `Hoodie:${area}_diffuse: ${diffuseBase}`;
-            iframe.contentWindow.postMessage(msg, "*");
-            if (logoOpacityBase) iframe.contentWindow.postMessage(`Hoodie:${area}_opacity: ${logoOpacityBase}`, "*");
-          }
-        });
-      }, flag2, flagCount, textColor);
-    });
-  }, [isAppReady, pressureOptions]);
 
   const handleBackDesignUpdate = (update) => {
     const current = pressureOptionsRef.current;
@@ -608,25 +551,13 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
           wctx.fillRect(0, 0, 128, 128);
           const whiteDiffuse = whiteCanvas.toDataURL("image/png");
 
-          ["preview-iframe", "preview-iframe2"].forEach((id) => {
-            const iframe = document.getElementById(id);
-            if (iframe?.contentWindow) {
-              iframe.contentWindow.postMessage("Hoodie:back_white_diffuse: " + whiteDiffuse, "*");
-              iframe.contentWindow.postMessage("Hoodie:back_white_opacity: " + invertedB64, "*");
-            }
-          });
+          postToActivePreview("Hoodie:back_white_diffuse: " + whiteDiffuse);
+          postToActivePreview("Hoodie:back_white_opacity: " + invertedB64);
         };
         img.src = opacityB64;
-      } else {
-        ["preview-iframe", "preview-iframe2"].forEach((id) => {
-          const iframe = document.getElementById(id);
-          if (iframe?.contentWindow) {
-            if (color === 'white') {
-              if (diffuseB64) iframe.contentWindow.postMessage("Hoodie:back_black_diffuse: " + diffuseB64, "*");
-              if (opacityB64) iframe.contentWindow.postMessage("Hoodie:back_black_opacity: " + opacityB64, "*");
-            }
-          }
-        });
+      } else if (color === 'white') {
+        if (diffuseB64) postToActivePreview("Hoodie:back_black_diffuse: " + diffuseB64);
+        if (opacityB64) postToActivePreview("Hoodie:back_black_opacity: " + opacityB64);
       }
     }
 
@@ -880,7 +811,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={() => setShowFlagModal(false)} />
       <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden border border-slate-200">
-        <div className="flex items-center justify-between px-8 py-7 border-b border-slate-50 bg-white/50 sticky top-0 z-10">
+        <div className="flex items-center justify-between lg:px-8 px-4 lg:py-7 py-3 border-b border-slate-50 bg-white/50 sticky top-0 z-10">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-green-50 rounded-2xl">{currentField.includes("Logo") ? <ImageIcon className="w-6 h-6 text-green-600" /> : <Flag className="w-6 h-6 text-green-600" />}</div>
             <div>
@@ -890,9 +821,9 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
           </div>
           <button onClick={() => setShowFlagModal(false)} className="p-3 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all group"><X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" /></button>
         </div>
-        <div className="p-8 overflow-y-auto bg-slate-50/30">
+        <div className="lg:p-8 p-4 overflow-y-auto bg-slate-50/30">
           {currentField.includes("Logo") ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
               {logos && logos.map(logo => (
                 <button key={logo.id} onClick={() => selectLogo(logo.name, logo.id)} className="group relative flex flex-col items-center p-2 rounded-3xl hover:bg-white hover:shadow-xl transition-all duration-300">
                   <div className="w-full aspect-square mb-4 flex items-center justify-center bg-white rounded-2xl border border-slate-100 shadow-sm group-hover:border-green-200 group-hover:-translate-y-2 transition-all duration-500 p-5 overflow-hidden">
@@ -904,7 +835,7 @@ const Hoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: e
               {(!logos || logos.length === 0) && <div className="col-span-full py-20 text-center"><ImageIcon className="w-8 h-8 text-slate-400 mx-auto mb-4" /><p className="text-slate-400 font-bold">{t("No logos found")}</p></div>}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
               {countries.map(c => (
                 <button key={c.name} onClick={() => selectFlag(c.name)} className="group flex flex-col items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 hover:border-green-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                   <div className="w-16 h-12 rounded-lg overflow-hidden shadow-sm bg-slate-100"><img src={c.flag} alt={c.name} className="w-full h-full object-cover" /></div>

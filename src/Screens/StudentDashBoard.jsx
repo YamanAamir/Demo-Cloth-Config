@@ -18,7 +18,7 @@ import QuoteModal from '../Components/Modal';
 import HistoryModal from '../Components/HistoryModal';
 import InquiryModal from '../Components/InquiryModal';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { GraduationCap, ChevronUp, ChevronDown, LogOut, Settings, LayoutGrid, Lock, History, Package, User, RefreshCw, RotateCcw } from 'lucide-react';
+import { GraduationCap, LogOut, Settings, LayoutGrid, Lock, History, Package, User, RefreshCw, RotateCcw } from 'lucide-react';
 import StudentPopup from '../Components/Popup';
 import useLogoStore from '../store/logoStore';
 import useSettingsStore from '../store/settingsStore';
@@ -26,6 +26,7 @@ import { useAuth } from '../context/AuthContext';
 import { getMyOrder, getMyOrderHistory, placeOrder, unlockOrder, lockOrder, deleteHistory, getStudentProfile, updateStudentProfile, changePasswordAuth, getMyClassBackDesigns, resetOrder, createFreshOrder } from '../api/api';
 import useSocket from '../hooks/useSocket';
 import useBackDesignStore from '../store/backDesignStore';
+import { getActivePreviewIframeId } from '../utils/postMessage';
 const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup /*, setShowBackTextPopup */ }) => { // COMMENTED: Back text feature disabled
     const { logout } = useAuth();
     const { backDesigns } = useBackDesignStore();
@@ -162,7 +163,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     const [searchParams] = useSearchParams();
     const packageName = searchParams.get("package");
     const program = searchParams.get("program");
-    const [isConfigOpen, setIsConfigOpen] = useState(false);
     const [globalEmblem, setGlobalEmblem] = useState({ name: 'Guld', value: 'Guld', color: '#FCD34D' });
     const [isAppReady, setIsAppReady] = useState(false);
     const [isIframeLoaded, setIsIframeLoaded] = useState(false);
@@ -206,6 +206,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     };
 
     const subtotal = calculateTotalPrice();
+    const configuredCount = Object.entries(allSelections).filter(([type, options]) => isGarmentConfigured(type, options)).length;
     const vatPct = getVat(); // e.g. 10
     const vatAmount = Math.round(subtotal * vatPct / 100);
     const dynamicPrice = subtotal + vatAmount;
@@ -680,38 +681,36 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
 
         const menuIndex = menuItems.findIndex(item => item.name === activeMenu);
         if (menuIndex !== -1) {
-            ['preview-iframe', 'preview-iframe2'].forEach((id) => {
-                const iframe = document.getElementById(id);
-                if (iframe?.contentWindow) {
-                    const pageNum = menuIndex + 1;
+            const iframe = document.getElementById(getActivePreviewIframeId());
+            if (iframe?.contentWindow) {
+                const pageNum = menuIndex + 1;
 
-                    iframe.contentWindow.postMessage(`Page : ${pageNum}`, "*");
-                    iframe.contentWindow.postMessage('Tilvælg:no', "*");
+                iframe.contentWindow.postMessage(`Page : ${pageNum}`, "*");
+                iframe.contentWindow.postMessage('Tilvælg:no', "*");
 
-                    setTimeout(() => {
-                        const currentData = allSelections[activeMenu];
-                        if (currentData) {
-                            const { selectedColor, selectedSize } = currentData;
+                setTimeout(() => {
+                    const currentData = allSelections[activeMenu];
+                    if (currentData) {
+                        const { selectedColor, selectedSize } = currentData;
 
-                            const prefixMap = {
-                                'T-SHIRT': 'T-Shirt: ',
-                                'SWEATSHIRT': 'SweatShirt: ',
-                                'HOODIE': 'Hoodie: ',
-                                'ZIPPERHOODIE': 'ZipperHoodie: ',
-                                'SWEATPANTS': 'SweatPant: ',
-                                'SHORTS': 'Short: '
-                            };
+                        const prefixMap = {
+                            'T-SHIRT': 'T-Shirt: ',
+                            'SWEATSHIRT': 'SweatShirt: ',
+                            'HOODIE': 'Hoodie: ',
+                            'ZIPPERHOODIE': 'ZipperHoodie: ',
+                            'SWEATPANTS': 'SweatPant: ',
+                            'SHORTS': 'Short: '
+                        };
 
-                            const prefix = prefixMap[activeMenu];
-                            if (prefix) {
-                                if (selectedColor) iframe.contentWindow.postMessage(`${prefix}${selectedColor.toLowerCase()}`, "*");
-                                if (selectedSize) iframe.contentWindow.postMessage(`${prefix}size:${selectedSize}`, "*");
-                            }
+                        const prefix = prefixMap[activeMenu];
+                        if (prefix) {
+                            if (selectedColor) iframe.contentWindow.postMessage(`${prefix}${selectedColor.toLowerCase()}`, "*");
+                            if (selectedSize) iframe.contentWindow.postMessage(`${prefix}size:${selectedSize}`, "*");
                         }
-                        setBackDesignKey(k => k + 1);
-                    }, 300);
-                }
-            });
+                    }
+                    setBackDesignKey(k => k + 1);
+                }, 300);
+            }
         }
     }, [activeMenu, isAppReady]);
 
@@ -868,11 +867,11 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                 </div>
             )}
 
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+            <div className="">
                 {/* Global Header */}
-                <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-40">
+                <header className="lg:bg-white/80 backdrop-blur-md lg:border-b lg:border-slate-200 lg:px-6 px-3 lg:py-4 py-2 flex justify-between items-center fixed w-full top-0 z-40">
                     <div className="flex items-center space-x-3">
-                        <div className="w-22 flex items-center justify-center">
+                        <div className="w-24 flex items-center justify-center">
                             {/* <GraduationCap className="w-6 h-6 text-white" /> */}
                             <img src="clothLogo.png" alt="" />
                         </div>
@@ -922,7 +921,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         {/* </Dropdown> */}
                     </div>
                 </header>
-                <div className="hidden md:flex h-[calc(100vh-80px)] w-full relative">
+                <div className="hidden md:flex h-[calc(100vh-0px)] w-full relative pt-18">
                     <div className="flex flex-col h-full border-r border-slate-200 bg-white shadow-xl z-10 w-[600px] min-w-[500px]">
                         <div className='flex flex-1 min-h-0'>
                             <div className="bg-white/70 border-r border-slate-200 overflow-y-auto firstdiv custom-scrollbar-premium min-w-[100px]">
@@ -1038,124 +1037,70 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         </div>
                     </div>
                 </div>
-                <div className="md:hidden flex flex-col ">
+                <div className="md:hidden flex flex-col pt-12">
                     <div className="flex flex-col h-screen">
-                        <div className="flex-1 flex flex-col overflow-hidden">
-                            <div
-                                className={`transition-all duration-300 ${isConfigOpen ? 'h-[35vh]' : 'h-[35vh]'
-                                    }`}
-                            >
-                                <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200 h-full">
-                                    <div className="flex items-center justify-between p-4 border-b border-slate-200">
-                                        <div className="flex items-center space-x-3">
-                                            <div className="w-8 h-8 bg-gradient-to-r from-green-600 to-green-600 rounded-xl flex items-center justify-center">
-                                                <GraduationCap className="w-4 h-4 text-white" />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-semibold text-slate-800 text-sm">Selected {activeMenu}</h4>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                            {isLocked && (
-                                                <Tag color="error" className="flex items-center space-x-1 px-2 py-0.5 rounded-full border-red-100">
-                                                    <Lock className="w-3 h-3" />
-                                                    <span className="text-[10px] font-bold uppercase tracking-tight">Locked</span>
-                                                </Tag>
+                        <div className="flex-1 flex flex-col overflow-y-auto">
+                            <div className="h-[45vh] flex-shrink-0 bg-white border-b border-slate-200">
+                                <iframe
+                                    id="preview-iframe2"
+                                    src={'https://playcanv.as/e/p/1b1eadeb/'}
+                                    className="w-full h-full"
+                                    frameBorder="0"
+                                    title="3D Student Card Preview"
+                                />
+                            </div>
+
+                            <div className="px-3 py-3 bg-white border-b border-slate-100 flex-shrink-0">
+                                <div className="flex justify-between">
+                                    {menuItems.map((item, index) => (
+                                        <button
+                                            key={index}
+                                            onClick={() => setActiveMenu(item.name)}
+                                            className={`flex flex-col items-center px-2 py-1.5 rounded-xl transition-all duration-200 ${activeMenu === item.name
+                                                ? 'bg-gradient-to-r from-green-50 to-green-50 border border-green-200 shadow-sm'
+                                                : 'hover:bg-slate-50'
+                                                }`}
+                                        >
+                                            <img
+                                                src={item.icon}
+                                                alt={item.name}
+                                                className={`w-7 h-7 object-contain transition-transform duration-200 ${activeMenu === item.name ? 'scale-110' : ''}`}
+                                            />
+                                            {activeMenu === item.name && (
+                                                <div className="mt-1 w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                                             )}
-                                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                                            <span className="text-xs font-medium text-slate-600">LIVE</span>
-                                        </div>
-                                    </div>
-                                    <div
-                                        className="h-[calc(100%-60px)] rounded-b-2xl overflow-hidden"
-                                        style={{
-                                            pointerEvents: isConfigOpen ? 'none' : 'auto',
-                                        }}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="px-4 pt-3 flex-shrink-0">
+                                <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
+                                    <button
+                                        onClick={() => setGarmentTab('size')}
+                                        className={`flex-1 py-2.5 text-sm font-semibold transition-all rounded-xl ${garmentTab === 'size' ? 'bg-green-700 text-white' : 'text-gray-500 bg-white hover:bg-gray-50'}`}
                                     >
-                                        <iframe
-                                            id="preview-iframe2"
-                                            src={'https://playcanv.as/e/p/1b1eadeb/'}
-                                            className="w-full h-full"
-                                            frameBorder="0"
-                                            title="3D Student Card Preview"
-                                        />
-                                    </div>
+                                        Color & Size
+                                    </button>
+                                    <button
+                                        onClick={() => setGarmentTab('pressure')}
+                                        className={`flex-1 py-2.5 text-sm font-semibold transition-all rounded-xl ${garmentTab === 'pressure' ? 'bg-green-700 text-white' : 'text-gray-500 bg-white hover:bg-gray-50'}`}
+                                    >
+                                        Design
+                                    </button>
                                 </div>
                             </div>
-                            <div className="px-4 py-2 bg-white/80 border-t border-slate-200 flex justify-center flex-shrink-0">
-                                <button
-                                    onClick={() => setIsConfigOpen(!isConfigOpen)}
-                                    className="flex items-center justify-center w-full py-2 bg-slate-100 rounded-lg text-slate-700 font-medium"
-                                >
-                                    {isConfigOpen ? (
-                                        <>
-                                            <ChevronDown className="w-4 h-4 mr-1" />
-                                            Hide Configuration
-                                        </>
-                                    ) : (
-                                        <>
-                                            <ChevronUp className="w-4 h-4 mr-1" />
-                                            Show Configuration
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                            <div
-                                className={`transition-all duration-300 overflow-y-auto max-h-[30vh] md:max-h-full ${isConfigOpen ? 'max-h-[30vh]' : 'max-h-0'
-                                    }`}
-                            >
-                                {isConfigOpen && (
-                                    <div className="p-4 space-y-6">
-                                        {activeMenu === 'T-SHIRT' && <Tshirt isAppReady={isAppReady} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                        {activeMenu === "SWEATSHIRT" && <SweatShirt isAppReady={isAppReady} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                        {activeMenu === "HOODIE" && <Hoodie isAppReady={isAppReady} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                        {activeMenu === "ZIPPERHOODIE" && <ZippedHoodie isAppReady={isAppReady} data={allSelections['ZIPPERHOODIE']} onUpdate={(updates) => handleUpdateSelection('ZIPPERHOODIE', updates)} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                        {activeMenu === "SWEATPANTS" && <SweatPants isAppReady={isAppReady} data={allSelections['SWEATPANTS']} onUpdate={(updates) => handleUpdateSelection('SWEATPANTS', updates)} maxCharsText={maxCharsClothText} />}
-                                        {activeMenu === "SHORTS" && <Shorts isAppReady={isAppReady} data={allSelections['SHORTS']} onUpdate={(updates) => handleUpdateSelection('SHORTS', updates)} maxCharsText={maxCharsClothText} />}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="bg-white/70 border-t border-slate-200 flex-shrink-0">
-                                <div className="px-4 pt-2">
-                                    <h3 className="text-xs font-semibold text-center text-slate-600 uppercase tracking-wider mb-3">
-                                        Clothing
-                                    </h3>
-                                    <div className="flex overflow-x-auto space-x-3 pb-2">
-                                        {menuItems.map((item, index) => (
-                                            <button
-                                                key={index}
-                                                onClick={() => {
-                                                    setActiveMenu(item.name)
-                                                }}
-                                                className={`flex-shrink-0 flex flex-col items-center px-3 rounded-xl transition-all duration-200 min-w-[80px] ${activeMenu === item.name
-                                                    ? 'bg-gradient-to-r from-green-50 to-green-50 border border-green-200 shadow-sm'
-                                                    : 'hover:bg-slate-50 hover:shadow-sm'
-                                                    }`}
-                                            >
-                                                <div
-                                                    className={`w-8 rounded-lg flex items-center justify-center mb-2 transition-transform duration-200 ${activeMenu === item.name ? 'scale-110' : 'hover:scale-105'
-                                                        }`}
-                                                >
-                                                    <img
-                                                        src={item.icon}
-                                                        alt={item.name}
-                                                        className="w-6 h-6 object-contain"
-                                                    />
-                                                </div>
-                                                <span className="text-xs font-medium text-slate-600 text-center leading-tight">
-                                                    {item.name.replace(' ', '\n')}
-                                                </span>
-                                                {activeMenu === item.name && (
-                                                    <div className="mt-1 w-2 h-2 bg-green-500 rounded-full"></div>
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
+
+                            <div className="p-4 space-y-6">
+                                {activeMenu === 'T-SHIRT' && <Tshirt isAppReady={isAppReady} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                {activeMenu === "SWEATSHIRT" && <SweatShirt isAppReady={isAppReady} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                {activeMenu === "HOODIE" && <Hoodie isAppReady={isAppReady} logos={logos} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                {activeMenu === "ZIPPERHOODIE" && <ZippedHoodie isAppReady={isAppReady} logos={logos} data={allSelections['ZIPPERHOODIE']} onUpdate={(updates) => handleUpdateSelection('ZIPPERHOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                {activeMenu === "SWEATPANTS" && <SweatPants isAppReady={isAppReady} logos={logos} data={allSelections['SWEATPANTS']} onUpdate={(updates) => handleUpdateSelection('SWEATPANTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
+                                {activeMenu === "SHORTS" && <Shorts isAppReady={isAppReady} logos={logos} data={allSelections['SHORTS']} onUpdate={(updates) => handleUpdateSelection('SHORTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
                             </div>
                         </div>
-                        <div className="border-t border-slate-200 p-4 bg-white/90 backdrop-blur-sm flex-shrink-0">
-                            <div className="mb-3 space-y-1">
+                        <div className="border-t border-slate-200 p-4 bg-white/90 backdrop-blur-sm flex-shrink-0 sticky bottom-0">
+                            {/* <div className="mb-3 space-y-1">
                                 <div className="flex justify-between text-xs text-slate-500">
                                     <span>Subtotal</span>
                                     <span>{subtotal} DKK</span>
@@ -1170,8 +1115,8 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                     <span className="text-sm font-semibold text-slate-700">Total</span>
                                     <span className="text-xl font-bold text-slate-900">{dynamicPrice} DKK</span>
                                 </div>
-                            </div>
-                            <div className="flex space-x-3 mb-4">
+                            </div> */}
+                            {/* <div className="flex space-x-3 mb-4">
                                 <button
                                     onClick={handleSaveOrder}
                                     disabled={isSaving || (isLocked && !isAdmin)}
@@ -1189,7 +1134,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                         <span>History</span>
                                     </button>
                                 )}
-                            </div>
+                            </div> */}
                             <button
                                 onClick={() => setIsInquiryModalOpen(true)}
                                 className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 shadow-md

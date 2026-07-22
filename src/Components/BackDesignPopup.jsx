@@ -3,6 +3,7 @@ import Test from './Test';
 import { X, Globe, Upload, ChevronRight, Loader2, CheckCircle } from 'lucide-react';
 import { getCountries, getLibraryDesigns } from '../api/api';
 import { BASE_URL } from '../utils/const';
+import { getActivePreviewIframeId } from '../utils/postMessage';
 
 // Color tab definitions (English labels)
 const COLOR_TABS = [
@@ -114,12 +115,10 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
     // Switch PlayCanvas page when tab changes
     useEffect(() => {
         const pageIndex = productTabs.findIndex(t => t.name === activeTab) + 1;
-        ['preview-iframe', 'preview-iframe2'].forEach((id) => {
-            const iframe = document.getElementById(id);
-            if (iframe?.contentWindow) {
-                iframe.contentWindow.postMessage(`Page : ${pageIndex}`, "*");
-            }
-        });
+        const iframe = document.getElementById(getActivePreviewIframeId());
+        if (iframe?.contentWindow) {
+            iframe.contentWindow.postMessage(`Page : ${pageIndex}`, "*");
+        }
     }, [activeTab]);
 
     const handleUpdate = (update) => {
@@ -134,24 +133,22 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
             });
 
             const allPrefixes = ['T-Shirt:', 'SweatShirt:', 'Hoodie:', 'ZipperHoodie:'];
-            ['preview-iframe', 'preview-iframe2'].forEach((id) => {
-                const iframe = document.getElementById(id);
-                if (iframe?.contentWindow) {
-                    // Send full messages (already has prefix from postEx)
-                    if (diffuse) iframe.contentWindow.postMessage(diffuse, '*');
-                    if (opacity) iframe.contentWindow.postMessage(opacity, '*');
-                    if (emissive) iframe.contentWindow.postMessage(emissive, '*');
+            const iframe = document.getElementById(getActivePreviewIframeId());
+            if (iframe?.contentWindow) {
+                // Send full messages (already has prefix from postEx)
+                if (diffuse) iframe.contentWindow.postMessage(diffuse, '*');
+                if (opacity) iframe.contentWindow.postMessage(opacity, '*');
+                if (emissive) iframe.contentWindow.postMessage(emissive, '*');
 
-                    // Also send raw data for all OTHER prefixes (not current tab)
-                    allPrefixes.forEach(prefix => {
-                        if (prefix !== currentTab.postEx) {
-                            if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_diffuse: ' + rawDiffuse, '*');
-                            if (rawOpacity) iframe.contentWindow.postMessage(prefix + 'back_opacity: ' + rawOpacity, '*');
-                            if (rawEmissive) iframe.contentWindow.postMessage(prefix + 'back_emissive: ' + rawEmissive, '*');
-                        }
-                    });
-                }
-            });
+                // Also send raw data for all OTHER prefixes (not current tab)
+                allPrefixes.forEach(prefix => {
+                    if (prefix !== currentTab.postEx) {
+                        if (rawDiffuse) iframe.contentWindow.postMessage(prefix + 'back_diffuse: ' + rawDiffuse, '*');
+                        if (rawOpacity) iframe.contentWindow.postMessage(prefix + 'back_opacity: ' + rawOpacity, '*');
+                        if (rawEmissive) iframe.contentWindow.postMessage(prefix + 'back_emissive: ' + rawEmissive, '*');
+                    }
+                });
+            }
         }
         if (update.backDesign !== undefined) {
             setCustomizations(prev => {
