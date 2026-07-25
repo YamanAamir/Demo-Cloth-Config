@@ -869,7 +869,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
 
             <div className="">
                 {/* Global Header */}
-                <header className="lg:bg-white/80 backdrop-blur-md lg:border-b lg:border-slate-200 lg:px-6 px-3 lg:py-4 py-2 flex justify-between items-center fixed w-full top-0 z-40">
+                <header className="lg:bg-white/80 bg-transparent lg:border-b lg:border-slate-200 lg:px-6 px-3 lg:py-4 py-2 flex justify-between items-center fixed w-full top-0 z-40">
                     <div className="flex items-center space-x-3">
                         <div className="w-24 flex items-center justify-center">
                             {/* <GraduationCap className="w-6 h-6 text-white" /> */}
@@ -907,7 +907,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             trigger={['click']}
                             placement="bottomRight"
                         > */}
-                        <div className="flex items-center gap-2 px-2 py-1 rounded-xl transition-all">
+                        <div className="md:flex hidden items-center gap-2 px-2 py-1 rounded-xl transition-all">
                             <Avatar
                                 size={34}
                                 style={{ backgroundColor: '#16a34a', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
@@ -1037,7 +1037,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         </div>
                     </div>
                 </div>
-                <div className="md:hidden flex flex-col pt-12">
+                <div className="md:hidden flex flex-col">
                     <div className="flex flex-col h-screen">
                         <div className="flex-1 flex flex-col overflow-y-auto">
                             <div className="h-[45vh] flex-shrink-0 bg-white border-b border-slate-200">
@@ -1090,7 +1090,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                 </div>
                             </div>
 
-                            <div className="p-4 space-y-6">
+                            <div className="p-4 space-y-6 md:h-full h-[40vh] overflow-y-auto custom-scrollbar-premium">
                                 {activeMenu === 'T-SHIRT' && <Tshirt isAppReady={isAppReady} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
                                 {activeMenu === "SWEATSHIRT" && <SweatShirt isAppReady={isAppReady} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
                                 {activeMenu === "HOODIE" && <Hoodie isAppReady={isAppReady} logos={logos} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
