@@ -586,6 +586,8 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
     pressureOptionsRef.current = pressureOptions;
   }, [pressureOptions]);
 
+  const lastEmittedOpacityRef = useRef(null);
+
   const handleBackDesignUpdate = (update) => {
     if (!pressureOptionsRef.current.backDesign) return;
     if (update.canvasBase64) {
@@ -593,6 +595,10 @@ const Tshirt = ({ data, onUpdate, isAppReady, logos, backDesigns, onOpenInquiry,
       const diffuseB64 = raw?.diffuse || "";
       const opacityB64 = raw?.opacity || "";
       const color = libDesignColorRef.current;
+
+      const emitKey = `${color}:${opacityB64}`;
+      if (lastEmittedOpacityRef.current === emitKey) return;
+      lastEmittedOpacityRef.current = emitKey;
 
       if (color === 'black' && opacityB64) {
         // Pehle invert karo, phir dono iframes ko bhejo

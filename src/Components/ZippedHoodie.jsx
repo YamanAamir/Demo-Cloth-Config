@@ -550,6 +550,8 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
     });
   }, [isAppReady, pressureOptions]);
 
+  const lastEmittedOpacityRef = useRef(null);
+
   const handleBackDesignUpdate = (update) => {
     const current = pressureOptionsRef.current;
     if (!current?.backDesign) return;
@@ -558,6 +560,10 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, active
       const diffuseB64 = raw?.diffuse || "";
       const opacityB64 = raw?.opacity || "";
       const color = libDesignColorRef.current;
+
+      const emitKey = `${color}:${opacityB64}`;
+      if (lastEmittedOpacityRef.current === emitKey) return;
+      lastEmittedOpacityRef.current = emitKey;
 
       if (color === 'black' && opacityB64) {
         // Pehle invert karo, phir dono iframes ko bhejo

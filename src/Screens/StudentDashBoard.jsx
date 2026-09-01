@@ -194,6 +194,16 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     const [isResetting, setIsResetting] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
 
+    const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     // 3. Derived State
     const calculateTotalPrice = () => {
         let total = 0;
@@ -708,7 +718,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             if (selectedSize) iframe.contentWindow.postMessage(`${prefix}size:${selectedSize}`, "*");
                         }
                     }
-                    setBackDesignKey(k => k + 1);
                 }, 300);
             }
         }
@@ -921,6 +930,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         {/* </Dropdown> */}
                     </div>
                 </header>
+                {!isMobile && (
                 <div className="hidden md:flex h-[calc(100vh-0px)] w-full relative pt-18">
                     <div className="flex flex-col h-full border-r border-slate-200 bg-white shadow-xl z-10 w-[600px] min-w-[500px]">
                         <div className='flex flex-1 min-h-0'>
@@ -983,12 +993,12 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                 </div>
                                 <div className="px-6 pt-2 space-y-8">
 
-                                    {activeMenu === 'T-SHIRT' && <Tshirt key={`tshirt-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                    {activeMenu === "SWEATSHIRT" && <SweatShirt key={`sweatshirt-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                    {activeMenu === "HOODIE" && <Hoodie key={`hoodie-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                    {activeMenu === "ZIPPERHOODIE" && <ZippedHoodie key={`zipper-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['ZIPPERHOODIE']} onUpdate={(updates) => handleUpdateSelection('ZIPPERHOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                    {activeMenu === "SWEATPANTS" && <SweatPants key={`sweatpants-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['SWEATPANTS']} onUpdate={(updates) => handleUpdateSelection('SWEATPANTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
-                                    {activeMenu === "SHORTS" && <Shorts key={`shorts-${backDesignKey}`} isAppReady={isAppReady} logos={logos} data={allSelections['SHORTS']} onUpdate={(updates) => handleUpdateSelection('SHORTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
+                                    {activeMenu === 'T-SHIRT' && <Tshirt key="tshirt" isAppReady={isAppReady} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                    {activeMenu === "SWEATSHIRT" && <SweatShirt key="sweatshirt" isAppReady={isAppReady} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                    {activeMenu === "HOODIE" && <Hoodie key="hoodie" isAppReady={isAppReady} logos={logos} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                    {activeMenu === "ZIPPERHOODIE" && <ZippedHoodie key="zipper" isAppReady={isAppReady} logos={logos} data={allSelections['ZIPPERHOODIE']} onUpdate={(updates) => handleUpdateSelection('ZIPPERHOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                    {activeMenu === "SWEATPANTS" && <SweatPants key="sweatpants" isAppReady={isAppReady} logos={logos} data={allSelections['SWEATPANTS']} onUpdate={(updates) => handleUpdateSelection('SWEATPANTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
+                                    {activeMenu === "SHORTS" && <Shorts key="shorts" isAppReady={isAppReady} logos={logos} data={allSelections['SHORTS']} onUpdate={(updates) => handleUpdateSelection('SHORTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
                                 </div>
                             </div>
                         </div>
@@ -1037,6 +1047,8 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         </div>
                     </div>
                 </div>
+                )}
+                {isMobile && (
                 <div className="md:hidden flex flex-col">
                     <div className="flex flex-col h-screen">
                         <div className="flex-1 flex flex-col overflow-y-auto">
@@ -1147,6 +1159,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                         </div>
                     </div>
                 </div>
+                )}
                 <QuoteModal
                     isOpen={isQuoteModalOpen}
                     onClose={() => setIsQuoteModalOpen(false)}
