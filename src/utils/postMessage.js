@@ -17,3 +17,23 @@ export const postToActivePreview = (msg) => {
 export const postToPreview = (message) => {
     postToActivePreview(`rotate ${message}`);
 };
+
+export const isPlayCanvasLoadedMessage = (data) => {
+    if (!data) return false;
+    if (typeof data === 'string') {
+        const lower = data.trim().toLowerCase();
+        return (
+            lower === 'loaded' ||
+            lower === 'app:ready' ||
+            lower === 'app:loaded' ||
+            lower === 'ready' ||
+            lower.includes('loaded')
+        );
+    }
+    if (typeof data === 'object') {
+        const type = (data.type || data.event || data.status || data.msg || '').toString().toLowerCase();
+        return type === 'loaded' || type === 'app:ready' || type === 'ready' || type.includes('loaded');
+    }
+    return false;
+};
+

@@ -26,14 +26,14 @@ import { useAuth } from '../context/AuthContext';
 import { getMyOrder, getMyOrderHistory, placeOrder, unlockOrder, lockOrder, deleteHistory, getStudentProfile, updateStudentProfile, changePasswordAuth, getMyClassBackDesigns, resetOrder, createFreshOrder } from '../api/api';
 import useSocket from '../hooks/useSocket';
 import useBackDesignStore from '../store/backDesignStore';
-import { getActivePreviewIframeId } from '../utils/postMessage';
+import { getActivePreviewIframeId, isPlayCanvasLoadedMessage } from '../utils/postMessage';
 const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup /*, setShowBackTextPopup */ }) => { // COMMENTED: Back text feature disabled
     const { logout } = useAuth();
-    const { backDesigns } = useBackDesignStore();
+    const { backDesigns, fetchBackDesigns } = useBackDesignStore();
     // 1. Move Constants & Logic to top
     const DEFAULT_SELECTIONS = {
         'T-SHIRT': {
-            selectedColor: 'Red',
+            selectedColor: 'White',
             activetab: 'white',
             selectedSize: '',
             pressureOptions: {
@@ -45,7 +45,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             }
         },
         'SWEATSHIRT': {
-            selectedColor: 'Red',
+            selectedColor: 'White',
             activetab: 'white',
             selectedSize: '',
             pressureOptions: {
@@ -57,7 +57,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             }
         },
         'HOODIE': {
-            selectedColor: 'Red',
+            selectedColor: 'White',
             activetab: 'white',
             selectedSize: '',
             pressureOptions: {
@@ -70,7 +70,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             }
         },
         'ZIPPERHOODIE': {
-            selectedColor: 'Red',
+            selectedColor: 'White',
             activetab: 'white',
             selectedSize: '',
             pressureOptions: {
@@ -82,7 +82,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             }
         },
         'SWEATPANTS': {
-            selectedColor: 'Red',
+            selectedColor: 'Heather Grey',
             selectedSize: '',
             pressureOptions: {
                 rightLegText: '', rightLegFlag: '', rightLegLogoPredefined: '', rightLegLogoCustom: '', rightLegType: '', rightLegTextColor: '#ffffff',
@@ -90,7 +90,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             }
         },
         'SHORTS': {
-            selectedColor: 'Red',
+            selectedColor: 'Heather Grey',
             selectedSize: '',
             pressureOptions: {
                 rightLegText: '', rightLegFlag: '', rightLegLogoPredefined: '', rightLegLogoCustom: '', rightLegType: '', rightLegTextColor: '#ffffff',
@@ -165,8 +165,13 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     const program = searchParams.get("program");
     const [globalEmblem, setGlobalEmblem] = useState({ name: 'Guld', value: 'Guld', color: '#FCD34D' });
     const [isAppReady, setIsAppReady] = useState(false);
+    const [loadedTrigger, setLoadedTrigger] = useState(0);
     const [isIframeLoaded, setIsIframeLoaded] = useState(false);
-    const [extraCoverReset, setExtraCoverReset] = useState(false)
+    const [extraCoverReset, setExtraCoverReset] = useState(false);
+    const activeMenuRef = useRef(activeMenu);
+    useEffect(() => {
+        activeMenuRef.current = activeMenu;
+    }, [activeMenu]);
 
     // Garment switch copy popup state
     const [copyDesignPrompt, setCopyDesignPrompt] = useState(null); // { from, to }
@@ -231,7 +236,8 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         if (school_id) {
             fetchLogos({ page: 1, limit: 100, school_id });
         }
-    }, [school_id, fetchLogos]);
+        fetchBackDesigns();
+    }, [school_id, fetchLogos, fetchBackDesigns]);
 
     // --- Real-time Socket Updates ---
     const userId = user?.id;
@@ -678,6 +684,27 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         { name: 'SWEATPANTS', icon: img5 },
         { name: 'SHORTS', icon: img6 },
     ];
+    const lastSentPageRef = useRef(null);
+
+
+    const sendPageSwitch = (targetMenu) => {
+        const menuIndex = menuItems.findIndex(item => item.name === targetMenu);
+        if (menuIndex !== -1) {
+            const pageNum = menuIndex + 1;
+            lastSentPageRef.current = pageNum;
+            const iframe = document.getElementById(getActivePreviewIframeId());
+            if (iframe?.contentWindow) {
+                iframe.contentWindow.postMessage(`Page : ${pageNum}`, "*");
+                iframe.contentWindow.postMessage('Tilvælg:no', "*");
+            }
+        }
+    };
+
+    const handleSelectGarment = (targetName) => {
+        sendPageSwitch(targetName);
+        setActiveMenu(targetName);
+    };
+
     useEffect(() => {
         const playcanvasUrl = 'https://playcanv.as/e/p/1b1eadeb/';
         ['preview-iframe', 'preview-iframe2'].forEach(id => {
@@ -691,42 +718,20 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
 
         const menuIndex = menuItems.findIndex(item => item.name === activeMenu);
         if (menuIndex !== -1) {
-            const iframe = document.getElementById(getActivePreviewIframeId());
-            if (iframe?.contentWindow) {
-                const pageNum = menuIndex + 1;
-
-                iframe.contentWindow.postMessage(`Page : ${pageNum}`, "*");
-                iframe.contentWindow.postMessage('Tilvælg:no', "*");
-
-                setTimeout(() => {
-                    const currentData = allSelections[activeMenu];
-                    if (currentData) {
-                        const { selectedColor, selectedSize } = currentData;
-
-                        const prefixMap = {
-                            'T-SHIRT': 'T-Shirt: ',
-                            'SWEATSHIRT': 'SweatShirt: ',
-                            'HOODIE': 'Hoodie: ',
-                            'ZIPPERHOODIE': 'ZipperHoodie: ',
-                            'SWEATPANTS': 'SweatPant: ',
-                            'SHORTS': 'Short: '
-                        };
-
-                        const prefix = prefixMap[activeMenu];
-                        if (prefix) {
-                            if (selectedColor) iframe.contentWindow.postMessage(`${prefix}${selectedColor.toLowerCase()}`, "*");
-                            if (selectedSize) iframe.contentWindow.postMessage(`${prefix}size:${selectedSize}`, "*");
-                        }
-                    }
-                }, 300);
+            const pageNum = menuIndex + 1;
+            if (lastSentPageRef.current !== pageNum) {
+                sendPageSwitch(activeMenu);
             }
         }
     }, [activeMenu, isAppReady]);
 
     useEffect(() => {
         const handleMessage = (event) => {
-            if (event.data === 'app:ready') {
+            if (isPlayCanvasLoadedMessage(event.data)) {
+                console.log("🎮 PlayCanvas loaded message received:", event.data);
+                sendPageSwitch(activeMenuRef.current || 'T-SHIRT');
                 setIsAppReady(true);
+                setLoadedTrigger(prev => prev + 1);
             }
         };
 
@@ -770,7 +775,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                             pressureOptions: { ...sourceData.pressureOptions }
                                         }
                                     }));
-                                    setActiveMenu(copyDesignPrompt.to);
+                                    handleSelectGarment(copyDesignPrompt.to);
                                     setCopyDesignPrompt(null);
                                 }}
                                 className="flex-1 py-2.5 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 transition-all"
@@ -779,7 +784,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                             </button>
                             <button
                                 onClick={() => {
-                                    setActiveMenu(copyDesignPrompt.to);
+                                    handleSelectGarment(copyDesignPrompt.to);
                                     setCopyDesignPrompt(null);
                                 }}
                                 className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
@@ -931,51 +936,161 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                     </div>
                 </header>
                 {!isMobile && (
-                <div className="hidden md:flex h-[calc(100vh-0px)] w-full relative pt-18">
-                    <div className="flex flex-col h-full border-r border-slate-200 bg-white shadow-xl z-10 w-[600px] min-w-[500px]">
-                        <div className='flex flex-1 min-h-0'>
-                            <div className="bg-white/70 border-r border-slate-200 overflow-y-auto firstdiv custom-scrollbar-premium min-w-[100px]">
-                                <div className="p-6">
-                                    <h2 className="text-sm font-semibold text-center text-slate-600 uppercase tracking-wider mb-4">
-                                        Clothing
-                                    </h2>
-                                    <nav className="">
+                    <div className="hidden md:flex h-[calc(100vh-0px)] w-full relative pt-18">
+                        <div className="flex flex-col h-full border-r border-slate-200 bg-white shadow-xl z-10 w-[600px] min-w-[500px]">
+                            <div className='flex flex-1 min-h-0'>
+                                <div className="bg-white/70 border-r border-slate-200 overflow-y-auto firstdiv custom-scrollbar-premium min-w-[100px]">
+                                    <div className="p-6">
+                                        <h2 className="text-sm font-semibold text-center text-slate-600 uppercase tracking-wider mb-4">
+                                            Clothing
+                                        </h2>
+                                        <nav className="">
+                                            {menuItems.map((item, index) => (
+                                                <button
+                                                    key={index}
+                                                    onClick={() => {
+                                                        const currentConfigured = isGarmentConfigured(activeMenu, allSelections[activeMenu]);
+                                                        const targetConfigured = isGarmentConfigured(item.name, allSelections[item.name]);
+                                                        if (
+                                                            item.name !== activeMenu &&
+                                                            currentConfigured &&
+                                                            !targetConfigured
+                                                        ) {
+                                                            setCopyDesignPrompt({ from: activeMenu, to: item.name });
+                                                        } else {
+                                                            handleSelectGarment(item.name);
+                                                        }
+                                                    }}
+                                                    className={`flex items-center px-2 py-3 rounded-xl transition-all duration-200 group w-full ${activeMenu === item.name
+                                                        ? 'bg-gradient-to-r from-green-50 to-green-50 border border-green-200 shadow-sm'
+                                                        : 'hover:bg-slate-50 hover:shadow-sm'
+                                                        }`}
+                                                >
+                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-transform duration-200 ${activeMenu === item.name ? 'scale-110' : 'group-hover:scale-105'
+                                                        }`}>
+                                                        <img src={item.icon} alt={item.name} className="w-10 h-10 object-contain" />
+                                                    </div>
+                                                    {activeMenu === item.name && (
+                                                        <div className="ml-auto w-2 h-2 bg-green-700 rounded-full"></div>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </nav>
+                                    </div>
+                                </div>
+                                <div className="flex-1 bg-white/50 secondDiv overflow-y-auto custom-scrollbar-premium" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                    {/* Tab Navigation — top */}
+                                    <div className="px-6 pt-6 pb-2">
+                                        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
+                                            <button
+                                                onClick={() => setGarmentTab('size')}
+                                                className={`flex-1 py-2.5 text-sm font-semibold transition-all rounded-xl ${garmentTab === 'size' ? 'bg-green-700 text-white' : 'text-gray-500 bg-white hover:bg-gray-50'}`}
+                                            >
+                                                Color & Size
+                                            </button>
+                                            <button
+                                                onClick={() => setGarmentTab('pressure')}
+                                                className={`flex-1 py-2.5 text-sm font-semibold transition-all rounded-xl ${garmentTab === 'pressure' ? 'bg-green-700 text-white' : 'text-gray-500 bg-white hover:bg-gray-50'}`}
+                                            >
+                                                Design
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="px-6 pt-2 space-y-8">
+
+                                        {activeMenu === 'T-SHIRT' && <Tshirt key="tshirt" isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                        {activeMenu === "SWEATSHIRT" && <SweatShirt key="sweatshirt" isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                        {activeMenu === "HOODIE" && <Hoodie key="hoodie" isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                        {activeMenu === "ZIPPERHOODIE" && <ZippedHoodie key="zipper" isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['ZIPPERHOODIE']} onUpdate={(updates) => handleUpdateSelection('ZIPPERHOODIE', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                        {activeMenu === "SWEATPANTS" && <SweatPants key="sweatpants" isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['SWEATPANTS']} onUpdate={(updates) => handleUpdateSelection('SWEATPANTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
+                                        {activeMenu === "SHORTS" && <Shorts key="shorts" isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['SHORTS']} onUpdate={(updates) => handleUpdateSelection('SHORTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className=" border-slate-200 p-6 bg-white/50 backdrop-blur-sm">
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setIsInquiryModalOpen(true)}
+                                        disabled={!sizeFlag}
+                                        className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 shadow-md text-sm
+                                        ${sizeFlag
+                                                ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 hover:shadow-lg"
+                                                : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
+                                    >
+                                        {balanceDue <= 0 && paymentStatus === 'paid' ? 'Save Changes' : (balanceDue > 0 && amountPaid > 0 ? `Pay Balance (${balanceDue} DKK)` : 'Send Inquiry')}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex flex-1 h-full">
+                            <div className="flex-1">
+                                <div className="bg-white/50 backdrop-blur-sm  h-full flex flex-col border border-slate-200">
+                                    {/* <div className="flex items-center justify-between p-6 border-b border-slate-200">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-10 h-10 bg-gradient-to-r from-green-600 to-green-600 rounded-xl flex items-center justify-center">
+                                            <GraduationCap className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-slate-800">Selected {activeMenu}</h4>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                        <span className="text-xs font-medium text-slate-600">LIVE PREVIEW</span>
+                                    </div>
+                                </div> */}
+                                    <div className="flex-1 overflow-hidden">
+                                        <iframe
+                                            id="preview-iframe"
+                                            src={'https://playcanv.as/e/p/1b1eadeb/'}
+                                            className="w-full h-full"
+                                            frameBorder="0"
+                                            title="3D Student Card Preview"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {isMobile && (
+                    <div className="md:hidden flex flex-col">
+                        <div className="flex flex-col h-screen">
+                            <div className="flex-1 flex flex-col overflow-y-auto">
+                                <div className="h-[45vh] flex-shrink-0 bg-white border-b border-slate-200">
+                                    <iframe
+                                        id="preview-iframe2"
+                                        src={'https://playcanv.as/e/p/1b1eadeb/'}
+                                        className="w-full h-full"
+                                        frameBorder="0"
+                                        title="3D Student Card Preview"
+                                    />
+                                </div>
+
+                                <div className="px-3 py-3 bg-white border-b border-slate-100 flex-shrink-0">
+                                    <div className="flex justify-between">
                                         {menuItems.map((item, index) => (
                                             <button
                                                 key={index}
-                                                onClick={() => {
-                                                    const currentConfigured = isGarmentConfigured(activeMenu, allSelections[activeMenu]);
-                                                    const targetConfigured = isGarmentConfigured(item.name, allSelections[item.name]);
-                                                    if (
-                                                        item.name !== activeMenu &&
-                                                        currentConfigured &&
-                                                        !targetConfigured
-                                                    ) {
-                                                        setCopyDesignPrompt({ from: activeMenu, to: item.name });
-                                                    } else {
-                                                        setActiveMenu(item.name);
-                                                    }
-                                                }}
-                                                className={`flex items-center px-2 py-3 rounded-xl transition-all duration-200 group w-full ${activeMenu === item.name
+                                                onClick={() => handleSelectGarment(item.name)}
+                                                className={`flex flex-col items-center px-2 py-1.5 rounded-xl transition-all duration-200 ${activeMenu === item.name
                                                     ? 'bg-gradient-to-r from-green-50 to-green-50 border border-green-200 shadow-sm'
-                                                    : 'hover:bg-slate-50 hover:shadow-sm'
+                                                    : 'hover:bg-slate-50'
                                                     }`}
                                             >
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-transform duration-200 ${activeMenu === item.name ? 'scale-110' : 'group-hover:scale-105'
-                                                    }`}>
-                                                    <img src={item.icon} alt={item.name} className="w-10 h-10 object-contain" />
-                                                </div>
+                                                <img
+                                                    src={item.icon}
+                                                    alt={item.name}
+                                                    className={`w-7 h-7 object-contain transition-transform duration-200 ${activeMenu === item.name ? 'scale-110' : ''}`}
+                                                />
                                                 {activeMenu === item.name && (
-                                                    <div className="ml-auto w-2 h-2 bg-green-700 rounded-full"></div>
+                                                    <div className="mt-1 w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                                                 )}
                                             </button>
                                         ))}
-                                    </nav>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex-1 bg-white/50 secondDiv overflow-y-auto custom-scrollbar-premium" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                                {/* Tab Navigation — top */}
-                                <div className="px-6 pt-6 pb-2">
+                                <div className="px-4 pt-3 flex-shrink-0">
                                     <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
                                         <button
                                             onClick={() => setGarmentTab('size')}
@@ -991,128 +1106,18 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                         </button>
                                     </div>
                                 </div>
-                                <div className="px-6 pt-2 space-y-8">
 
-                                    {activeMenu === 'T-SHIRT' && <Tshirt key="tshirt" isAppReady={isAppReady} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                    {activeMenu === "SWEATSHIRT" && <SweatShirt key="sweatshirt" isAppReady={isAppReady} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                    {activeMenu === "HOODIE" && <Hoodie key="hoodie" isAppReady={isAppReady} logos={logos} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                    {activeMenu === "ZIPPERHOODIE" && <ZippedHoodie key="zipper" isAppReady={isAppReady} logos={logos} data={allSelections['ZIPPERHOODIE']} onUpdate={(updates) => handleUpdateSelection('ZIPPERHOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                    {activeMenu === "SWEATPANTS" && <SweatPants key="sweatpants" isAppReady={isAppReady} logos={logos} data={allSelections['SWEATPANTS']} onUpdate={(updates) => handleUpdateSelection('SWEATPANTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
-                                    {activeMenu === "SHORTS" && <Shorts key="shorts" isAppReady={isAppReady} logos={logos} data={allSelections['SHORTS']} onUpdate={(updates) => handleUpdateSelection('SHORTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
+                                <div className="p-4 space-y-6 md:h-full h-[38vh] overflow-y-auto custom-scrollbar-premium">
+                                    {activeMenu === 'T-SHIRT' && <Tshirt isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                    {activeMenu === "SWEATSHIRT" && <SweatShirt isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                    {activeMenu === "HOODIE" && <Hoodie isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                    {activeMenu === "ZIPPERHOODIE" && <ZippedHoodie isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['ZIPPERHOODIE']} onUpdate={(updates) => handleUpdateSelection('ZIPPERHOODIE', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                    {activeMenu === "SWEATPANTS" && <SweatPants isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['SWEATPANTS']} onUpdate={(updates) => handleUpdateSelection('SWEATPANTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
+                                    {activeMenu === "SHORTS" && <Shorts isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['SHORTS']} onUpdate={(updates) => handleUpdateSelection('SHORTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
                                 </div>
                             </div>
-                        </div>
-                        <div className=" border-slate-200 p-6 bg-white/50 backdrop-blur-sm">
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setIsInquiryModalOpen(true)}
-                                    disabled={!sizeFlag}
-                                    className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 shadow-md text-sm
-                                        ${sizeFlag
-                                            ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 hover:shadow-lg"
-                                            : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
-                                >
-                                    {balanceDue <= 0 && paymentStatus === 'paid' ? 'Save Changes' : (balanceDue > 0 && amountPaid > 0 ? `Pay Balance (${balanceDue} DKK)` : 'Send Inquiry')}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex flex-1 h-full">
-                        <div className="flex-1">
-                            <div className="bg-white/50 backdrop-blur-sm  h-full flex flex-col border border-slate-200">
-                                {/* <div className="flex items-center justify-between p-6 border-b border-slate-200">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-10 h-10 bg-gradient-to-r from-green-600 to-green-600 rounded-xl flex items-center justify-center">
-                                            <GraduationCap className="w-5 h-5 text-white" />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-semibold text-slate-800">Selected {activeMenu}</h4>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                                        <span className="text-xs font-medium text-slate-600">LIVE PREVIEW</span>
-                                    </div>
-                                </div> */}
-                                <div className="flex-1 overflow-hidden">
-                                    <iframe
-                                        id="preview-iframe"
-                                        src={'https://playcanv.as/e/p/1b1eadeb/'}
-                                        className="w-full h-full"
-                                        frameBorder="0"
-                                        title="3D Student Card Preview"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                )}
-                {isMobile && (
-                <div className="md:hidden flex flex-col">
-                    <div className="flex flex-col h-screen">
-                        <div className="flex-1 flex flex-col overflow-y-auto">
-                            <div className="h-[45vh] flex-shrink-0 bg-white border-b border-slate-200">
-                                <iframe
-                                    id="preview-iframe2"
-                                    src={'https://playcanv.as/e/p/1b1eadeb/'}
-                                    className="w-full h-full"
-                                    frameBorder="0"
-                                    title="3D Student Card Preview"
-                                />
-                            </div>
-
-                            <div className="px-3 py-3 bg-white border-b border-slate-100 flex-shrink-0">
-                                <div className="flex justify-between">
-                                    {menuItems.map((item, index) => (
-                                        <button
-                                            key={index}
-                                            onClick={() => setActiveMenu(item.name)}
-                                            className={`flex flex-col items-center px-2 py-1.5 rounded-xl transition-all duration-200 ${activeMenu === item.name
-                                                ? 'bg-gradient-to-r from-green-50 to-green-50 border border-green-200 shadow-sm'
-                                                : 'hover:bg-slate-50'
-                                                }`}
-                                        >
-                                            <img
-                                                src={item.icon}
-                                                alt={item.name}
-                                                className={`w-7 h-7 object-contain transition-transform duration-200 ${activeMenu === item.name ? 'scale-110' : ''}`}
-                                            />
-                                            {activeMenu === item.name && (
-                                                <div className="mt-1 w-1.5 h-1.5 bg-green-600 rounded-full"></div>
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="px-4 pt-3 flex-shrink-0">
-                                <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
-                                    <button
-                                        onClick={() => setGarmentTab('size')}
-                                        className={`flex-1 py-2.5 text-sm font-semibold transition-all rounded-xl ${garmentTab === 'size' ? 'bg-green-700 text-white' : 'text-gray-500 bg-white hover:bg-gray-50'}`}
-                                    >
-                                        Color & Size
-                                    </button>
-                                    <button
-                                        onClick={() => setGarmentTab('pressure')}
-                                        className={`flex-1 py-2.5 text-sm font-semibold transition-all rounded-xl ${garmentTab === 'pressure' ? 'bg-green-700 text-white' : 'text-gray-500 bg-white hover:bg-gray-50'}`}
-                                    >
-                                        Design
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="p-4 space-y-6 md:h-full h-[38vh] overflow-y-auto custom-scrollbar-premium">
-                                {activeMenu === 'T-SHIRT' && <Tshirt isAppReady={isAppReady} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                {activeMenu === "SWEATSHIRT" && <SweatShirt isAppReady={isAppReady} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                {activeMenu === "HOODIE" && <Hoodie isAppReady={isAppReady} logos={logos} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                {activeMenu === "ZIPPERHOODIE" && <ZippedHoodie isAppReady={isAppReady} logos={logos} data={allSelections['ZIPPERHOODIE']} onUpdate={(updates) => handleUpdateSelection('ZIPPERHOODIE', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                {activeMenu === "SWEATPANTS" && <SweatPants isAppReady={isAppReady} logos={logos} data={allSelections['SWEATPANTS']} onUpdate={(updates) => handleUpdateSelection('SWEATPANTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
-                                {activeMenu === "SHORTS" && <Shorts isAppReady={isAppReady} logos={logos} data={allSelections['SHORTS']} onUpdate={(updates) => handleUpdateSelection('SHORTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
-                            </div>
-                        </div>
-                        <div className="border-t border-slate-200 p-4 bg-white/90 backdrop-blur-sm flex-shrink-0 sticky bottom-0">
-                            {/* <div className="mb-3 space-y-1">
+                            <div className="border-t border-slate-200 p-4 bg-white/90 backdrop-blur-sm flex-shrink-0 sticky bottom-0">
+                                {/* <div className="mb-3 space-y-1">
                                 <div className="flex justify-between text-xs text-slate-500">
                                     <span>Subtotal</span>
                                     <span>{subtotal} DKK</span>
@@ -1128,7 +1133,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                     <span className="text-xl font-bold text-slate-900">{dynamicPrice} DKK</span>
                                 </div>
                             </div> */}
-                            {/* <div className="flex space-x-3 mb-4">
+                                {/* <div className="flex space-x-3 mb-4">
                                 <button
                                     onClick={handleSaveOrder}
                                     disabled={isSaving || (isLocked && !isAdmin)}
@@ -1147,18 +1152,18 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                     </button>
                                 )}
                             </div> */}
-                            <button
-                                onClick={() => setIsInquiryModalOpen(true)}
-                                className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 shadow-md
+                                <button
+                                    onClick={() => setIsInquiryModalOpen(true)}
+                                    className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 shadow-md
         ${sizeFlag
-                                        ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 hover:shadow-lg"
-                                        : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
-                            >
-                                Send Inquiry
-                            </button>
+                                            ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 hover:shadow-lg"
+                                            : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
+                                >
+                                    Send Inquiry
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
                 )}
                 <QuoteModal
                     isOpen={isQuoteModalOpen}

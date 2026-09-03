@@ -12,11 +12,11 @@ import { X, Search, Image as ImageIcon, Trash2, Globe, Loader2, CheckCircle, Fla
 import { getCountries, getLibraryDesigns } from "../api/api";
 import UploadRequestModal from "./UploadRequestModal";
 import { TRANSLATE_MAP } from "../Default/translateMap";
-import { postToPreview, postToActivePreview } from "../utils/postMessage";
+import { postToPreview, postToActivePreview, isPlayCanvasLoadedMessage } from "../utils/postMessage";
 
 const t = (key) => TRANSLATE_MAP[key] || key;
 
-const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange, maxCharsText = 25, libDesignColor: libDesignColorProp, setLibDesignColor }) => {
+const SweatShirt = ({ data, onUpdate, isAppReady, loadedTrigger, logos, backDesigns, onOpenInquiry, activeTab: externalTab, onTabChange, maxCharsText = 25, libDesignColor: libDesignColorProp, setLibDesignColor }) => {
   const [internalTab, setInternalTab] = useState("size");
   const activeTab = externalTab ?? internalTab;
   const setActiveTab = (tab) => { setInternalTab(tab); onTabChange?.(tab); };
@@ -84,7 +84,8 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     fetchDesigns();
   }, [libSelectedCountry]);
 
-  const selectedColor = data?.selectedColor || "Red";
+  const rawColor = data?.selectedColor;
+  const selectedColor = (rawColor === "Red" && libDesignColor === "white") ? "White" : (rawColor || "White");
   const selectedSize = data?.selectedSize || "";
   const pressureOptions = data?.pressureOptions || {
     rightChestText: "",
@@ -421,19 +422,19 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
             octx.putImageData(d, 0, 0);
           } else {
             ctx.drawImage(img, x, y, w, h);
-            const gC = (px, py) => { const idx = (py * img.width + px) * 4; return [tmpD.data[idx], tmpD.data[idx+1], tmpD.data[idx+2]]; };
-            const corners = [gC(0,0), gC(img.width-1,0), gC(0,img.height-1), gC(img.width-1,img.height-1)];
-            const bgR = corners.reduce((s,c)=>s+c[0],0)/4;
-            const bgG = corners.reduce((s,c)=>s+c[1],0)/4;
-            const bgB = corners.reduce((s,c)=>s+c[2],0)/4;
+            const gC = (px, py) => { const idx = (py * img.width + px) * 4; return [tmpD.data[idx], tmpD.data[idx + 1], tmpD.data[idx + 2]]; };
+            const corners = [gC(0, 0), gC(img.width - 1, 0), gC(0, img.height - 1), gC(img.width - 1, img.height - 1)];
+            const bgR = corners.reduce((s, c) => s + c[0], 0) / 4;
+            const bgG = corners.reduce((s, c) => s + c[1], 0) / 4;
+            const bgB = corners.reduce((s, c) => s + c[2], 0) / 4;
             const thr = 90;
             octx.drawImage(img, x, y, w, h);
             const d = octx.getImageData(0, 0, W, H);
             for (let i = 0; i < d.data.length; i += 4) {
               const a = d.data[i + 3]; let bw;
               if (a < 10) { bw = 0; }
-              else { const diff = Math.abs(d.data[i]-bgR)+Math.abs(d.data[i+1]-bgG)+Math.abs(d.data[i+2]-bgB); bw = diff > thr ? 255 : 0; }
-              d.data[i] = d.data[i+1] = d.data[i+2] = bw; d.data[i+3] = 255;
+              else { const diff = Math.abs(d.data[i] - bgR) + Math.abs(d.data[i + 1] - bgG) + Math.abs(d.data[i + 2] - bgB); bw = diff > thr ? 255 : 0; }
+              d.data[i] = d.data[i + 1] = d.data[i + 2] = bw; d.data[i + 3] = 255;
             }
             octx.putImageData(d, 0, 0);
           }
@@ -537,23 +538,22 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
 
   // -- Effects --------------------------------------------------------------
 
-  useEffect(() => {
-    const colorMap = {
-      red: "SweatShirt:red",
-      black: "SweatShirt:black",
-      white: "SweatShirt:white",
-      natural: "SweatShirt:natural",
-      'heather grey': "SweatShirt:heatherGrey",
-      navy: "SweatShirt:navy",
-      'light pink': "SweatShirt:lightPink",
-      'olive green': "SweatShirt:oliveGreen",
-      blue: "SweatShirt:blue",
-      purple: "SweatShirt:purple",
-    };
+  const colorMap = {
+    red: "SweatShirt:red",
+    black: "SweatShirt:black",
+    white: "SweatShirt:white",
+    natural: "SweatShirt:natural",
+    'heather grey': "SweatShirt:heatherGrey",
+    navy: "SweatShirt:navy",
+    'light pink': "SweatShirt:lightPink",
+    'olive green': "SweatShirt:oliveGreen",
+    blue: "SweatShirt:blue",
+    purple: "SweatShirt:purple",
+  };
 
+  useEffect(() => {
     const message = colorMap[selectedColor.toLowerCase()];
     if (!message) return;
-
     postToActivePreview(message);
   }, [selectedColor, isAppReady]);
 
@@ -566,11 +566,96 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
   const prevPressureOptionsRef = React.useRef({});
   const renderCounterRef = React.useRef({});
   const lastSentRef = React.useRef({});
+  const lastBackDesignPayloadRef = useRef(null);
+  const lastEmittedOpacityRef = useRef(null);
+
   const postIfChanged = (key, msg) => {
     if (lastSentRef.current[key] === msg) return;
     lastSentRef.current[key] = msg;
     postToActivePreview(msg);
   };
+
+  // Dedicated function to send ALL postmessages (color, size, flag, text, logo, back design) when loaded
+  const sendAllCustomizations = React.useCallback(() => {
+    console.log("📤 [SweatShirt] Sending all customizations to PlayCanvas on loaded event");
+    lastSentRef.current = {};
+    prevPressureOptionsRef.current = {};
+    lastEmittedOpacityRef.current = null;
+
+    // 1. Color
+    const colorMsg = colorMap[selectedColor.toLowerCase()];
+    if (colorMsg) {
+      postToActivePreview(colorMsg);
+    }
+
+    // 2. Size
+    if (selectedSize) {
+      postToActivePreview(`SweatShirt:size:${selectedSize}`);
+    }
+
+    // 3. Flags, Text, Logos for all areas
+    const areas = ["rightChest", "leftChest", "rightSleeve", "leftSleeve"];
+    areas.forEach((area) => {
+      const text = pressureOptions[`${area}Text`]?.trim() || "";
+      const flag = pressureOptions[`${area}Flag`] || "";
+      const flag2 = pressureOptions[`${area}Flag2`] || "";
+      const flagCount = pressureOptions[`${area}FlagCount`] || 1;
+      const logoPre = pressureOptions[`${area}LogoPredefined`] || "";
+      const logoCustom = pressureOptions[`${area}LogoCustom`] || "";
+      const type = pressureOptions[`${area}Type`] || "";
+      const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
+
+      prevPressureOptionsRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
+      const currentRender = (renderCounterRef.current[area] || 0) + 1;
+      renderCounterRef.current[area] = currentRender;
+
+      const hasText = text.length > 0;
+      const hasFlag = !!flag && type === "flag";
+      const hasLogo = !!(logoPre || logoCustom) && type === "logo";
+      const hasSecondAsset = !!flag2;
+      const opacity = getEmissiveBase64(text, hasFlag, hasLogo, hasSecondAsset);
+      postToActivePreview(`SweatShirt:${area}_opacity: ${opacity}`);
+
+      getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase, logoOpacityBase) => {
+        if (renderCounterRef.current[area] !== currentRender) return;
+        postToActivePreview(`SweatShirt:${area}_diffuse: ${diffuseBase}`);
+        if (logoOpacityBase) postToActivePreview(`SweatShirt:${area}_opacity: ${logoOpacityBase}`);
+      }, flag2, flagCount, textColor);
+    });
+
+    // 4. Back Design
+    if (lastBackDesignPayloadRef.current) {
+      const { color, diffuseB64, opacityB64, invertedB64 } = lastBackDesignPayloadRef.current;
+      if (color === 'black') {
+        if (diffuseB64) postToActivePreview("SweatShirt:back_white_diffuse: " + diffuseB64);
+        if (invertedB64) postToActivePreview("SweatShirt:back_white_opacity: " + invertedB64);
+      } else if (color === 'white') {
+        if (diffuseB64) postToActivePreview("SweatShirt:back_black_diffuse: " + diffuseB64);
+        if (opacityB64) postToActivePreview("SweatShirt:back_black_opacity: " + opacityB64);
+      }
+    }
+  }, [selectedColor, selectedSize, pressureOptions]);
+
+  // Listen directly for 'loaded' message from PlayCanvas
+  useEffect(() => {
+    const handleWindowMessage = (event) => {
+      if (isPlayCanvasLoadedMessage(event.data)) {
+        sendAllCustomizations();
+        setTimeout(sendAllCustomizations, 150);
+      }
+    };
+    window.addEventListener('message', handleWindowMessage);
+    return () => window.removeEventListener('message', handleWindowMessage);
+  }, [sendAllCustomizations]);
+
+  // Trigger when isAppReady or loadedTrigger changes
+  useEffect(() => {
+    if (isAppReady) {
+      sendAllCustomizations();
+      const timer = setTimeout(sendAllCustomizations, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [isAppReady, loadedTrigger]);
 
   useEffect(() => {
     pressureOptionsRef.current = pressureOptions;
@@ -621,8 +706,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     });
   }, [isAppReady, pressureOptions]);
 
-  const lastEmittedOpacityRef = useRef(null);
-
   const handleBackDesignUpdate = (update) => {
     const current = pressureOptionsRef.current;
     if (!current?.backDesign) return;
@@ -654,19 +737,24 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
           ctx.putImageData(imgData, 0, 0);
           const invertedB64 = canvas.toDataURL("image/png");
 
-          const whiteCanvas = document.createElement("canvas");
-          whiteCanvas.width = 128;
-          whiteCanvas.height = 128;
-          const wctx = whiteCanvas.getContext("2d");
-          wctx.fillStyle = "#ffffff";
-          wctx.fillRect(0, 0, 128, 128);
-          const whiteDiffuse = whiteCanvas.toDataURL("image/png");
+          lastBackDesignPayloadRef.current = {
+            color,
+            diffuseB64,
+            opacityB64,
+            invertedB64
+          };
 
-          postToActivePreview("SweatShirt:back_white_diffuse: " + whiteDiffuse);
+          postToActivePreview("SweatShirt:back_white_diffuse: " + diffuseB64);
           postToActivePreview("SweatShirt:back_white_opacity: " + invertedB64);
         };
         img.src = opacityB64;
       } else if (color === 'white') {
+        lastBackDesignPayloadRef.current = {
+          color,
+          diffuseB64,
+          opacityB64,
+          invertedB64: null
+        };
         if (diffuseB64) postToActivePreview("SweatShirt:back_black_diffuse: " + diffuseB64);
         if (opacityB64) postToActivePreview("SweatShirt:back_black_opacity: " + opacityB64);
       }
@@ -681,16 +769,77 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
       });
     }
   };
+  // Current active back design
+  const activeBackDesign =
+    libSelectedDesign ||
+    (libDesigns.find(d => d.id === data?.pressureOptions?.backDesign?.designId || d.id === data?.pressureOptions?.backDesign?.id)) ||
+    data?.pressureOptions?.backDesign ||
+    (Array.isArray(backDesigns) ? (backDesigns.find(d => d?.class_id === (typeof user !== 'undefined' ? user?.class_id : undefined)) || backDesigns[0]) : (backDesigns?.data || backDesigns)) ||
+    (libDesigns.length > 0 ? libDesigns[0] : null);
+
+  const hasLight = Boolean(
+    activeBackDesign && (
+      activeBackDesign.file_path ||
+      activeBackDesign.configured_file_path ||
+      (activeBackDesign.designColor === 'white' && !activeBackDesign.file_path_2 && !activeBackDesign.configured_file_path_2)
+    )
+  );
+
+  const hasDark = Boolean(
+    activeBackDesign && (
+      activeBackDesign.file_path_2 ||
+      activeBackDesign.configured_file_path_2 ||
+      activeBackDesign.designColor_2 === 'black' ||
+      (activeBackDesign.designColor === 'black' && !activeBackDesign.file_path && !activeBackDesign.configured_file_path)
+    )
+  );
+
+  // If a back design is present with at least one path, show only the matching tabs. Otherwise show both.
+  const showLightGarment = activeBackDesign ? (hasLight || (!hasLight && !hasDark)) : true;
+  const showDarkGarment = activeBackDesign ? (hasDark || (!hasLight && !hasDark)) : true;
+
+  const lightColors = [
+    { name: "White", value: "#FFFFFF", border: "#D1D5DB" },
+    { name: "Natural", value: "#FFFAD9", border: "#D4C87A" },
+    { name: "Heather Grey", value: "#D4D9DC", border: "#D4D9DC" },
+    { name: "Light Pink", value: "#F0A5C7", border: "#F0A5C7" },
+  ];
+
+  const darkColors = [
+    { name: "Red", value: "#E61709", border: "#E61709" },
+    { name: "Olive Green", value: "#63673F", border: "#63673F" },
+    { name: "Purple", value: "#431279", border: "#431279" },
+    { name: "Blue", value: "#0000FF", border: "#0000FF" },
+    { name: "Black", value: "#120F14", border: "#120F14" },
+    { name: "Navy", value: "#051734", border: "#051734" },
+  ];
+
+
+  // Auto-switch libDesignColor if current tab is hidden
+  useEffect(() => {
+    if (showLightGarment && !showDarkGarment && libDesignColor !== 'white') {
+      setLibDesignColorSafe('white');
+      onUpdate({ selectedColor: lightColors[0].name });
+    } else if (showDarkGarment && !showLightGarment && libDesignColor !== 'black') {
+      setLibDesignColorSafe('black');
+      onUpdate({ selectedColor: darkColors[0].name });
+    }
+  }, [showLightGarment, showDarkGarment, libDesignColor]);
+
   useEffect(() => {
     if (!libSelectedCountry) return;
     if (!libDesigns.length) return;
 
     const filtered = libDesigns.filter(d => {
       if (libDesignColor === 'white') {
+        if (d.file_path || d.configured_file_path) return true;
+        if (d.file_path === null && (d.file_path_2 || d.configured_file_path_2)) return false;
         return d.designColor === 'white' || d.designColor === 'normal' || !d.designColor;
       }
 
       if (libDesignColor === 'black') {
+        if (d.file_path_2 || d.configured_file_path_2) return true;
+        if (d.file_path_2 === null && (d.file_path || d.configured_file_path)) return false;
         return d.designColor === 'black' || d.designColor_2 === 'black';
       }
 
@@ -701,12 +850,11 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
 
     // ✅ IMPORTANT: preserve selection
     const activeDesign = libSelectedDesign || filtered[0];
-    console.log("activeDesign", libSelectedDesign);
 
     const selectedPath =
       libDesignColor === 'black'
-        ? (activeDesign.file_path_2 || activeDesign.file_path)
-        : activeDesign.file_path;
+        ? (activeDesign.file_path_2 || activeDesign.configured_file_path_2 || activeDesign.file_path || activeDesign.configured_file_path)
+        : (activeDesign.file_path || activeDesign.configured_file_path || activeDesign.file_path_2 || activeDesign.configured_file_path_2);
 
     const src = selectedPath?.startsWith("http")
       ? selectedPath
@@ -724,6 +872,8 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
           country_id: libSelectedCountry?.id,
           file_path: activeDesign.file_path,
           file_path_2: activeDesign.file_path_2,
+          configured_file_path: activeDesign.configured_file_path,
+          configured_file_path_2: activeDesign.configured_file_path_2,
           designColor: libDesignColor,
           pos: null,
           size: null,
@@ -734,22 +884,6 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     });
 
   }, [libDesignColor, libSelectedCountry, libSelectedDesign]);
-
-  const lightColors = [
-    { name: "White", value: "#FFFFFF", border: "#D1D5DB" },
-    { name: "Natural", value: "#FFFAD9", border: "#D4C87A" },
-    { name: "Heather Grey", value: "#D4D9DC", border: "#D4D9DC" },
-    { name: "Light Pink", value: "#F0A5C7", border: "#F0A5C7" },
-  ];
-
-  const darkColors = [
-    { name: "Red", value: "#E61709", border: "#E61709" },
-    { name: "Olive Green", value: "#63673F", border: "#63673F" },
-    { name: "Purple", value: "#431279", border: "#431279" },
-    { name: "Blue", value: "#0000FF", border: "#0000FF" },
-    { name: "Black", value: "#120F14", border: "#120F14" },
-    { name: "Navy", value: "#051734", border: "#051734" },
-  ];
 
   const colors = libDesignColor === 'black' ? darkColors : lightColors;
 
@@ -770,35 +904,51 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
         <div className="flex flex-col flex-1 relative p-2">
           <h1 className="text-lg font-bold mb-4 text-gray-900">SweatShirt</h1>
           {/* Garment Color tabs */}
-          <div className="mb-3">
-            <p className="text-xs font-semibold text-gray-700 mb-2">Garment Color</p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { key: 'white', label: 'Light Garment', sub: 'Black print' },
-                { key: 'black', label: 'Dark Garment', sub: 'White print' },
-                // { key: 'normal', label: 'Normal', sub: 'Original print' },
-              ].map(tab => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  // onClick={() => { setLibDesignColorSafe(tab.key); setLibSelectedDesign(null); }}
-                  onClick={() => {
-                    setLibDesignColorSafe(tab.key);
-                    // Tab ke hisaab se default color set karo
-                    const newPalette = tab.key === 'black' ? darkColors : lightColors;
-                    onUpdate({
-                      selectedColor: newPalette[0].name,
-                    });
-                  }}
-                  className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border-2 transition-all bg-white ${libDesignColor === tab.key ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                >
-                  <span className={`text-xs font-bold ${libDesignColor === tab.key ? 'text-gray-900' : 'text-gray-600'}`}>{tab.label}</span>
-                  <span className="text-[10px] text-gray-400 mt-0.5 leading-tight text-center">{tab.sub}</span>
-                </button>
-              ))}
+          {(showLightGarment || showDarkGarment) && (
+            <div className="mb-3">
+              <p className="text-xs font-semibold text-gray-700 mb-2">Garment Color</p>
+              <div className={`grid ${showLightGarment && showDarkGarment ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
+                {showLightGarment && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLibDesignColorSafe('white');
+                      const newPalette = lightColors;
+                      onUpdate({
+                        selectedColor: newPalette[0].name,
+                      });
+                    }}
+                    className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border-2 transition-all bg-white ${libDesignColor === 'white'
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                  >
+                    <span className={`text-xs font-bold ${libDesignColor === 'white' ? 'text-gray-900' : 'text-gray-600'}`}>{t('Light Garment')}</span>
+                    <span className="text-[10px] text-gray-400 mt-0.5 leading-tight text-center">{t('Black print')}</span>
+                  </button>
+                )}
+                {showDarkGarment && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLibDesignColorSafe('black');
+                      const newPalette = darkColors;
+                      onUpdate({
+                        selectedColor: newPalette[0].name,
+                      });
+                    }}
+                    className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border-2 transition-all bg-white ${libDesignColor === 'black'
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                  >
+                    <span className={`text-xs font-bold ${libDesignColor === 'black' ? 'text-gray-900' : 'text-gray-600'}`}>{t('Dark Garment')}</span>
+                    <span className="text-[10px] text-gray-400 mt-0.5 leading-tight text-center">{t('White print')}</span>
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
           <div className="mb-5">
             <h2 className="text-xs font-semibold mb-2 text-gray-500 uppercase tracking-wide">Color</h2>
             <div className="grid grid-flow-col grid-rows-1 gap-2 w-fit">
@@ -888,13 +1038,16 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
             ) : (() => {
               const filtered = libDesigns.filter(d => {
                 if (libDesignColor === 'white') {
+                  if (d.file_path || d.configured_file_path) return true;
+                  if (d.file_path === null && (d.file_path_2 || d.configured_file_path_2)) return false;
                   return d.designColor === 'white' || d.designColor === 'normal' || !d.designColor;
                 }
                 if (libDesignColor === 'black') {
-                  // Ya toh direct black hai, ya designColor_2 black hai
+                  if (d.file_path_2 || d.configured_file_path_2) return true;
+                  if (d.file_path_2 === null && (d.file_path || d.configured_file_path)) return false;
                   return d.designColor === 'black' || d.designColor_2 === 'black';
                 }
-                return !d.designColor || d.designColor === 'normal';
+                return true;
               });
               if (!libSelectedCountry) return <p className="text-xs text-gray-400 py-3 text-center">Select a country above</p>;
               return filtered.length === 0 ? (
@@ -907,12 +1060,12 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                     const previewBg = libDesignColor === 'black' ? '#1f2937' : '#ffffff';
                     const rawPath = (() => {
                       if (libDesignColor === 'black') {
-                        if (design.designColor_2 === 'black' && design.file_path_2) {
-                          return design.file_path_2.replace(/\\/g, "/");
+                        if (design.file_path_2 || design.configured_file_path_2) {
+                          return (design.file_path_2 || design.configured_file_path_2).replace(/\\/g, "/");
                         }
-                        return (design.file_path || "").replace(/\\/g, "/");
+                        return (design.file_path || design.configured_file_path || "").replace(/\\/g, "/");
                       }
-                      return (design.file_path || "").replace(/\\/g, "/");
+                      return (design.file_path || design.configured_file_path || "").replace(/\\/g, "/");
                     })();
 
                     const isSelected = libSelectedDesign?.id === design.id;
@@ -922,14 +1075,37 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                         key={design.id}
                         onClick={() => {
                           setLibSelectedDesign(design);
+                          const dHasLight = Boolean(design.file_path || design.configured_file_path);
+                          const dHasDark = Boolean(design.file_path_2 || design.configured_file_path_2);
+                          let nextColor = libDesignColor;
+                          if (dHasLight && !dHasDark) {
+                            nextColor = 'white';
+                          } else if (dHasDark && !dHasLight) {
+                            nextColor = 'black';
+                          }
+                          if (nextColor !== libDesignColor) {
+                            setLibDesignColorSafe(nextColor);
+                            const newPalette = nextColor === 'black' ? darkColors : lightColors;
+                            onUpdate({ selectedColor: newPalette[0].name });
+                          }
+                          const selectedPath =
+                            nextColor === 'black'
+                              ? (design.file_path_2 || design.configured_file_path_2 || design.file_path || design.configured_file_path)
+                              : (design.file_path || design.configured_file_path || design.file_path_2 || design.configured_file_path_2);
+                          const finalSrc = selectedPath?.startsWith("http") ? selectedPath : `${BASE_URL}${selectedPath?.replace(/\\/g, "/")}`;
+
                           onUpdate({
                             pressureOptions: {
                               ...pressureOptions,
                               backDesign: {
-                                src,
+                                src: finalSrc,
                                 designId: design.id,
                                 country_id: libSelectedCountry?.id,
-                                designColor: design.designColor || libDesignColor,
+                                file_path: design.file_path,
+                                file_path_2: design.file_path_2,
+                                configured_file_path: design.configured_file_path,
+                                configured_file_path_2: design.configured_file_path_2,
+                                designColor: design.designColor || nextColor,
                                 pos: null,
                                 size: null,
                                 angle: 0,
@@ -937,7 +1113,7 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
                               }
                             }
                           });
-                          postToPreview(`tshirt backDesign`);
+                          postToPreview(`sweatshirt backDesign`);
                         }}
                         className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${isSelected ? 'border-green-500 shadow-md' : 'border-gray-200 hover:border-green-300'}`}
                         style={{ background: previewBg }}
@@ -1227,8 +1403,9 @@ const SweatShirt = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
           color={libDesignColorRef.current}
           pressureOptions={pressureOptions}
           isAppReady={isAppReady}
-          
+          loadedTrigger={loadedTrigger}
           onUpdate={handleBackDesignUpdate}
+          backDesigns={activeBackDesign}
         />
       </div>
 

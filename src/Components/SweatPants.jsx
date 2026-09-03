@@ -8,11 +8,11 @@ import { BASE_URL } from "../utils/const";
 import { ALL_FLAGS } from "../utils/flags";
 import { X, Image as ImageIcon, Trash2, Flag } from "lucide-react";
 import { TRANSLATE_MAP } from "../Default/translateMap";
-import { postToPreview, postToActivePreview } from "../utils/postMessage";
+import { postToPreview, postToActivePreview, isPlayCanvasLoadedMessage } from "../utils/postMessage";
 
 const t = (key) => TRANSLATE_MAP[key] || key;
 
-const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange, maxCharsText = 25 }) => {
+const SweatPants = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenInquiry, activeTab: externalTab, onTabChange, maxCharsText = 25 }) => {
   const [internalTab, setInternalTab] = useState("size");
   const activeTab = externalTab ?? internalTab;
   const setActiveTab = (tab) => { setInternalTab(tab); onTabChange?.(tab); };
@@ -367,13 +367,14 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     if (!data?.selectedColor) onUpdate({ selectedColor: "Heather Grey" });
   }, []);
 
+  const colorMap = {
+    "heather grey": "SweatPant:heatherGrey",
+    black: "SweatPant:black",
+    navy: "SweatPant:navy",
+    white: "SweatPant:white",
+  };
+
   useEffect(() => {
-    const colorMap = {
-      "heather grey": "SweatPant:heatherGrey",
-      black: "SweatPant:black",
-      navy: "SweatPant:navy",
-      white: "SweatPant:white",
-    };
     const msg = colorMap[selectedColor.toLowerCase()];
     if (!msg) return;
     postToActivePreview(msg);
@@ -392,6 +393,73 @@ const SweatPants = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTa
     lastSentRef.current[key] = msg;
     postToActivePreview(msg);
   };
+
+  // Dedicated function to send ALL postmessages (color, size, flag, text, logo) when loaded
+  const sendAllCustomizations = React.useCallback(() => {
+    console.log("📤 [SweatPants] Sending all customizations to PlayCanvas on loaded event");
+    lastSentRef.current = {};
+    prevRef.current = {};
+
+    // 1. Color
+    const colorMsg = colorMap[selectedColor.toLowerCase()];
+    if (colorMsg) {
+      postToActivePreview(colorMsg);
+    }
+
+    // 2. Size
+    if (selectedSize) {
+      postToActivePreview(`SweatPant:size:${selectedSize}`);
+    }
+
+    // 3. Legs
+    ["rightLeg", "leftLeg"].forEach(area => {
+      const text = pressureOptions[`${area}Text`]?.trim() || "";
+      const flag = pressureOptions[`${area}Flag`] || "";
+      const flag2 = pressureOptions[`${area}Flag2`] || "";
+      const flagCount = pressureOptions[`${area}FlagCount`] || 1;
+      const logoPre = pressureOptions[`${area}LogoPredefined`] || "";
+      const logoCustom = pressureOptions[`${area}LogoCustom`] || "";
+      const type = pressureOptions[`${area}Type`] || "";
+      const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
+
+      prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
+      const currentRender = (renderCounterRef.current[area] || 0) + 1;
+      renderCounterRef.current[area] = currentRender;
+
+      const hasFlag = !!flag && type === "flag";
+      const hasLogo = !!(logoPre || logoCustom) && type === "logo";
+      const opacity = getEmissiveBase64(text, hasFlag, hasLogo);
+      postToActivePreview(`SweatPant:${area}_opacity: ${opacity}`);
+
+      getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuse, logoOpacityBase) => {
+        if (renderCounterRef.current[area] !== currentRender) return;
+        postToActivePreview(`SweatPant:${area}_diffuse: ${diffuse}`);
+        if (logoOpacityBase) postToActivePreview(`SweatPant:${area}_opacity: ${logoOpacityBase}`);
+      }, flag2, flagCount, textColor);
+    });
+  }, [selectedColor, selectedSize, pressureOptions]);
+
+  // Listen directly for 'loaded' message from PlayCanvas
+  useEffect(() => {
+    const handleWindowMessage = (event) => {
+      if (isPlayCanvasLoadedMessage(event.data)) {
+        sendAllCustomizations();
+        setTimeout(sendAllCustomizations, 150);
+      }
+    };
+    window.addEventListener('message', handleWindowMessage);
+    return () => window.removeEventListener('message', handleWindowMessage);
+  }, [sendAllCustomizations]);
+
+  // Trigger when isAppReady or loadedTrigger changes
+  useEffect(() => {
+    if (isAppReady) {
+      sendAllCustomizations();
+      const timer = setTimeout(sendAllCustomizations, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [isAppReady, loadedTrigger]);
+
   useEffect(() => {
     ["rightLeg", "leftLeg"].forEach(area => {
       const text = pressureOptions[`${area}Text`]?.trim() || "";

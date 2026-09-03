@@ -12,6 +12,7 @@ import StudentRegister from './Pages/StudentRegister.jsx';
 import StudentLogin from './Pages/StudentLogin.jsx';
 import { useAuth } from './context/AuthContext';
 import useBackDesignStore from './store/backDesignStore';
+import { isPlayCanvasLoadedMessage } from './utils/postMessage';
 
 function App() {
   const { user, loading } = useAuth();
@@ -41,7 +42,7 @@ function App() {
   // Sync isAppReady from PlayCanvas
   useEffect(() => {
     const handleMessage = (event) => {
-      if (typeof event.data === 'string' && event.data === 'app:ready') {
+      if (isPlayCanvasLoadedMessage(event.data)) {
         setIsAppReady(true);
       }
     };

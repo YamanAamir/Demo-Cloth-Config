@@ -17,6 +17,7 @@ import design8 from '../assets/predefinedbackimages/Design8.jpeg';
 import { BASE_URL } from "../utils/const";
 import useLogoStore from "../store/logoStore";
 import useBackDesignStore from "../store/backDesignStore";
+import { isPlayCanvasLoadedMessage } from "../utils/postMessage";
 
 // Preload icons
 const deleteIcon = new Image();
@@ -97,7 +98,7 @@ const getCenteredImageSize = (img) => {
 //   { name: 'Design 8', url: design8 },
 // ];
 
-export default function Test({ pressureOptions, color, onUpdate, postEx, isAppReady, designColor, backDesigns: propBackDesigns }) {
+export default function Test({ pressureOptions, color, onUpdate, postEx, isAppReady, loadedTrigger, designColor, backDesigns: propBackDesigns }) {
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
   const [objects, setObjects] = useState([]);
@@ -234,7 +235,11 @@ export default function Test({ pressureOptions, color, onUpdate, postEx, isAppRe
   useEffect(() => {
     if (backDesigns && objects.length === 0 && !pressureOptions?.backDesign) {
       const design = backDesigns;
-      const img = `${BASE_URL}${design.file_path.replace(/\\/g, "/")}`;
+      const rawPath = (designColor === 'black'
+        ? (design.file_path_2 || design.configured_file_path_2 || design.file_path || design.configured_file_path)
+        : (design.file_path || design.configured_file_path || design.file_path_2 || design.configured_file_path_2)) || "";
+      if (!rawPath) return;
+      const img = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.replace(/\\/g, "/")}`;
 
       loadImageSafe(img, async (imgObj) => {
         if (!imgObj) return;
@@ -455,9 +460,21 @@ export default function Test({ pressureOptions, color, onUpdate, postEx, isAppRe
   };
 
   useEffect(() => {
+    const handleMsg = (event) => {
+      if (isPlayCanvasLoadedMessage(event.data)) {
+        if (objects.length > 0) {
+          draw();
+        }
+      }
+    };
+    window.addEventListener('message', handleMsg);
+    return () => window.removeEventListener('message', handleMsg);
+  }, [objects]);
+
+  useEffect(() => {
     if (objects.length === 0) return; // kuch nahi draw karo
     draw();
-  }, [objects, selectedId, isAppReady]);
+  }, [objects, selectedId, isAppReady, loadedTrigger]);
 
   // const selectPredefinedDesign = (url) => {
   //   const img = new Image();

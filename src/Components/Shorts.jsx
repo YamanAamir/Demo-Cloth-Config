@@ -8,11 +8,11 @@ import { BASE_URL } from "../utils/const";
 import { ALL_FLAGS } from "../utils/flags";
 import { X, Image as ImageIcon, Trash2, Flag } from "lucide-react";
 import { TRANSLATE_MAP } from "../Default/translateMap";
-import { postToPreview, postToActivePreview } from "../utils/postMessage";
+import { postToPreview, postToActivePreview, isPlayCanvasLoadedMessage } from "../utils/postMessage";
 
 const t = (key) => TRANSLATE_MAP[key] || key;
 
-const Shorts = ({ data, onUpdate, isAppReady, logos, onOpenInquiry, activeTab: externalTab, onTabChange, maxCharsText = 25 }) => {
+const Shorts = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenInquiry, activeTab: externalTab, onTabChange, maxCharsText = 25 }) => {
   const [internalTab, setInternalTab] = useState("size");
   const activeTab = externalTab ?? internalTab;
   const setActiveTab = (tab) => { setInternalTab(tab); onTabChange?.(tab); };

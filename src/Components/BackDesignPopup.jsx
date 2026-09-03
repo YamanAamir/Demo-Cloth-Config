@@ -104,12 +104,18 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
     const currentBackDesign = currentCategoryData.pressureOptions?.backDesign;
 
     // Filter library designs by active color tab
-    // normal tab → designs where designColor is null, undefined, or 'normal'
-    // white/black tab → exact match
     const filteredLibraryDesigns = libraryDesigns.filter(d => {
-        const dc = d.designColor;
-        if (designColorTab === 'normal') return !dc || dc === 'normal';
-        return dc === designColorTab;
+        if (designColorTab === 'white') {
+            if (d.file_path || d.configured_file_path) return true;
+            if (d.file_path === null && (d.file_path_2 || d.configured_file_path_2)) return false;
+            return d.designColor === 'white' || d.designColor === 'normal' || !d.designColor;
+        }
+        if (designColorTab === 'black') {
+            if (d.file_path_2 || d.configured_file_path_2) return true;
+            if (d.file_path_2 === null && (d.file_path || d.configured_file_path)) return false;
+            return d.designColor === 'black' || d.designColor_2 === 'black';
+        }
+        return true;
     });
 
     // Switch PlayCanvas page when tab changes
@@ -150,18 +156,22 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
                 });
             }
         }
+
         if (update.backDesign !== undefined) {
             setCustomizations(prev => {
                 const nextCustom = { ...prev };
+                const shirtCategories = ['T-SHIRT', 'SWEATSHIRT', 'HOODIE', 'ZIPPERHOODIE'];
                 students.forEach(student => {
                     const studentName = typeof student === 'object' ? (student.name || student.id) : student;
                     const studentData = nextCustom[studentName] || {};
-                    const shirtCategories = ['T-SHIRT', 'SWEATSHIRT', 'HOODIE', 'ZIPPERHOODIE'];
                     shirtCategories.forEach(cat => {
                         const categoryData = studentData[cat] || {};
                         studentData[cat] = {
                             ...categoryData,
-                            pressureOptions: { ...(categoryData.pressureOptions || {}), backDesign: update.backDesign }
+                            pressureOptions: {
+                                ...(categoryData.pressureOptions || {}),
+                                backDesign: update.backDesign,
+                            }
                         };
                     });
                     nextCustom[studentName] = { ...studentData };
@@ -174,11 +184,21 @@ const BackDesignPopup = ({ onFinish, customizations, setCustomizations, students
     // When user selects a library design → load it into Test canvas via pressureOptions
     const handleLibrarySelect = (design) => {
         setSelectedLibraryDesign(design);
-        const rawPath = (design.file_path || design.image_path || "").replace(/\\/g, "/"); const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
+        const rawPath = (() => {
+            if (designColorTab === 'black') {
+                return (design.file_path_2 || design.configured_file_path_2 || design.file_path || design.configured_file_path || design.image_path || "").replace(/\\/g, "/");
+            }
+            return (design.file_path || design.configured_file_path || design.file_path_2 || design.configured_file_path_2 || design.image_path || "").replace(/\\/g, "/");
+        })();
+        const src = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath.startsWith("/") ? rawPath.slice(1) : rawPath}`;
         const backDesignObj = {
             src,
             designId: design.id,
             designColor: design.designColor || designColorTab, // use design's own color or active tab
+            file_path: design.file_path,
+            file_path_2: design.file_path_2,
+            configured_file_path: design.configured_file_path,
+            configured_file_path_2: design.configured_file_path_2,
             pos: null,
             size: null,
             angle: 0,
