@@ -1,6 +1,6 @@
 ﻿// isme karna hay 
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 // import Test1 from "./Test1";
@@ -433,23 +433,6 @@ const Shorts = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenInquir
     if (!data?.selectedColor) onUpdate({ selectedColor: "Heather Grey" });
   }, []);
 
-  useEffect(() => {
-    const colorMap = {
-      "heather grey": "Short:heatherGrey",
-      black: "Short:black",
-      navy: "Short:navy",
-      white: "Short:white",
-    };
-    const msg = colorMap[selectedColor.toLowerCase()];
-    if (!msg) return;
-    postToActivePreview(msg);
-  }, [selectedColor, isAppReady]);
-
-  useEffect(() => {
-    if (!selectedSize) return;
-    postToActivePreview(`Short:size:${selectedSize}`);
-  }, [selectedSize, isAppReady]);
-
   const prevRef = React.useRef({});
   const renderCounterRef = React.useRef({});
   const lastSentRef = React.useRef({});
@@ -458,7 +441,40 @@ const Shorts = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenInquir
     lastSentRef.current[key] = msg;
     postToActivePreview(msg);
   };
+
+  // Reset tracking when loadedTrigger increments so new PlayCanvas instance receives state once
+  const lastTriggerRef = useRef(loadedTrigger);
   useEffect(() => {
+    if (lastTriggerRef.current !== loadedTrigger) {
+      lastTriggerRef.current = loadedTrigger;
+      lastSentRef.current = {};
+      prevRef.current = {};
+    }
+  }, [loadedTrigger]);
+
+  // 1. Color emission - only sends once on load or when color changes
+  useEffect(() => {
+    if (!isAppReady) return;
+    const colorMap = {
+      "heather grey": "Short:heatherGrey",
+      black: "Short:black",
+      navy: "Short:navy",
+      white: "Short:white",
+    };
+    const msg = colorMap[selectedColor.toLowerCase()];
+    if (!msg) return;
+    postIfChanged("color", msg);
+  }, [selectedColor, isAppReady, loadedTrigger]);
+
+  // 2. Size emission - only sends once on load or when size changes
+  useEffect(() => {
+    if (!isAppReady || !selectedSize) return;
+    postIfChanged("size", `Short:size:${selectedSize}`);
+  }, [selectedSize, isAppReady, loadedTrigger]);
+
+  // 3. Legs emission - only sends once on load or when an area changes
+  useEffect(() => {
+    if (!isAppReady) return;
     ["rightLeg", "leftLeg"].forEach(area => {
       const text = pressureOptions[`${area}Text`]?.trim() || "";
       const flag = pressureOptions[`${area}Flag`] || "";
@@ -475,77 +491,73 @@ const Shorts = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenInquir
         prev.flag !== flag || prev.flag2 !== flag2 || prev.flagCount !== flagCount ||
         prev.logoPre !== logoPre || prev.logoCustom !== logoCustom || prev.type !== type
       );
-      if (!textChanged && !logoChanged) return;
+      if (!textChanged && !logoChanged && lastSentRef.current[`${area}_opacity`] && lastSentRef.current[`${area}_diffuse`]) return;
       prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
 
       const hasFlag = !!flag && type === "flag";
       const hasLogo = !!(logoPre || logoCustom) && type === "logo";
 
       // ── 1. Text texture — always send separately, only when text itself changed ──
-      if (!textChanged) {
-        // text unchanged — skip, avoids re-fetching/redrawing the logo below on every keystroke elsewhere
-      } else if (text) {
-        const textCanvas = document.createElement("canvas");
-        textCanvas.width = 320;
-        textCanvas.height = 120;
-        const tctx = textCanvas.getContext("2d");
+      if (textChanged) {
+        if (text) {
+          const textCanvas = document.createElement("canvas");
+          textCanvas.width = 320;
+          textCanvas.height = 120;
+          const tctx = textCanvas.getContext("2d");
 
-        let fontSize = 48;
-        tctx.font = `bold ${fontSize}px Arial`;
-        tctx.fillStyle = textColor;
-        tctx.textAlign = "center";
-        tctx.textBaseline = "middle";
-        while (tctx.measureText(text).width > 240 && fontSize > 28) {
-          fontSize -= 2;
+          let fontSize = 48;
           tctx.font = `bold ${fontSize}px Arial`;
+          tctx.fillStyle = textColor;
+          tctx.textAlign = "center";
+          tctx.textBaseline = "middle";
+          while (tctx.measureText(text).width > 240 && fontSize > 28) {
+            fontSize -= 2;
+            tctx.font = `bold ${fontSize}px Arial`;
+          }
+          tctx.fillText(text, 160, 60);
+
+          const textDiffuse = textCanvas.toDataURL("image/png");
+
+          // Opacity (black/white mask)
+          const imgData = tctx.getImageData(0, 0, 320, 120);
+          const d = imgData.data;
+
+          for (let i = 0; i < d.length; i += 4) {
+            const alpha = d[i + 3];
+            const bw = alpha > 10 ? 255 : 0;
+            d[i] = d[i + 1] = d[i + 2] = bw;
+            d[i + 3] = 255;
+          }
+          tctx.putImageData(imgData, 0, 0);
+          const textOpacity = textCanvas.toDataURL("image/png");
+
+          postIfChanged(`${area}_Text_diffuse`, `Short:${area}_Text_diffuse: ${textDiffuse}`);
+          postIfChanged(`${area}_Text_opacity`, `Short:${area}_Text_opacity: ${textOpacity}`);
+        } else {
+          const blankCanvas = document.createElement("canvas");
+          blankCanvas.width = 320; blankCanvas.height = 120;
+          const blank = blankCanvas.toDataURL("image/png");
+          postIfChanged(`${area}_Text_diffuse`, `Short:${area}_Text_diffuse: ${blank}`);
+          postIfChanged(`${area}_Text_opacity`, `Short:${area}_Text_opacity: ${blank}`);
         }
-        tctx.fillText(text, 160, 60);
-
-        const textDiffuse = textCanvas.toDataURL("image/png");
-
-        // Opacity (black/white mask)
-        const imgData = tctx.getImageData(0, 0, 320, 120);
-        const d = imgData.data;
-
-        for (let i = 0; i < d.length; i += 4) {
-          const alpha = d[i + 3];
-
-          // sirf alpha use karo (text visibility yahin hoti hai)
-          const bw = alpha > 10 ? 255 : 0;
-
-          d[i] = d[i + 1] = d[i + 2] = bw;
-          d[i + 3] = 255;
-        }
-        tctx.putImageData(imgData, 0, 0);
-        const textOpacity = textCanvas.toDataURL("image/png");
-
-        postIfChanged(`${area}_Text_diffuse`, `Short:${area}_Text_diffuse: ${textDiffuse}`);
-        postIfChanged(`${area}_Text_opacity`, `Short:${area}_Text_opacity: ${textOpacity}`);
-      } else {
-        // Text cleared — send blank texture
-        const blankCanvas = document.createElement("canvas");
-        blankCanvas.width = 320; blankCanvas.height = 120;
-        const blank = blankCanvas.toDataURL("image/png");
-        postIfChanged(`${area}_Text_diffuse`, `Short:${area}_Text_diffuse: ${blank}`);
-        postIfChanged(`${area}_Text_opacity`, `Short:${area}_Text_opacity: ${blank}`);
       }
 
       // ── 2. Flag / Logo texture — send separately, only when flag/logo itself changed ──
-      if (!logoChanged) return;
+      if (logoChanged || !lastSentRef.current[`${area}_opacity`]) {
+        const currentRender = (renderCounterRef.current[area] || 0) + 1;
+        renderCounterRef.current[area] = currentRender;
 
-      const currentRender = (renderCounterRef.current[area] || 0) + 1;
-      renderCounterRef.current[area] = currentRender;
+        const opacity = getEmissiveBase64("", hasFlag, hasLogo, flagCount);
+        postIfChanged(`${area}_opacity`, `Short:${area}_opacity: ${opacity}`);
 
-      const opacity = getEmissiveBase64("", hasFlag, hasLogo, flagCount);
-      postIfChanged(`${area}_opacity`, `Short:${area}_opacity: ${opacity}`);
-
-      getDiffuseBase64(flag, logoPre, logoCustom, "", (diffuse, logoOpacityBase) => {
-        if (renderCounterRef.current[area] !== currentRender) return;
-        postIfChanged(`${area}_diffuse`, `Short:${area}_diffuse: ${diffuse}`);
-        if (logoOpacityBase) postIfChanged(`${area}_opacity`, `Short:${area}_opacity: ${logoOpacityBase}`);
-      }, flag2, flagCount, textColor);
+        getDiffuseBase64(flag, logoPre, logoCustom, "", (diffuse, logoOpacityBase) => {
+          if (renderCounterRef.current[area] !== currentRender) return;
+          postIfChanged(`${area}_diffuse`, `Short:${area}_diffuse: ${diffuse}`);
+          if (logoOpacityBase) postIfChanged(`${area}_opacity`, `Short:${area}_opacity: ${logoOpacityBase}`);
+        }, flag2, flagCount, textColor);
+      }
     });
-  }, [isAppReady, pressureOptions]);
+  }, [isAppReady, loadedTrigger, pressureOptions]);
 
   const colors = [
     { name: "Heather Grey", value: "#D4D9DC", border: "#D4D9DC" },

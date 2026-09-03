@@ -479,17 +479,6 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, loadedTrigger, logos, backDe
     'olive green': "ZipperHoodie:oliveGreen", blue: "ZipperHoodie:blue", purple: "ZipperHoodie:purple",
   };
 
-  useEffect(() => {
-    const message = colorMap[selectedColor.toLowerCase()];
-    if (!message) return;
-    postToActivePreview(message);
-  }, [selectedColor, isAppReady]);
-
-  useEffect(() => {
-    if (!selectedSize) return;
-    postToActivePreview(`ZipperHoodie:size:${selectedSize}`);
-  }, [selectedSize, isAppReady]);
-
   const prevPressureOptionsRef = React.useRef({});
   const renderCounterRef = React.useRef({});
   const lastSentRef = React.useRef({});
@@ -502,95 +491,34 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, loadedTrigger, logos, backDe
     postToActivePreview(msg);
   };
 
-  // Dedicated function to send ALL postmessages (color, size, flag, text, logo, back design) when loaded
-  const sendAllCustomizations = React.useCallback(() => {
-    console.log("📤 [ZippedHoodie] Sending all customizations to PlayCanvas on loaded event");
-    lastSentRef.current = {};
-    prevPressureOptionsRef.current = {};
-    lastEmittedOpacityRef.current = null;
-
-    // 1. Color
-    const colorMsg = colorMap[selectedColor.toLowerCase()];
-    if (colorMsg) {
-      postToActivePreview(colorMsg);
-    }
-
-    // 2. Size
-    if (selectedSize) {
-      postToActivePreview(`ZipperHoodie:size:${selectedSize}`);
-    }
-
-    // 3. Flags, Text, Logos for all areas
-    const areas = ["rightChest", "leftChest", "rightSleeve", "leftSleeve"];
-    areas.forEach((area) => {
-      const text = pressureOptions[`${area}Text`]?.trim() || "";
-      const flag = pressureOptions[`${area}Flag`] || "";
-      const flag2 = pressureOptions[`${area}Flag2`] || "";
-      const flagCount = pressureOptions[`${area}FlagCount`] || 1;
-      const logoPre = pressureOptions[`${area}LogoPredefined`] || "";
-      const logoCustom = pressureOptions[`${area}LogoCustom`] || "";
-      const type = pressureOptions[`${area}Type`] || "";
-      const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
-
-      prevPressureOptionsRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
-      const currentRender = (renderCounterRef.current[area] || 0) + 1;
-      renderCounterRef.current[area] = currentRender;
-
-      const hasText = text.length > 0;
-      const hasFlag = !!flag && type === "flag";
-      const hasLogo = !!(logoPre || logoCustom) && type === "logo";
-      const hasSecondAsset = !!flag2;
-      const opacity = getEmissiveBase64(text, hasFlag, hasLogo, hasSecondAsset);
-      postToActivePreview(`ZipperHoodie:${area}_opacity: ${opacity}`);
-
-      getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuseBase, logoOpacityBase) => {
-        if (renderCounterRef.current[area] !== currentRender) return;
-        postToActivePreview(`ZipperHoodie:${area}_diffuse: ${diffuseBase}`);
-        if (logoOpacityBase) postToActivePreview(`ZipperHoodie:${area}_opacity: ${logoOpacityBase}`);
-      }, flag2, flagCount, textColor);
-    });
-
-    // 4. Back Design
-    if (lastBackDesignPayloadRef.current) {
-      const { color, diffuseB64, opacityB64, invertedB64 } = lastBackDesignPayloadRef.current;
-      if (color === 'black') {
-        if (diffuseB64) postToActivePreview("ZipperHoodie:back_white_diffuse: " + diffuseB64);
-        if (invertedB64) postToActivePreview("ZipperHoodie:back_white_opacity: " + invertedB64);
-      } else if (color === 'white') {
-        if (diffuseB64) postToActivePreview("ZipperHoodie:back_black_diffuse: " + diffuseB64);
-        if (opacityB64) postToActivePreview("ZipperHoodie:back_black_opacity: " + opacityB64);
-      }
-    }
-  }, [selectedColor, selectedSize, pressureOptions]);
-
-  // Listen directly for 'loaded' message from PlayCanvas
+  // Reset tracking when loadedTrigger increments so new PlayCanvas instance receives state once
+  const lastTriggerRef = useRef(loadedTrigger);
   useEffect(() => {
-    const handleWindowMessage = (event) => {
-      if (isPlayCanvasLoadedMessage(event.data)) {
-        sendAllCustomizations();
-        setTimeout(sendAllCustomizations, 150);
-      }
-    };
-    window.addEventListener('message', handleWindowMessage);
-    return () => window.removeEventListener('message', handleWindowMessage);
-  }, [sendAllCustomizations]);
-
-  // Trigger when isAppReady or loadedTrigger changes
-  useEffect(() => {
-    if (isAppReady) {
-      sendAllCustomizations();
-      const timer = setTimeout(sendAllCustomizations, 150);
-      return () => clearTimeout(timer);
+    if (lastTriggerRef.current !== loadedTrigger) {
+      lastTriggerRef.current = loadedTrigger;
+      lastSentRef.current = {};
+      prevPressureOptionsRef.current = {};
+      lastEmittedOpacityRef.current = null;
     }
-  }, [isAppReady, loadedTrigger]);
+  }, [loadedTrigger]);
 
-  const pressureOptionsRef = useRef(pressureOptions);
-
+  // 1. Color emission - only sends once on load or when color changes
   useEffect(() => {
-    pressureOptionsRef.current = pressureOptions;
-  }, [pressureOptions]);
+    if (!isAppReady) return;
+    const message = colorMap[selectedColor.toLowerCase()];
+    if (!message) return;
+    postIfChanged("color", message);
+  }, [selectedColor, isAppReady, loadedTrigger]);
 
+  // 2. Size emission - only sends once on load or when size changes
   useEffect(() => {
+    if (!isAppReady || !selectedSize) return;
+    postIfChanged("size", `ZipperHoodie:size:${selectedSize}`);
+  }, [selectedSize, isAppReady, loadedTrigger]);
+
+  // 3. Chest / Sleeve areas emission - only sends once on load or when an area changes
+  useEffect(() => {
+    if (!isAppReady) return;
     const areas = ["rightChest", "leftChest", "rightSleeve", "leftSleeve"];
 
     areas.forEach((area) => {
@@ -614,7 +542,7 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, loadedTrigger, logos, backDe
         prev.type !== type ||
         prev.textColor !== textColor;
 
-      if (!hasChanged) return;
+      if (!hasChanged && lastSentRef.current[`${area}_opacity`] && lastSentRef.current[`${area}_diffuse`]) return;
 
       prevPressureOptionsRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
       const currentRender = (renderCounterRef.current[area] || 0) + 1;
@@ -633,7 +561,12 @@ const ZippedHoodie = ({ data, onUpdate, isAppReady, loadedTrigger, logos, backDe
         if (logoOpacityBase) postIfChanged(`${area}_opacity`, `ZipperHoodie:${area}_opacity: ${logoOpacityBase}`);
       }, flag2, flagCount, textColor);
     });
-  }, [isAppReady, pressureOptions]);
+  }, [isAppReady, loadedTrigger, pressureOptions]);
+
+  const pressureOptionsRef = useRef(pressureOptions);
+  useEffect(() => {
+    pressureOptionsRef.current = pressureOptions;
+  }, [pressureOptions]);
 
   const handleBackDesignUpdate = (update) => {
     const current = pressureOptionsRef.current;

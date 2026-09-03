@@ -1,6 +1,6 @@
 // is me karna hay 
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
 import plus from "../assets/menuimages/shirt-plus.png";
 // import Test1 from "./Test1";
@@ -374,17 +374,6 @@ const SweatPants = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenIn
     white: "SweatPant:white",
   };
 
-  useEffect(() => {
-    const msg = colorMap[selectedColor.toLowerCase()];
-    if (!msg) return;
-    postToActivePreview(msg);
-  }, [selectedColor, isAppReady]);
-
-  useEffect(() => {
-    if (!selectedSize) return;
-    postToActivePreview(`SweatPant:size:${selectedSize}`);
-  }, [selectedSize, isAppReady]);
-
   const prevRef = React.useRef({});
   const renderCounterRef = React.useRef({});
   const lastSentRef = React.useRef({});
@@ -394,24 +383,33 @@ const SweatPants = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenIn
     postToActivePreview(msg);
   };
 
-  // Dedicated function to send ALL postmessages (color, size, flag, text, logo) when loaded
-  const sendAllCustomizations = React.useCallback(() => {
-    console.log("📤 [SweatPants] Sending all customizations to PlayCanvas on loaded event");
-    lastSentRef.current = {};
-    prevRef.current = {};
-
-    // 1. Color
-    const colorMsg = colorMap[selectedColor.toLowerCase()];
-    if (colorMsg) {
-      postToActivePreview(colorMsg);
+  // Reset tracking when loadedTrigger increments so new PlayCanvas instance receives state once
+  const lastTriggerRef = useRef(loadedTrigger);
+  useEffect(() => {
+    if (lastTriggerRef.current !== loadedTrigger) {
+      lastTriggerRef.current = loadedTrigger;
+      lastSentRef.current = {};
+      prevRef.current = {};
     }
+  }, [loadedTrigger]);
 
-    // 2. Size
-    if (selectedSize) {
-      postToActivePreview(`SweatPant:size:${selectedSize}`);
-    }
+  // 1. Color emission - only sends once on load or when color changes
+  useEffect(() => {
+    if (!isAppReady) return;
+    const msg = colorMap[selectedColor.toLowerCase()];
+    if (!msg) return;
+    postIfChanged("color", msg);
+  }, [selectedColor, isAppReady, loadedTrigger]);
 
-    // 3. Legs
+  // 2. Size emission - only sends once on load or when size changes
+  useEffect(() => {
+    if (!isAppReady || !selectedSize) return;
+    postIfChanged("size", `SweatPant:size:${selectedSize}`);
+  }, [selectedSize, isAppReady, loadedTrigger]);
+
+  // 3. Legs emission - only sends once on load or when an area changes
+  useEffect(() => {
+    if (!isAppReady) return;
     ["rightLeg", "leftLeg"].forEach(area => {
       const text = pressureOptions[`${area}Text`]?.trim() || "";
       const flag = pressureOptions[`${area}Flag`] || "";
@@ -422,70 +420,35 @@ const SweatPants = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenIn
       const type = pressureOptions[`${area}Type`] || "";
       const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
 
-      prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
-      const currentRender = (renderCounterRef.current[area] || 0) + 1;
-      renderCounterRef.current[area] = currentRender;
-
-      const hasFlag = !!flag && type === "flag";
-      const hasLogo = !!(logoPre || logoCustom) && type === "logo";
-      const opacity = getEmissiveBase64(text, hasFlag, hasLogo);
-      postToActivePreview(`SweatPant:${area}_opacity: ${opacity}`);
-
-      getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuse, logoOpacityBase) => {
-        if (renderCounterRef.current[area] !== currentRender) return;
-        postToActivePreview(`SweatPant:${area}_diffuse: ${diffuse}`);
-        if (logoOpacityBase) postToActivePreview(`SweatPant:${area}_opacity: ${logoOpacityBase}`);
-      }, flag2, flagCount, textColor);
-    });
-  }, [selectedColor, selectedSize, pressureOptions]);
-
-  // Listen directly for 'loaded' message from PlayCanvas
-  useEffect(() => {
-    const handleWindowMessage = (event) => {
-      if (isPlayCanvasLoadedMessage(event.data)) {
-        sendAllCustomizations();
-        setTimeout(sendAllCustomizations, 150);
-      }
-    };
-    window.addEventListener('message', handleWindowMessage);
-    return () => window.removeEventListener('message', handleWindowMessage);
-  }, [sendAllCustomizations]);
-
-  // Trigger when isAppReady or loadedTrigger changes
-  useEffect(() => {
-    if (isAppReady) {
-      sendAllCustomizations();
-      const timer = setTimeout(sendAllCustomizations, 150);
-      return () => clearTimeout(timer);
-    }
-  }, [isAppReady, loadedTrigger]);
-
-  useEffect(() => {
-    ["rightLeg", "leftLeg"].forEach(area => {
-      const text = pressureOptions[`${area}Text`]?.trim() || "";
-      const flag = pressureOptions[`${area}Flag`] || "";
-      const flag2 = pressureOptions[`${area}Flag2`] || "";
-      const flagCount = pressureOptions[`${area}FlagCount`] || 1;
-      const logoPre = pressureOptions[`${area}LogoPredefined`] || "";
-      const logoCustom = pressureOptions[`${area}LogoCustom`] || "";
-      const type = pressureOptions[`${area}Type`] || "";
-      const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
       const prev = prevRef.current[area] || {};
-      if (prev.text === text && prev.flag === flag && prev.flag2 === flag2 && prev.flagCount === flagCount && prev.logoPre === logoPre && prev.logoCustom === logoCustom && prev.type === type && prev.textColor === textColor) return;
+      const hasChanged =
+        prev.text !== text ||
+        prev.flag !== flag ||
+        prev.flag2 !== flag2 ||
+        prev.flagCount !== flagCount ||
+        prev.logoPre !== logoPre ||
+        prev.logoCustom !== logoCustom ||
+        prev.type !== type ||
+        prev.textColor !== textColor;
+
+      if (!hasChanged && lastSentRef.current[`${area}_opacity`] && lastSentRef.current[`${area}_diffuse`]) return;
+
       prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
       const currentRender = (renderCounterRef.current[area] || 0) + 1;
       renderCounterRef.current[area] = currentRender;
+
       const hasFlag = !!flag && type === "flag";
       const hasLogo = !!(logoPre || logoCustom) && type === "logo";
       const opacity = getEmissiveBase64(text, hasFlag, hasLogo);
       postIfChanged(`${area}_opacity`, `SweatPant:${area}_opacity: ${opacity}`);
+
       getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuse, logoOpacityBase) => {
         if (renderCounterRef.current[area] !== currentRender) return;
         postIfChanged(`${area}_diffuse`, `SweatPant:${area}_diffuse: ${diffuse}`);
         if (logoOpacityBase) postIfChanged(`${area}_opacity`, `SweatPant:${area}_opacity: ${logoOpacityBase}`);
       }, flag2, flagCount, textColor);
     });
-  }, [isAppReady, pressureOptions]);
+  }, [isAppReady, loadedTrigger, pressureOptions]);
 
   const colors = [
     { name: "Heather Grey", value: "#D4D9DC", border: "#D4D9DC" },
