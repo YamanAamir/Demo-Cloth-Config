@@ -1009,7 +1009,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                                     : 'hover:bg-slate-50'
                                                     }`}
                                             >
-                                                <img src={item.icon} alt={item.name} className="w-4 h-4 object-contain" />
+                                                <img src={item.icon} alt={item.name} className="w-6 h-6 object-contain" />
                                             </button>
                                         ))}
                                     </div>
