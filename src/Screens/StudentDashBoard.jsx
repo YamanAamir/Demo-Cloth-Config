@@ -1010,7 +1010,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                                     }`}
                                             >
                                                 <img src={item.icon} alt={item.name} className="w-4 h-4 object-contain" />
-                                                <span className="text-xs font-semibold">{item.name}</span>
                                             </button>
                                         ))}
                                     </div>
