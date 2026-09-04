@@ -631,26 +631,48 @@ const Tshirt = ({ data, onUpdate, isAppReady, loadedTrigger, logos, backDesigns,
           ctx.putImageData(imgData, 0, 0);
           const invertedB64 = canvas.toDataURL("image/png");
 
+          // Pure white diffuse canvas so bilinear filtering never samples black pixels
+          const diffCanvas = document.createElement("canvas");
+          diffCanvas.width = img.width;
+          diffCanvas.height = img.height;
+          const dctx = diffCanvas.getContext("2d");
+          dctx.fillStyle = "#ffffff";
+          dctx.fillRect(0, 0, img.width, img.height);
+          const cleanDiffuseB64 = diffCanvas.toDataURL("image/png");
+
           lastBackDesignPayloadRef.current = {
             color,
-            diffuseB64,
+            diffuseB64: cleanDiffuseB64,
             opacityB64,
             invertedB64
           };
 
-          postToActivePreview("T-Shirt:back_white_diffuse: " + diffuseB64);
+          postToActivePreview("T-Shirt:back_white_diffuse: " + cleanDiffuseB64);
           postToActivePreview("T-Shirt:back_white_opacity: " + invertedB64);
         };
         img.src = opacityB64;
-      } else if (color === 'white') {
-        lastBackDesignPayloadRef.current = {
-          color,
-          diffuseB64,
-          opacityB64,
-          invertedB64: null
+      } else if (color === 'white' && opacityB64) {
+        const img = new Image();
+        img.onload = () => {
+          // Pure black diffuse canvas so bilinear filtering never samples white pixels
+          const diffCanvas = document.createElement("canvas");
+          diffCanvas.width = img.width;
+          diffCanvas.height = img.height;
+          const dctx = diffCanvas.getContext("2d");
+          dctx.fillStyle = "#000000";
+          dctx.fillRect(0, 0, img.width, img.height);
+          const cleanDiffuseB64 = diffCanvas.toDataURL("image/png");
+
+          lastBackDesignPayloadRef.current = {
+            color,
+            diffuseB64: cleanDiffuseB64,
+            opacityB64,
+            invertedB64: null
+          };
+          postToActivePreview("T-Shirt:back_black_diffuse: " + cleanDiffuseB64);
+          postToActivePreview("T-Shirt:back_black_opacity: " + opacityB64);
         };
-        if (diffuseB64) postToActivePreview("T-Shirt:back_black_diffuse: " + diffuseB64);
-        if (opacityB64) postToActivePreview("T-Shirt:back_black_opacity: " + opacityB64);
+        img.src = opacityB64;
       }
     }
 

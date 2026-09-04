@@ -166,6 +166,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     const [globalEmblem, setGlobalEmblem] = useState({ name: 'Guld', value: 'Guld', color: '#FCD34D' });
     const [isAppReady, setIsAppReady] = useState(false);
     const [loadedTrigger, setLoadedTrigger] = useState(0);
+    const [dbHistory, setDbHistory] = useState(null);
     const [isIframeLoaded, setIsIframeLoaded] = useState(false);
     const [extraCoverReset, setExtraCoverReset] = useState(false);
     const activeMenuRef = useRef(activeMenu);
@@ -183,9 +184,10 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     const [deadline, setDeadline] = useState(null);
     const [history, setHistory] = useState([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
-    const [dbHistory, setDbHistory] = useState([]);
+    const userStr = localStorage.getItem("user");
+    const user = userStr ? JSON.parse(userStr) : null;
     const [isAdmin, setIsAdmin] = useState(false);
-    const [selectedStudent, setSelectedStudent] = useState("");
+    const [selectedStudent, setSelectedStudent] = useState(() => user?.name || "Student");
     const [existingDeliveryDetails, setExistingDeliveryDetails] = useState(null);
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -229,8 +231,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
 
 
     const { logos, loading, fetchLogos } = useLogoStore();
-    const userStr = localStorage.getItem("user");
-    const user = userStr ? JSON.parse(userStr) : null;
     const school_id = user?.school_id;
     useEffect(() => {
         if (school_id) {
@@ -466,9 +466,13 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
     useEffect(() => {
         if (!selectedStudent) return;
 
-        const studentData = customizations[selectedStudent] || DEFAULT_SELECTIONS;
-        setAllSelections(studentData);
+        if (customizations && customizations[selectedStudent]) {
+            setAllSelections(customizations[selectedStudent]);
+        }
     }, [selectedStudent, customizations]);
+
+    const TOP_GARMENTS = ['T-SHIRT', 'SWEATSHIRT', 'HOODIE', 'ZIPPERHOODIE'];
+    const BOTTOM_GARMENTS = ['SWEATPANTS', 'SHORTS'];
 
     const handleUpdateSelection = (category, updates) => {
 
@@ -477,88 +481,84 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
             return;
         }
 
-        setAllSelections(prev => {
-            const next = JSON.parse(JSON.stringify(prev));
-            if (updates.selectedColor) {
-                next[category].selectedColor = updates.selectedColor;
-            }
-            if (updates.selectedSize) {
-                next[category].selectedSize = updates.selectedSize;
-            }
-            if (updates.pressureOptions) {
-                const pUpdates = updates.pressureOptions;
-                if (category === 'SHORTS' || category === 'SWEATPANTS') {
-                    Object.keys(pUpdates).forEach(key => {
-                        if (next[category].pressureOptions) {
-                            next[category].pressureOptions[key] = pUpdates[key];
+        const currentSelections = allSelections || DEFAULT_SELECTIONS;
+        const next = JSON.parse(JSON.stringify(currentSelections));
+
+        if (updates.selectedColor) {
+            next[category].selectedColor = updates.selectedColor;
+        }
+        if (updates.selectedSize) {
+            next[category].selectedSize = updates.selectedSize;
+        }
+        if (updates.pressureOptions) {
+            const pUpdates = updates.pressureOptions;
+            if (TOP_GARMENTS.includes(category)) {
+                // TOPS sync only with TOPS: T-SHIRT, SWEATSHIRT, HOODIE, ZIPPERHOODIE
+                Object.keys(pUpdates).forEach(key => {
+                    const val = pUpdates[key];
+                    if (key === 'backDesign') {
+                        TOP_GARMENTS.forEach(cat => {
+                            if (next[cat]) {
+                                if (!next[cat].pressureOptions) next[cat].pressureOptions = {};
+                                next[cat].pressureOptions.backDesign = val;
+                            }
+                        });
+                        return;
+                    }
+
+                    TOP_GARMENTS.forEach(cat => {
+                        if (next[cat]) {
+                            if (!next[cat].pressureOptions) next[cat].pressureOptions = {};
+                            next[cat].pressureOptions[key] = val;
                         }
                     });
-                } else {
-                    Object.keys(pUpdates).forEach(key => {
-                        if (key === 'backDesign') {
-                            const val = pUpdates[key];
-                            ['T-SHIRT', 'SWEATSHIRT', 'HOODIE', 'ZIPPERHOODIE'].forEach(cat => {
-                                if (next[cat]) next[cat].pressureOptions.backDesign = val;
-                            });
-                            return;
-                        }
-
-                        const newValue = pUpdates[key];
-                        const match = key.match(/^(rightChest|leftChest|rightSleeve|leftSleeve|bottomChest|rightLeg|leftLeg)(.*)$/);
-                        if (match) {
-                            const basePos = match[1];
-                            const suffix = match[2]; // e.g., "Text", "Flag", "Type"
-
-                            // Map Chest to Leg for unified "side" selection
-                            const mapping = {
-                                'rightChest': ['rightChest', 'rightLeg'],
-                                'leftChest': ['leftChest', 'leftLeg'],
-                                'rightLeg': ['rightChest', 'rightLeg'],
-                                'leftLeg': ['leftChest', 'leftLeg'],
-                                'rightSleeve': ['rightSleeve'],
-                                'leftSleeve': ['leftSleeve'],
-                                'bottomChest': ['bottomChest']
-                            };
-
-                            const targets = mapping[basePos] || [basePos];
-                            Object.keys(next).forEach(cat => {
-                                targets.forEach(tPos => {
-                                    const tKey = `${tPos}${suffix}`;
-                                    if (next[cat].pressureOptions && next[cat].pressureOptions.hasOwnProperty(tKey)) {
-                                        next[cat].pressureOptions[tKey] = newValue;
-                                    }
-                                });
-                            });
-                        }
-                    });
-                }
-            }
-
-            // Apply any non-sync updates directly
-            Object.keys(updates).forEach(key => {
-                if (key !== 'selectedColor' && key !== 'selectedSize' && key !== 'pressureOptions') {
-                    next[category][key] = updates[key];
-                }
-            });
-
-            // 2. Schedule parent state update
-            setCustomizations(prevCustom => {
-                const updated = { ...prevCustom, [selectedStudent]: next };
-
-                // (BackDesign batch sync removed as multi-student mode is disabled)
-
-                // Save to history for Change Control
-                setHistory(h => {
-                    const newH = [...h.slice(0, historyIndex + 1), JSON.parse(JSON.stringify(updated))].slice(-10);
-                    setHistoryIndex(newH.length - 1);
-                    setUndoAvailable(newH.length > 1);
-                    return newH;
                 });
+            } else if (BOTTOM_GARMENTS.includes(category)) {
+                // BOTTOMS sync only with BOTTOMS: SWEATPANTS, SHORTS
+                Object.keys(pUpdates).forEach(key => {
+                    const val = pUpdates[key];
+                    BOTTOM_GARMENTS.forEach(cat => {
+                        if (next[cat]) {
+                            if (!next[cat].pressureOptions) next[cat].pressureOptions = {};
+                            next[cat].pressureOptions[key] = val;
+                        }
+                    });
+                });
+            } else {
+                if (next[category]) {
+                    if (!next[category].pressureOptions) next[category].pressureOptions = {};
+                    Object.keys(pUpdates).forEach(key => {
+                        next[category].pressureOptions[key] = pUpdates[key];
+                    });
+                }
+            }
+        }
 
-                return updated;
-            });
+        // Apply any non-sync updates directly
+        Object.keys(updates).forEach(key => {
+            if (key !== 'selectedColor' && key !== 'selectedSize' && key !== 'pressureOptions') {
+                next[category][key] = updates[key];
+            }
+        });
 
-            return next;
+        // 1. Update local state
+        setAllSelections(next);
+
+        // 2. Update parent customizations state
+        if (selectedStudent) {
+            setCustomizations(prevCustom => ({
+                ...prevCustom,
+                [selectedStudent]: next
+            }));
+        }
+
+        // 3. Save to history for Change Control
+        setHistory(h => {
+            const updated = { ...(customizations || {}), [selectedStudent]: next };
+            const newH = [...h.slice(0, historyIndex + 1), JSON.parse(JSON.stringify(updated))].slice(-10);
+            setHistoryIndex(newH.length - 1);
+            setUndoAvailable(newH.length > 1);
+            return newH;
         });
     };
 
@@ -739,19 +739,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         return () => window.removeEventListener('message', handleMessage);
     }, []);
 
-    useEffect(() => {
-        if (!selectedStudent) return;
-
-        if (!customizations[selectedStudent]) {
-            setCustomizations(prev => ({
-                ...prev,
-                [selectedStudent]: DEFAULT_SELECTIONS
-            }));
-            setAllSelections(DEFAULT_SELECTIONS);
-        } else {
-            setAllSelections(customizations[selectedStudent]);
-        }
-    }, [selectedStudent, customizations]);
     return (
         <>
             {copyDesignPrompt && (
@@ -1078,43 +1065,41 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                                     : 'hover:bg-slate-50'
                                                     }`}
                                             >
-                                                <img
-                                                    src={item.icon}
-                                                    alt={item.name}
-                                                    className={`w-7 h-7 object-contain transition-transform duration-200 ${activeMenu === item.name ? 'scale-110' : ''}`}
-                                                />
-                                                {activeMenu === item.name && (
-                                                    <div className="mt-1 w-1.5 h-1.5 bg-green-600 rounded-full"></div>
-                                                )}
+                                                <img src={item.icon} alt={item.name} className="w-4 h-4 object-contain" />
+                                                <span className="text-xs font-semibold">{item.name}</span>
                                             </button>
                                         ))}
                                     </div>
-                                </div>
-                                <div className="px-4 pt-3 flex-shrink-0">
-                                    <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
-                                        <button
-                                            onClick={() => setGarmentTab('size')}
-                                            className={`flex-1 py-2.5 text-sm font-semibold transition-all rounded-xl ${garmentTab === 'size' ? 'bg-green-700 text-white' : 'text-gray-500 bg-white hover:bg-gray-50'}`}
-                                        >
-                                            Color & Size
-                                        </button>
-                                        <button
-                                            onClick={() => setGarmentTab('pressure')}
-                                            className={`flex-1 py-2.5 text-sm font-semibold transition-all rounded-xl ${garmentTab === 'pressure' ? 'bg-green-700 text-white' : 'text-gray-500 bg-white hover:bg-gray-50'}`}
-                                        >
-                                            Design
-                                        </button>
-                                    </div>
-                                </div>
 
-                                <div className="p-4 space-y-6 md:h-full h-[38vh] overflow-y-auto custom-scrollbar-premium">
-                                    {activeMenu === 'T-SHIRT' && <Tshirt isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                    {activeMenu === "SWEATSHIRT" && <SweatShirt isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                    {activeMenu === "HOODIE" && <Hoodie isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                    {activeMenu === "ZIPPERHOODIE" && <ZippedHoodie isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['ZIPPERHOODIE']} onUpdate={(updates) => handleUpdateSelection('ZIPPERHOODIE', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
-                                    {activeMenu === "SWEATPANTS" && <SweatPants isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['SWEATPANTS']} onUpdate={(updates) => handleUpdateSelection('SWEATPANTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
-                                    {activeMenu === "SHORTS" && <Shorts isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['SHORTS']} onUpdate={(updates) => handleUpdateSelection('SHORTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
-                                </div>
+                                    <div className="px-4 py-2 border-b border-slate-100 bg-white">
+                                        <div className="flex rounded-xl bg-gray-100 p-1">
+                                            <button
+                                                onClick={() => setGarmentTab('size')}
+                                                className={`flex-1 py-2.5 text-sm font-semibold transition-all rounded-xl ${garmentTab === 'size' ? 'bg-green-700 text-white' : 'text-gray-500 bg-white hover:bg-gray-50'}`}
+                                            >
+                                                Farve og Størrelse
+                                            </button>
+                                            <button
+                                                onClick={() => setGarmentTab('pressure')}
+                                                className={`flex-1 py-2.5 text-sm font-semibold transition-all rounded-xl ${garmentTab === 'pressure' ? 'bg-green-700 text-white' : 'text-gray-500 bg-white hover:bg-gray-50'}`}
+                                            >
+                                                Design
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 space-y-6 md:h-full h-[38vh] overflow-y-auto custom-scrollbar-premium">
+                                        {isMobile && (
+                                            <>
+                                                {activeMenu === 'T-SHIRT' && <Tshirt key="tshirt-mobile" isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['T-SHIRT']} onUpdate={(updates) => handleUpdateSelection('T-SHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                                {activeMenu === "SWEATSHIRT" && <SweatShirt key="sweatshirt-mobile" isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['SWEATSHIRT']} onUpdate={(updates) => handleUpdateSelection('SWEATSHIRT', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                                {activeMenu === "HOODIE" && <Hoodie key="hoodie-mobile" isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['HOODIE']} onUpdate={(updates) => handleUpdateSelection('HOODIE', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                                {activeMenu === "ZIPPERHOODIE" && <ZippedHoodie key="zipper-mobile" isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['ZIPPERHOODIE']} onUpdate={(updates) => handleUpdateSelection('ZIPPERHOODIE', updates)} backDesigns={backDesigns} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} libDesignColor={libDesignColor} setLibDesignColor={setLibDesignColor} />}
+                                                {activeMenu === "SWEATPANTS" && <SweatPants key="sweatpants-mobile" isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['SWEATPANTS']} onUpdate={(updates) => handleUpdateSelection('SWEATPANTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
+                                                {activeMenu === "SHORTS" && <Shorts key="shorts-mobile" isAppReady={isAppReady} loadedTrigger={loadedTrigger} logos={logos} data={allSelections['SHORTS']} onUpdate={(updates) => handleUpdateSelection('SHORTS', updates)} onOpenInquiry={() => setIsInquiryModalOpen(true)} activeTab={garmentTab} onTabChange={setGarmentTab} maxCharsText={maxCharsClothText} />}
+                                            </>
+                                        )}
+                                    </div>                 </div>
                             </div>
                             <div className="border-t border-slate-200 p-4 bg-white/90 backdrop-blur-sm flex-shrink-0 sticky bottom-0">
                                 {/* <div className="mb-3 space-y-1">

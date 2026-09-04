@@ -363,10 +363,6 @@ const SweatPants = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenIn
     }
   }, [logos]);
 
-  useEffect(() => {
-    if (!data?.selectedColor) onUpdate({ selectedColor: "Heather Grey" });
-  }, []);
-
   const colorMap = {
     "heather grey": "SweatPant:heatherGrey",
     black: "SweatPant:black",
@@ -411,13 +407,15 @@ const SweatPants = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenIn
   useEffect(() => {
     if (!isAppReady) return;
     ["rightLeg", "leftLeg"].forEach(area => {
-      const text = pressureOptions[`${area}Text`]?.trim() || "";
-      const flag = pressureOptions[`${area}Flag`] || "";
-      const flag2 = pressureOptions[`${area}Flag2`] || "";
-      const flagCount = pressureOptions[`${area}FlagCount`] || 1;
-      const logoPre = pressureOptions[`${area}LogoPredefined`] || "";
-      const logoCustom = pressureOptions[`${area}LogoCustom`] || "";
       const type = pressureOptions[`${area}Type`] || "";
+      const text = pressureOptions[`${area}Text`]?.trim() || "";
+      const hasFlag = type === "flag" && !!pressureOptions[`${area}Flag`];
+      const hasLogo = type === "logo" && !!(pressureOptions[`${area}LogoPredefined`] || pressureOptions[`${area}LogoCustom`]);
+      const flag = hasFlag ? (pressureOptions[`${area}Flag`] || "") : "";
+      const flag2 = hasFlag ? (pressureOptions[`${area}Flag2`] || "") : "";
+      const flagCount = pressureOptions[`${area}FlagCount`] || 1;
+      const logoPre = hasLogo ? (pressureOptions[`${area}LogoPredefined`] || "") : "";
+      const logoCustom = hasLogo ? (pressureOptions[`${area}LogoCustom`] || "") : "";
       const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
 
       const prev = prevRef.current[area] || {};
@@ -437,15 +435,13 @@ const SweatPants = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenIn
       const currentRender = (renderCounterRef.current[area] || 0) + 1;
       renderCounterRef.current[area] = currentRender;
 
-      const hasFlag = !!flag && type === "flag";
-      const hasLogo = !!(logoPre || logoCustom) && type === "logo";
       const opacity = getEmissiveBase64(text, hasFlag, hasLogo);
       postIfChanged(`${area}_opacity`, `SweatPant:${area}_opacity: ${opacity}`);
 
       getDiffuseBase64(flag, logoPre, logoCustom, text, (diffuse, logoOpacityBase) => {
         if (renderCounterRef.current[area] !== currentRender) return;
         postIfChanged(`${area}_diffuse`, `SweatPant:${area}_diffuse: ${diffuse}`);
-        if (logoOpacityBase) postIfChanged(`${area}_opacity`, `SweatPant:${area}_opacity: ${logoOpacityBase}`);
+        if (logoOpacityBase && hasLogo) postIfChanged(`${area}_opacity`, `SweatPant:${area}_opacity: ${logoOpacityBase}`);
       }, flag2, flagCount, textColor);
     });
   }, [isAppReady, loadedTrigger, pressureOptions]);
@@ -467,21 +463,18 @@ const SweatPants = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenIn
         <div className="flex rounded-lg overflow-hidden border border-gray-200">
           {["text", "flag", "logo"].map(tab => (
             <button key={tab} type="button"
-              onClick={() => {
-                if (tab === "text") onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Type`]: "", [`${area}Flag`]: "", [`${area}LogoPredefined`]: "", [`${area}LogoCustom`]: "" } });
-                else handleTypeChange(area, tab);
-              }}
+              onClick={() => handleTypeChange(area, tab === "text" ? "" : tab)}
               className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${pressureOptions[`${area}Type`] === tab || (tab === "text" && !pressureOptions[`${area}Type`]) ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
             >
               {tab === "text" ? t("Text") : tab === "flag" ? t("Flag") : t("Logo")}
-              {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ?" : ""}
+              {(tab === "text" && pressureOptions[`${area}Text`]) || (tab === "flag" && pressureOptions[`${area}Flag`]) || (tab === "logo" && pressureOptions[`${area}LogoPredefined`]) ? " ✓" : ""}
             </button>
           ))}
         </div>
         {!pressureOptions[`${area}Type`] && (
           <div className="space-y-2">
             <div className="flex flex-wrap gap-2">
-              <input type="text" value={pressureOptions[`${area}Text`]}
+              <input type="text" value={pressureOptions[`${area}Text`] || ""}
                 onChange={e => onUpdate({ pressureOptions: { ...pressureOptions, [`${area}Text`]: e.target.value } })}
                 placeholder="Enter text" maxLength={maxCharsText}
                 className="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"

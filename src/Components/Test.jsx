@@ -346,47 +346,63 @@ export default function Test({ pressureOptions, color, onUpdate, postEx, isAppRe
     try {
       // High-res export: scale up 3x for quality
       const EXPORT_SCALE = 3;
+      const exportW = CANVAS_WIDTH * EXPORT_SCALE;
+      const exportH = CANVAS_HEIGHT * EXPORT_SCALE;
 
-      // --- DIFFUSE: no background (transparent) — only the design ---
+      // --- DIFFUSE: Pure solid white for white print (color === 'black'), solid black for black print (color === 'white') ---
+      // This eliminates all black edges, fringes, and dark bleed caused by GPU bilinear texture filtering at alpha boundaries.
       const exportCanvas = document.createElement("canvas");
-      exportCanvas.width = CANVAS_WIDTH * EXPORT_SCALE;
-      exportCanvas.height = CANVAS_HEIGHT * EXPORT_SCALE;
+      exportCanvas.width = exportW;
+      exportCanvas.height = exportH;
       const ectx = exportCanvas.getContext("2d");
-      ectx.imageSmoothingEnabled = true;
-      ectx.imageSmoothingQuality = "high";
-      // No background fill — transparent canvas
-      objects.forEach(obj => {
-        ectx.save();
-        ectx.translate(obj.pos.x * EXPORT_SCALE, obj.pos.y * EXPORT_SCALE);
-        ectx.rotate((obj.angle * Math.PI) / 180);
-        if (obj.type === 'image') {
-          ectx.drawImage(
-            obj.srcObj,
-            -(obj.size.w * EXPORT_SCALE) / 2,
-            -(obj.size.h * EXPORT_SCALE) / 2,
-            obj.size.w * EXPORT_SCALE,
-            obj.size.h * EXPORT_SCALE
-          );
-        }
-        ectx.restore();
-      });
+      ectx.fillStyle = color === "white" ? "#000000" : "#ffffff";
+      ectx.fillRect(0, 0, exportW, exportH);
       diffuseBase64 = exportCanvas.toDataURL("image/png", 1.0);
 
-      // --- OPACITY: white background + design → convert to B&W mask ---
+      // --- OPACITY: High-fidelity anti-aliased mask ---
       const exportOpacity = document.createElement("canvas");
-      exportOpacity.width = CANVAS_WIDTH * EXPORT_SCALE;
-      exportOpacity.height = CANVAS_HEIGHT * EXPORT_SCALE;
+      exportOpacity.width = exportW;
+      exportOpacity.height = exportH;
       const eoctx = exportOpacity.getContext("2d");
       eoctx.imageSmoothingEnabled = true;
       eoctx.imageSmoothingQuality = "high";
-      // White background so brightness threshold works correctly
-      eoctx.fillStyle = color;
-      eoctx.fillRect(0, 0, exportOpacity.width, exportOpacity.height);
-      objects.forEach(obj => {
+
+      // Detect whether primary object has dark or light background
+      let isDarkBg = color === "black";
+      if (objects.length > 0 && objects[0].srcObj) {
+        try {
+          const sampleC = document.createElement("canvas");
+          sampleC.width = 16;
+          sampleC.height = 16;
+          const sctx = sampleC.getContext("2d");
+          sctx.drawImage(objects[0].srcObj, 0, 0, 16, 16);
+          const sData = sctx.getImageData(0, 0, 16, 16).data;
+          const cornerIndices = [0, 15 * 4, (15 * 16) * 4, (15 * 16 + 15) * 4];
+          let bTotal = 0;
+          let count = 0;
+          cornerIndices.forEach((idx) => {
+            if (sData[idx + 3] > 40) {
+              bTotal += 0.299 * sData[idx] + 0.587 * sData[idx + 1] + 0.114 * sData[idx + 2];
+              count++;
+            }
+          });
+          if (count > 0) {
+            isDarkBg = bTotal / count < 128;
+          }
+        } catch (e) {
+          // fallback to assumption
+        }
+      }
+
+      // Background fill matching image background
+      eoctx.fillStyle = isDarkBg ? "#000000" : "#ffffff";
+      eoctx.fillRect(0, 0, exportW, exportH);
+
+      objects.forEach((obj) => {
         eoctx.save();
         eoctx.translate(obj.pos.x * EXPORT_SCALE, obj.pos.y * EXPORT_SCALE);
         eoctx.rotate((obj.angle * Math.PI) / 180);
-        if (obj.type === 'image') {
+        if (obj.type === "image") {
           eoctx.drawImage(
             obj.srcObj,
             -(obj.size.w * EXPORT_SCALE) / 2,
@@ -397,13 +413,55 @@ export default function Test({ pressureOptions, color, onUpdate, postEx, isAppRe
         }
         eoctx.restore();
       });
-      const eImgData = eoctx.getImageData(0, 0, exportOpacity.width, exportOpacity.height);
-      for (let i = 0; i < eImgData.data.length; i += 4) {
-        const brightness = 0.299 * eImgData.data[i] + 0.587 * eImgData.data[i + 1] + 0.114 * eImgData.data[i + 2];
-        const bw = brightness > 128 ? 0 : 255;
-        eImgData.data[i] = eImgData.data[i + 1] = eImgData.data[i + 2] = bw;
-        eImgData.data[i + 3] = 255;
+
+      const eImgData = eoctx.getImageData(0, 0, exportW, exportH);
+      const data = eImgData.data;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+
+        let printPresence = 0; // 0 = transparent background, 1 = full opaque print
+        if (isDarkBg) {
+          // White artwork on dark background
+          if (brightness <= 20) {
+            printPresence = 0;
+          } else if (brightness >= 150) {
+            printPresence = 1;
+          } else {
+            const t = (brightness - 20) / (150 - 20);
+            printPresence = t * t * (3 - 2 * t); // smoothstep
+          }
+        } else {
+          // Dark artwork on light background
+          if (brightness >= 235) {
+            printPresence = 0;
+          } else if (brightness <= 85) {
+            printPresence = 1;
+          } else {
+            const t = (235 - brightness) / (235 - 85);
+            printPresence = t * t * (3 - 2 * t); // smoothstep
+          }
+        }
+
+        // Parent component (Tshirt/Hoodie/etc.) inverts when color === 'black' (inverted = 255 - pixel)
+        // So for color === 'black', output (1 - printPresence) * 255 (which gets inverted to printPresence * 255)
+        // For color === 'white', parent does NOT invert, so output printPresence * 255
+        let maskValue = 0;
+        if (color === "black") {
+          maskValue = Math.round((1 - printPresence) * 255);
+        } else {
+          maskValue = Math.round(printPresence * 255);
+        }
+
+        data[i] = maskValue;
+        data[i + 1] = maskValue;
+        data[i + 2] = maskValue;
+        data[i + 3] = 255;
       }
+
       eoctx.putImageData(eImgData, 0, 0);
       opacityBase64 = exportOpacity.toDataURL("image/png", 1.0);
     } catch (err) {

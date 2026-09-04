@@ -1,4 +1,4 @@
-﻿// isme karna hay 
+// isme karna hay 
 
 import React, { useState, useEffect, useRef } from "react";
 import cog from "../assets/menuimages/cogwheel-pen.png";
@@ -429,10 +429,6 @@ const Shorts = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenInquir
     }
   }, [logos]);
 
-  useEffect(() => {
-    if (!data?.selectedColor) onUpdate({ selectedColor: "Heather Grey" });
-  }, []);
-
   const prevRef = React.useRef({});
   const renderCounterRef = React.useRef({});
   const lastSentRef = React.useRef({});
@@ -476,13 +472,15 @@ const Shorts = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenInquir
   useEffect(() => {
     if (!isAppReady) return;
     ["rightLeg", "leftLeg"].forEach(area => {
-      const text = pressureOptions[`${area}Text`]?.trim() || "";
-      const flag = pressureOptions[`${area}Flag`] || "";
-      const flag2 = pressureOptions[`${area}Flag2`] || "";
-      const flagCount = pressureOptions[`${area}FlagCount`] || 1;
-      const logoPre = pressureOptions[`${area}LogoPredefined`] || "";
-      const logoCustom = pressureOptions[`${area}LogoCustom`] || "";
       const type = pressureOptions[`${area}Type`] || "";
+      const text = pressureOptions[`${area}Text`]?.trim() || "";
+      const hasFlag = type === "flag" && !!pressureOptions[`${area}Flag`];
+      const hasLogo = type === "logo" && !!(pressureOptions[`${area}LogoPredefined`] || pressureOptions[`${area}LogoCustom`]);
+      const flag = hasFlag ? (pressureOptions[`${area}Flag`] || "") : "";
+      const flag2 = hasFlag ? (pressureOptions[`${area}Flag2`] || "") : "";
+      const flagCount = pressureOptions[`${area}FlagCount`] || 1;
+      const logoPre = hasLogo ? (pressureOptions[`${area}LogoPredefined`] || "") : "";
+      const logoCustom = hasLogo ? (pressureOptions[`${area}LogoCustom`] || "") : "";
       const textColor = pressureOptions[`${area}TextColor`] || "#ffffff";
 
       const prev = prevRef.current[area] || {};
@@ -493,9 +491,6 @@ const Shorts = ({ data, onUpdate, isAppReady, loadedTrigger, logos, onOpenInquir
       );
       if (!textChanged && !logoChanged && lastSentRef.current[`${area}_opacity`] && lastSentRef.current[`${area}_diffuse`]) return;
       prevRef.current[area] = { text, flag, flag2, flagCount, logoPre, logoCustom, type, textColor };
-
-      const hasFlag = !!flag && type === "flag";
-      const hasLogo = !!(logoPre || logoCustom) && type === "logo";
 
       // ── 1. Text texture — always send separately, only when text itself changed ──
       if (textChanged) {
