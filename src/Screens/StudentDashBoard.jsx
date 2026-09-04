@@ -174,8 +174,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
         activeMenuRef.current = activeMenu;
     }, [activeMenu]);
 
-    // Garment switch copy popup state
-    const [copyDesignPrompt, setCopyDesignPrompt] = useState(null); // { from, to }
     // Track which garments user has explicitly added to order
     const [orderedGarments, setOrderedGarments] = useState({});
     const [sizeFlag, setSizeFlag] = useState(true)
@@ -741,48 +739,6 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
 
     return (
         <>
-            {copyDesignPrompt && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-100">
-                        <h3 className="text-lg font-bold text-slate-800 mb-2">
-                            Copy Design?
-                        </h3>
-                        <p className="text-sm text-slate-500 mb-6">
-                            You configured <span className="font-bold text-green-700">{copyDesignPrompt.from}</span>.
-                            Copy this design to <span className="font-bold text-green-700">{copyDesignPrompt.to}</span> as well?
-                        </p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => {
-                                    const sourceData = allSelections[copyDesignPrompt.from];
-                                    setAllSelections(prev => ({
-                                        ...prev,
-                                        [copyDesignPrompt.to]: {
-                                            ...prev[copyDesignPrompt.to],
-                                            pressureOptions: { ...sourceData.pressureOptions }
-                                        }
-                                    }));
-                                    handleSelectGarment(copyDesignPrompt.to);
-                                    setCopyDesignPrompt(null);
-                                }}
-                                className="flex-1 py-2.5 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 transition-all"
-                            >
-                                Haan, Copy Karo
-                            </button>
-                            <button
-                                onClick={() => {
-                                    handleSelectGarment(copyDesignPrompt.to);
-                                    setCopyDesignPrompt(null);
-                                }}
-                                className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
-                            >
-                                Nahi, Alag Rakho
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {showSaveModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
                     <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-100">
@@ -935,19 +891,7 @@ const StudentDashboard = ({ customizations, setCustomizations, setShowBackPopup 
                                             {menuItems.map((item, index) => (
                                                 <button
                                                     key={index}
-                                                    onClick={() => {
-                                                        const currentConfigured = isGarmentConfigured(activeMenu, allSelections[activeMenu]);
-                                                        const targetConfigured = isGarmentConfigured(item.name, allSelections[item.name]);
-                                                        if (
-                                                            item.name !== activeMenu &&
-                                                            currentConfigured &&
-                                                            !targetConfigured
-                                                        ) {
-                                                            setCopyDesignPrompt({ from: activeMenu, to: item.name });
-                                                        } else {
-                                                            handleSelectGarment(item.name);
-                                                        }
-                                                    }}
+                                                    onClick={() => handleSelectGarment(item.name)}
                                                     className={`flex items-center px-2 py-3 rounded-xl transition-all duration-200 group w-full ${activeMenu === item.name
                                                         ? 'bg-gradient-to-r from-green-50 to-green-50 border border-green-200 shadow-sm'
                                                         : 'hover:bg-slate-50 hover:shadow-sm'
